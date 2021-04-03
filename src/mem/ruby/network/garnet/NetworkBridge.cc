@@ -29,8 +29,6 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Srikant Bharadwaj
  */
 
 
@@ -41,18 +39,18 @@
 #include "debug/RubyNetwork.hh"
 #include "params/GarnetIntLink.hh"
 
-NetworkBridge::NetworkBridge(const Params *p)
+NetworkBridge::NetworkBridge(const Params &p)
     :CreditLink(p)
 {
     enCdc = true;
     enSerDes = true;
-    mType = p->vtype;
+    mType = p.vtype;
 
-    cdcLatency = p->cdc_latency;
-    serDesLatency = p->serdes_latency;
+    cdcLatency = p.cdc_latency;
+    serDesLatency = p.serdes_latency;
     lastScheduledAt = 0;
 
-    nLink = p->link;
+    nLink = p.link;
     if (mType == Enums::LINK_OBJECT) {
         nLink->setLinkConsumer(this);
         setSourceQueue(nLink->getBuffer(), nLink);
@@ -262,10 +260,4 @@ NetworkBridge::wakeup()
         return;
     }
     assert(!link_srcQueue->getSize());
-}
-
-NetworkBridge *
-NetworkBridgeParams::create()
-{
-    return new NetworkBridge(this);
 }

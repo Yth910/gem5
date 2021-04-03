@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 #
 # Copyright (c) 2014, 2016 ARM Limited
 # All rights reserved
@@ -46,8 +46,6 @@ import inspect
 import os
 import re
 import sys
-
-from six import add_metaclass
 
 from . import style
 from . import sort_includes
@@ -102,8 +100,7 @@ def _modified_regions(old, new):
     return regions
 
 
-@add_metaclass(ABCMeta)
-class Verifier(object):
+class Verifier(object, metaclass=ABCMeta):
     """Base class for style verifiers
 
     Verifiers check for style violations and optionally fix such
@@ -224,7 +221,6 @@ class Verifier(object):
         """
         pass
 
-@add_metaclass(ABCMeta)
 class LineVerifier(Verifier):
     def check(self, filename, regions=all_regions, fobj=None, silent=False):
         close = False

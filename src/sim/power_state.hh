@@ -44,6 +44,7 @@
 #define __SIM_POWER_STATE_HH__
 
 #include <set>
+#include <vector>
 
 #include "base/callback.hh"
 #include "base/statistics.hh"
@@ -61,14 +62,10 @@ class PowerDomain;
 class PowerState : public SimObject
 {
   public:
-    PowerState(const PowerStateParams *p);
+    PowerState(const PowerStateParams &p);
 
     /** Parameters of PowerState object */
-    typedef PowerStateParams Params;
-    const Params* params() const
-    {
-        return reinterpret_cast<const Params*>(_params);
-    }
+    PARAMS(PowerState);
 
     virtual void addFollower(PowerState* pwr_obj) {};
     void setControlledDomain(PowerDomain* pwr_dom);

@@ -34,7 +34,7 @@
 #include "cpu/testers/directedtest/RubyDirectedTester.hh"
 #include "debug/DirectedTest.hh"
 
-InvalidateGenerator::InvalidateGenerator(const Params *p)
+InvalidateGenerator::InvalidateGenerator(const Params &p)
     : DirectedGenerator(p)
 {
     //
@@ -44,7 +44,7 @@ InvalidateGenerator::InvalidateGenerator(const Params *p)
     m_active_read_node = 0;
     m_active_inv_node = 0;
     m_address = 0x0;
-    m_addr_increment_size = p->addr_increment_size;
+    m_addr_increment_size = p.addr_increment_size;
 }
 
 InvalidateGenerator::~InvalidateGenerator()
@@ -132,10 +132,4 @@ InvalidateGenerator::performCallback(uint32_t proc, Addr address)
         m_status = InvalidateGeneratorStatus_Load_Waiting;
     }
 
-}
-
-InvalidateGenerator *
-InvalidateGeneratorParams::create()
-{
-    return new InvalidateGenerator(this);
 }

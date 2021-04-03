@@ -59,18 +59,18 @@ const AddrRange GicV2::GICD_IPRIORITYR(0x400, 0x800);
 const AddrRange GicV2::GICD_ITARGETSR (0x800, 0xc00);
 const AddrRange GicV2::GICD_ICFGR     (0xc00, 0xd00);
 
-GicV2::GicV2(const Params *p)
+GicV2::GicV2(const Params &p)
     : BaseGic(p),
-      gicdPIDR(p->gicd_pidr),
-      gicdIIDR(p->gicd_iidr),
-      giccIIDR(p->gicc_iidr),
-      distRange(RangeSize(p->dist_addr, DIST_SIZE)),
-      cpuRange(RangeSize(p->cpu_addr, p->cpu_size)),
+      gicdPIDR(p.gicd_pidr),
+      gicdIIDR(p.gicd_iidr),
+      giccIIDR(p.gicc_iidr),
+      distRange(RangeSize(p.dist_addr, DIST_SIZE)),
+      cpuRange(RangeSize(p.cpu_addr, p.cpu_size)),
       addrRanges{distRange, cpuRange},
-      distPioDelay(p->dist_pio_delay),
-      cpuPioDelay(p->cpu_pio_delay), intLatency(p->int_latency),
-      enabled(false), haveGem5Extensions(p->gem5_extensions),
-      itLines(p->it_lines),
+      distPioDelay(p.dist_pio_delay),
+      cpuPioDelay(p.cpu_pio_delay), intLatency(p.int_latency),
+      enabled(false), haveGem5Extensions(p.gem5_extensions),
+      itLines(p.it_lines),
       intEnabled {}, pendingInt {}, activeInt {},
       intPriority {}, intConfig {}, cpuTarget {},
       cpuSgiPending {}, cpuSgiActive {},
@@ -389,7 +389,7 @@ GicV2::writeDistributor(PacketPtr pkt)
     const ContextID ctx = pkt->req->contextId();
     const size_t data_sz = pkt->getSize();
 
-    uint32_t pkt_data M5_VAR_USED;
+    M5_VAR_USED uint32_t pkt_data;
     switch (data_sz)
     {
       case 1:
@@ -1089,10 +1089,4 @@ GicV2::BankedRegs::unserialize(CheckpointIn &cp)
     UNSERIALIZE_SCALAR(intGroup);
     UNSERIALIZE_ARRAY(intConfig, 2);
     UNSERIALIZE_ARRAY(intPriority, SGI_MAX + PPI_MAX);
-}
-
-GicV2 *
-GicV2Params::create()
-{
-    return new GicV2(this);
 }

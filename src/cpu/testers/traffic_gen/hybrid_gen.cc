@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Wendy Elsasser
  */
 
 #include "cpu/testers/traffic_gen/hybrid_gen.hh"
@@ -45,8 +43,6 @@
 #include "base/trace.hh"
 #include "debug/TrafficGen.hh"
 #include "enums/AddrMap.hh"
-
-using namespace std;
 
 HybridGen::HybridGen(SimObject &obj,
                RequestorID requestor_id, Tick _duration,

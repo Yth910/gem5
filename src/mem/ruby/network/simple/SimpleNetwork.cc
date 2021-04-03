@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020 Advanced Micro Devices, Inc.
- * Copyright (c) 2019 ARM Limited
+ * Copyright (c) 2019,2021 ARM Limited
  * All rights reserved.
  *
  * The license below extends only to copyright in the software and shall
@@ -52,22 +52,21 @@
 #include "mem/ruby/network/simple/Throttle.hh"
 #include "mem/ruby/profiler/Profiler.hh"
 
-using namespace std;
-
-SimpleNetwork::SimpleNetwork(const Params *p)
-    : Network(p), m_buffer_size(p->buffer_size),
-      m_endpoint_bandwidth(p->endpoint_bandwidth),
-      m_adaptive_routing(p->adaptive_routing)
+SimpleNetwork::SimpleNetwork(const Params &p)
+    : Network(p), m_buffer_size(p.buffer_size),
+      m_endpoint_bandwidth(p.endpoint_bandwidth),
+      m_adaptive_routing(p.adaptive_routing),
+      networkStats(this)
 {
     // record the routers
-    for (vector<BasicRouter*>::const_iterator i = p->routers.begin();
-         i != p->routers.end(); ++i) {
+    for (std::vector<BasicRouter*>::const_iterator i = p.routers.begin();
+         i != p.routers.end(); ++i) {
         Switch* s = safe_cast<Switch*>(*i);
         m_switches.push_back(s);
         s->init_net_ptr(this);
     }
 
-    m_int_link_buffers = p->int_link_buffers;
+    m_int_link_buffers = p.int_link_buffers;
     m_num_connected_buffers = 0;
 }
 
@@ -144,24 +143,29 @@ SimpleNetwork::regStats()
 
     for (MessageSizeType type = MessageSizeType_FIRST;
          type < MessageSizeType_NUM; ++type) {
-        m_msg_counts[(unsigned int) type]
-            .name(name() + ".msg_count." + MessageSizeType_to_string(type))
-            .flags(Stats::nozero)
+        networkStats.m_msg_counts[(unsigned int) type] =
+            new Stats::Formula(&networkStats,
+            csprintf("msg_count.%s", MessageSizeType_to_string(type)).c_str());
+        networkStats.m_msg_counts[(unsigned int) type]
+            ->flags(Stats::nozero)
             ;
-        m_msg_bytes[(unsigned int) type]
-            .name(name() + ".msg_byte." + MessageSizeType_to_string(type))
-            .flags(Stats::nozero)
+
+        networkStats.m_msg_bytes[(unsigned int) type] =
+            new Stats::Formula(&networkStats,
+            csprintf("msg_byte.%s", MessageSizeType_to_string(type)).c_str());
+        networkStats.m_msg_bytes[(unsigned int) type]
+            ->flags(Stats::nozero)
             ;
 
         // Now state what the formula is.
         for (int i = 0; i < m_switches.size(); i++) {
-            m_msg_counts[(unsigned int) type] +=
+            *(networkStats.m_msg_counts[(unsigned int) type]) +=
                 sum(m_switches[i]->getMsgCount(type));
         }
 
-        m_msg_bytes[(unsigned int) type] =
-            m_msg_counts[(unsigned int) type] * Stats::constant(
-                    Network::MessageSizeType_to_int(type));
+        *(networkStats.m_msg_bytes[(unsigned int) type]) =
+            *(networkStats.m_msg_counts[(unsigned int) type]) *
+                Stats::constant(Network::MessageSizeType_to_int(type));
     }
 }
 
@@ -174,15 +178,9 @@ SimpleNetwork::collateStats()
 }
 
 void
-SimpleNetwork::print(ostream& out) const
+SimpleNetwork::print(std::ostream& out) const
 {
     out << "[SimpleNetwork]";
-}
-
-SimpleNetwork *
-SimpleNetworkParams::create()
-{
-    return new SimpleNetwork(this);
 }
 
 /*
@@ -205,6 +203,21 @@ SimpleNetwork::functionalRead(Packet *pkt)
     return false;
 }
 
+bool
+SimpleNetwork::functionalRead(Packet *pkt, WriteMask &mask)
+{
+    bool read = false;
+    for (unsigned int i = 0; i < m_switches.size(); i++) {
+        if (m_switches[i]->functionalRead(pkt, mask))
+            read = true;
+    }
+    for (unsigned int i = 0; i < m_int_link_buffers.size(); ++i) {
+        if (m_int_link_buffers[i]->functionalRead(pkt, mask))
+            read = true;
+    }
+    return read;
+}
+
 uint32_t
 SimpleNetwork::functionalWrite(Packet *pkt)
 {
@@ -218,4 +231,11 @@ SimpleNetwork::functionalWrite(Packet *pkt)
         num_functional_writes += m_int_link_buffers[i]->functionalWrite(pkt);
     }
     return num_functional_writes;
+}
+
+SimpleNetwork::
+NetworkStats::NetworkStats(Stats::Group *parent)
+    : Stats::Group(parent)
+{
+
 }

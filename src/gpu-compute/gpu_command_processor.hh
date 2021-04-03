@@ -29,8 +29,6 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Anthony Gutierrez
  */
 
 /**
@@ -48,6 +46,8 @@
 #define __DEV_HSA_GPU_COMMAND_PROCESSOR_HH__
 
 #include "dev/hsa/hsa_device.hh"
+#include "dev/hsa/hsa_signal.hh"
+#include "gpu-compute/gpu_compute_driver.hh"
 #include "gpu-compute/hsa_queue_entry.hh"
 
 struct GPUCommandProcessorParams;
@@ -60,25 +60,54 @@ class GPUCommandProcessor : public HSADevice
     typedef GPUCommandProcessorParams Params;
 
     GPUCommandProcessor() = delete;
-    GPUCommandProcessor(const Params *p);
+    GPUCommandProcessor(const Params &p);
 
     void setShader(Shader *shader);
     Shader* shader();
 
+    enum AgentCmd {
+      Nop = 0,
+      Steal = 1
+    };
+
+    void submitAgentDispatchPkt(void *raw_pkt, uint32_t queue_id,
+                           Addr host_pkt_addr) override;
     void submitDispatchPkt(void *raw_pkt, uint32_t queue_id,
                            Addr host_pkt_addr) override;
     void submitVendorPkt(void *raw_pkt, uint32_t queue_id,
                          Addr host_pkt_addr) override;
+    void attachDriver(HSADriver *driver) override;
     void dispatchPkt(HSAQueueEntry *task);
+    void signalWakeupEvent(uint32_t event_id);
 
     Tick write(PacketPtr pkt) override { return 0; }
     Tick read(PacketPtr pkt) override { return 0; }
     AddrRangeList getAddrRanges() const override;
     System *system();
 
+    void updateHsaSignal(Addr signal_handle, uint64_t signal_value) override;
+
+    uint64_t functionalReadHsaSignal(Addr signal_handle) override;
+
+    Addr getHsaSignalValueAddr(Addr signal_handle)
+    {
+        return signal_handle + offsetof(amd_signal_t, value);
+    }
+
+    Addr getHsaSignalMailboxAddr(Addr signal_handle)
+    {
+        return signal_handle + offsetof(amd_signal_t, event_mailbox_ptr);
+    }
+
+    Addr getHsaSignalEventAddr(Addr signal_handle)
+    {
+        return signal_handle + offsetof(amd_signal_t, event_id);
+    }
+
   private:
     Shader *_shader;
     GPUDispatcher &dispatcher;
+    HSADriver *driver;
 
     void initABI(HSAQueueEntry *task);
 

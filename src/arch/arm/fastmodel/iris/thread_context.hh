@@ -57,8 +57,7 @@ class ThreadContext : public ::ThreadContext
     int _threadId;
     ContextID _contextId;
     System *_system;
-    ::BaseTLB *_dtb;
-    ::BaseTLB *_itb;
+    ::BaseMMU *_mmu;
     ::BaseISA *_isa;
 
     std::string _irisPath;
@@ -168,7 +167,7 @@ class ThreadContext : public ::ThreadContext
 
   public:
     ThreadContext(::BaseCPU *cpu, int id, System *system,
-                  ::BaseTLB *dtb, ::BaseTLB *itb, ::BaseISA *isa,
+                  ::BaseMMU *mmu, ::BaseISA *isa,
                   iris::IrisConnectionInterface *iris_if,
                   const std::string &iris_path);
     virtual ~ThreadContext();
@@ -192,16 +191,12 @@ class ThreadContext : public ::ThreadContext
     int contextId() const override { return _contextId; }
     void setContextId(int id) override { _contextId = id; }
 
-    BaseTLB *
-    getITBPtr() override
+    BaseMMU *
+    getMMUPtr() override
     {
-        return _itb;
+        return _mmu;
     }
-    BaseTLB *
-    getDTBPtr() override
-    {
-        return _dtb;
-    }
+
     CheckerCPU *getCheckerCpuPtr() override { return nullptr; }
     ArmISA::Decoder *
     getDecoderPtr() override

@@ -48,7 +48,6 @@
 #include <cassert>
 
 #include "base/intmath.hh"
-#include "cpu/base.hh"
 #include "mem/cache/base.hh"
 #include "params/BasePrefetcher.hh"
 #include "sim/system.hh"
@@ -89,14 +88,14 @@ Base::PrefetchListener::notify(const PacketPtr &pkt)
     }
 }
 
-Base::Base(const BasePrefetcherParams *p)
-    : ClockedObject(p), listeners(), cache(nullptr), blkSize(p->block_size),
-      lBlkSize(floorLog2(blkSize)), onMiss(p->on_miss), onRead(p->on_read),
-      onWrite(p->on_write), onData(p->on_data), onInst(p->on_inst),
-      requestorId(p->sys->getRequestorId(this)),
-      pageBytes(p->sys->getPageBytes()),
-      prefetchOnAccess(p->prefetch_on_access),
-      useVirtualAddresses(p->use_virtual_addresses),
+Base::Base(const BasePrefetcherParams &p)
+    : ClockedObject(p), listeners(), cache(nullptr), blkSize(p.block_size),
+      lBlkSize(floorLog2(blkSize)), onMiss(p.on_miss), onRead(p.on_read),
+      onWrite(p.on_write), onData(p.on_data), onInst(p.on_inst),
+      requestorId(p.sys->getRequestorId(this)),
+      pageBytes(p.sys->getPageBytes()),
+      prefetchOnAccess(p.prefetch_on_access),
+      useVirtualAddresses(p.use_virtual_addresses),
       prefetchStats(this), issuedPrefetches(0),
       usefulPrefetches(0), tlb(nullptr)
 {
@@ -114,7 +113,7 @@ Base::setCache(BaseCache *_cache)
 }
 Base::StatGroup::StatGroup(Stats::Group *parent)
     : Stats::Group(parent),
-    ADD_STAT(pfIssued, "number of hwpf issued")
+    ADD_STAT(pfIssued, UNIT_COUNT, "number of hwpf issued")
 {
 }
 
@@ -126,6 +125,7 @@ Base::observeAccess(const PacketPtr &pkt, bool miss) const
     bool read = pkt->isRead();
     bool inv = pkt->isInvalidate();
 
+    if (!miss && !prefetchOnAccess) return false;
     if (pkt->req->isUncacheable()) return false;
     if (fetch && !onInst) return false;
     if (!fetch && !onData) return false;
@@ -237,10 +237,8 @@ Base::regProbeListeners()
                                                 true));
         listeners.push_back(new PrefetchListener(*this, pm, "Fill", true,
                                                  false));
-        if (prefetchOnAccess) {
-            listeners.push_back(new PrefetchListener(*this, pm, "Hit", false,
-                                                     false));
-        }
+        listeners.push_back(new PrefetchListener(*this, pm, "Hit", false,
+                                                 false));
     }
 }
 

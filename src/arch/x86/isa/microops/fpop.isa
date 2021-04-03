@@ -76,6 +76,9 @@ def template MicroFpOpExecute {{
 def template MicroFpOpDeclare {{
     class %(class_name)s : public %(base_class)s
     {
+      private:
+        %(reg_idx_arr_decl)s;
+
       public:
         %(class_name)s(ExtMachInst _machInst,
                 const char * instMnem, uint64_t setFlags,
@@ -95,13 +98,12 @@ def template MicroFpOpConstructor {{
                 _src1, _src2, _dest, _dataSize, _spm,
                 %(op_class)s)
     {
+        %(set_reg_idx_arr)s;
         %(constructor)s;
     }
 }};
 
 let {{
-
-    import six
 
     # Make these empty strings so that concatenating onto
     # them will always work.
@@ -195,8 +197,7 @@ let {{
 
             return cls
 
-    @six.add_metaclass(FpOpMeta)
-    class FpUnaryOp(X86Microop):
+    class FpUnaryOp(X86Microop, metaclass=FpOpMeta):
         # This class itself doesn't act as a microop
         abstract = True
 
@@ -231,8 +232,7 @@ let {{
                 "dataSize" : self.dataSize,
                 "spm" : self.spm}
 
-    @six.add_metaclass(FpOpMeta)
-    class FpBinaryOp(X86Microop):
+    class FpBinaryOp(X86Microop, metaclass=FpOpMeta):
         # This class itself doesn't act as a microop
         abstract = True
 

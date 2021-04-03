@@ -31,7 +31,7 @@
 #include "params/KernelWorkload.hh"
 #include "sim/system.hh"
 
-KernelWorkload::KernelWorkload(const Params &p) : Workload(&p), _params(p),
+KernelWorkload::KernelWorkload(const Params &p) : Workload(p),
     _loadAddrMask(p.load_addr_mask), _loadAddrOffset(p.load_addr_offset),
     commandLine(p.command_line)
 {
@@ -134,10 +134,4 @@ void
 KernelWorkload::unserialize(CheckpointIn &cp)
 {
     kernelSymtab.unserialize("symtab", cp);
-}
-
-KernelWorkload *
-KernelWorkloadParams::create()
-{
-    return new KernelWorkload(*this);
 }

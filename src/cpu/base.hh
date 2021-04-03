@@ -48,7 +48,7 @@
 // and if so stop here
 #include "config/the_isa.hh"
 #if THE_ISA == NULL_ISA
-#include "arch/null/cpu_dummy.hh"
+#error Including BaseCPU in a system without CPU support
 #else
 #include "arch/generic/interrupts.hh"
 #include "base/statistics.hh"
@@ -145,6 +145,23 @@ class BaseCPU : public ClockedObject
     /** Cache the cache line size that we get from the system */
     const unsigned int _cacheLineSize;
 
+    /** Global CPU statistics that are merged into the Root object. */
+    struct GlobalStats : public Stats::Group {
+        GlobalStats(::Stats::Group *parent);
+
+        ::Stats::Value simInsts;
+        ::Stats::Value simOps;
+
+        ::Stats::Formula hostInstRate;
+        ::Stats::Formula hostOpRate;
+    };
+
+    /**
+     * Pointer to the global stat structure. This needs to be
+     * constructed from regStats since we merge it into the root
+     * group. */
+    static std::unique_ptr<GlobalStats> globalStats;
+
   public:
 
     /**
@@ -206,8 +223,8 @@ class BaseCPU : public ClockedObject
     uint32_t getPid() const { return _pid; }
     void setPid(uint32_t pid) { _pid = pid; }
 
-    inline void workItemBegin() { numWorkItemsStarted++; }
-    inline void workItemEnd() { numWorkItemsCompleted++; }
+    inline void workItemBegin() { baseStats.numWorkItemsStarted++; }
+    inline void workItemEnd() { baseStats.numWorkItemsCompleted++; }
     // @todo remove me after debugging with legion done
     Tick instCount() { return instCnt; }
 
@@ -292,10 +309,8 @@ class BaseCPU : public ClockedObject
     { return static_cast<ThreadID>(cid - threadContexts[0]->contextId()); }
 
   public:
-    typedef BaseCPUParams Params;
-    const Params *params() const
-    { return reinterpret_cast<const Params *>(_params); }
-    BaseCPU(Params *params, bool is_checker = false);
+    PARAMS(BaseCPU);
+    BaseCPU(const Params &params, bool is_checker = false);
     virtual ~BaseCPU();
 
     void init() override;
@@ -584,10 +599,14 @@ class BaseCPU : public ClockedObject
     }
 
   public:
-    // Number of CPU cycles simulated
-    Stats::Scalar numCycles;
-    Stats::Scalar numWorkItemsStarted;
-    Stats::Scalar numWorkItemsCompleted;
+    struct BaseCPUStats : public Stats::Group
+    {
+        BaseCPUStats(Stats::Group *parent);
+        // Number of CPU cycles simulated
+        Stats::Scalar numCycles;
+        Stats::Scalar numWorkItemsStarted;
+        Stats::Scalar numWorkItemsCompleted;
+    } baseStats;
 
   private:
     std::vector<AddressMonitor> addressMonitor;
@@ -595,7 +614,7 @@ class BaseCPU : public ClockedObject
   public:
     void armMonitor(ThreadID tid, Addr address);
     bool mwait(ThreadID tid, PacketPtr pkt);
-    void mwaitAtomic(ThreadID tid, ThreadContext *tc, BaseTLB *dtb);
+    void mwaitAtomic(ThreadID tid, ThreadContext *tc, BaseMMU *mmu);
     AddressMonitor *getCpuAddrMonitor(ThreadID tid)
     {
         assert(tid < numThreads);

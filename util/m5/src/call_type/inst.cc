@@ -29,16 +29,10 @@
 
 #include "args.hh"
 #include "call_type.hh"
-#include "dispatch_table.hh"
+#include "call_type/inst_dt.hh"
 
 namespace
 {
-
-DispatchTable inst_dispatch = {
-#define M5OP(name, func) .name = &::name,
-M5OP_FOREACH
-#undef M5OP
-};
 
 class InstCallType : public CallType
 {

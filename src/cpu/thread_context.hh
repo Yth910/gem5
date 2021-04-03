@@ -58,10 +58,10 @@
 // DTB pointers.
 namespace TheISA
 {
-    class ISA;
     class Decoder;
 }
 class BaseCPU;
+class BaseMMU;
 class BaseTLB;
 class CheckerCPU;
 class Checkpoint;
@@ -88,12 +88,13 @@ class System;
 class ThreadContext : public PCEventScope
 {
   protected:
-    typedef TheISA::MachInst MachInst;
-    using VecRegContainer = TheISA::VecRegContainer;
-    using VecElem = TheISA::VecElem;
-    using VecPredRegContainer = TheISA::VecPredRegContainer;
+    bool useForClone = false;
 
   public:
+
+    bool getUseForClone() { return useForClone; }
+
+    void setUseForClone(bool new_val) { useForClone = new_val; }
 
     enum Status
     {
@@ -131,9 +132,7 @@ class ThreadContext : public PCEventScope
 
     virtual void setContextId(ContextID id) = 0;
 
-    virtual BaseTLB *getITBPtr() = 0;
-
-    virtual BaseTLB *getDTBPtr() = 0;
+    virtual BaseMMU *getMMUPtr() = 0;
 
     virtual CheckerCPU *getCheckerCpuPtr() = 0;
 
@@ -202,8 +201,9 @@ class ThreadContext : public PCEventScope
 
     virtual RegVal readFloatReg(RegIndex reg_idx) const = 0;
 
-    virtual const VecRegContainer& readVecReg(const RegId& reg) const = 0;
-    virtual VecRegContainer& getWritableVecReg(const RegId& reg) = 0;
+    virtual const TheISA::VecRegContainer&
+        readVecReg(const RegId& reg) const = 0;
+    virtual TheISA::VecRegContainer& getWritableVecReg(const RegId& reg) = 0;
 
     /** Vector Register Lane Interfaces. */
     /** @{ */
@@ -234,11 +234,12 @@ class ThreadContext : public PCEventScope
             const LaneData<LaneSize::EightByte>& val) = 0;
     /** @} */
 
-    virtual const VecElem& readVecElem(const RegId& reg) const = 0;
+    virtual const TheISA::VecElem& readVecElem(const RegId& reg) const = 0;
 
-    virtual const VecPredRegContainer& readVecPredReg(const RegId& reg)
-        const = 0;
-    virtual VecPredRegContainer& getWritableVecPredReg(const RegId& reg) = 0;
+    virtual const TheISA::VecPredRegContainer& readVecPredReg(
+            const RegId& reg) const = 0;
+    virtual TheISA::VecPredRegContainer& getWritableVecPredReg(
+            const RegId& reg) = 0;
 
     virtual RegVal readCCReg(RegIndex reg_idx) const = 0;
 
@@ -246,12 +247,13 @@ class ThreadContext : public PCEventScope
 
     virtual void setFloatReg(RegIndex reg_idx, RegVal val) = 0;
 
-    virtual void setVecReg(const RegId& reg, const VecRegContainer& val) = 0;
+    virtual void setVecReg(const RegId& reg,
+            const TheISA::VecRegContainer& val) = 0;
 
-    virtual void setVecElem(const RegId& reg, const VecElem& val) = 0;
+    virtual void setVecElem(const RegId& reg, const TheISA::VecElem& val) = 0;
 
     virtual void setVecPredReg(const RegId& reg,
-                               const VecPredRegContainer& val) = 0;
+            const TheISA::VecPredRegContainer& val) = 0;
 
     virtual void setCCReg(RegIndex reg_idx, RegVal val) = 0;
 
@@ -283,7 +285,7 @@ class ThreadContext : public PCEventScope
 
     virtual void setMiscReg(RegIndex misc_reg, RegVal val) = 0;
 
-    virtual RegId flattenRegId(const RegId& regId) const = 0;
+    virtual RegId flattenRegId(const RegId& reg_id) const = 0;
 
     // Also not necessarily the best location for these two.  Hopefully will go
     // away once we decide upon where st cond failures goes.
@@ -293,8 +295,6 @@ class ThreadContext : public PCEventScope
 
     // Same with st cond failures.
     virtual Counter readFuncExeInst() const = 0;
-
-    virtual void syscall() = 0;
 
     // This function exits the thread context in the CPU and returns
     // 1 if the CPU has no more active threads (meaning it's OK to exit);
@@ -322,20 +322,23 @@ class ThreadContext : public PCEventScope
     virtual RegVal readFloatRegFlat(RegIndex idx) const = 0;
     virtual void setFloatRegFlat(RegIndex idx, RegVal val) = 0;
 
-    virtual const VecRegContainer& readVecRegFlat(RegIndex idx) const = 0;
-    virtual VecRegContainer& getWritableVecRegFlat(RegIndex idx) = 0;
-    virtual void setVecRegFlat(RegIndex idx, const VecRegContainer& val) = 0;
+    virtual const TheISA::VecRegContainer&
+        readVecRegFlat(RegIndex idx) const = 0;
+    virtual TheISA::VecRegContainer& getWritableVecRegFlat(RegIndex idx) = 0;
+    virtual void setVecRegFlat(RegIndex idx,
+            const TheISA::VecRegContainer& val) = 0;
 
-    virtual const VecElem& readVecElemFlat(RegIndex idx,
-                                           const ElemIndex& elemIdx) const = 0;
-    virtual void setVecElemFlat(RegIndex idx, const ElemIndex& elemIdx,
-                                const VecElem& val) = 0;
+    virtual const TheISA::VecElem& readVecElemFlat(RegIndex idx,
+            const ElemIndex& elem_idx) const = 0;
+    virtual void setVecElemFlat(RegIndex idx, const ElemIndex& elem_idx,
+            const TheISA::VecElem& val) = 0;
 
-    virtual const VecPredRegContainer &
+    virtual const TheISA::VecPredRegContainer &
         readVecPredRegFlat(RegIndex idx) const = 0;
-    virtual VecPredRegContainer& getWritableVecPredRegFlat(RegIndex idx) = 0;
+    virtual TheISA::VecPredRegContainer& getWritableVecPredRegFlat(
+            RegIndex idx) = 0;
     virtual void setVecPredRegFlat(RegIndex idx,
-                                   const VecPredRegContainer& val) = 0;
+            const TheISA::VecPredRegContainer& val) = 0;
 
     virtual RegVal readCCRegFlat(RegIndex idx) const = 0;
     virtual void setCCRegFlat(RegIndex idx, RegVal val) = 0;

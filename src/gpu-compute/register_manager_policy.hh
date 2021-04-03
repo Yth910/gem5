@@ -29,8 +29,6 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Mark Wyse
  */
 
 #ifndef __REGISTER_MANAGER_POLICY_HH__
@@ -75,9 +73,6 @@ class RegisterManagerPolicy
 
     // free all remaining registers held by specified WF
     virtual void freeRegisters(Wavefront *w) = 0;
-
-    // stats
-    virtual void regStats() = 0;
 
   protected:
     ComputeUnit *cu;

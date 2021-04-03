@@ -66,8 +66,6 @@
 #include "sim/faults.hh"
 #include "sim/full_system.hh"
 
-using namespace std;
-
 template <class Impl>
 void
 DefaultCommit<Impl>::processTrapEvent(ThreadID tid)
@@ -78,19 +76,19 @@ DefaultCommit<Impl>::processTrapEvent(ThreadID tid)
 }
 
 template <class Impl>
-DefaultCommit<Impl>::DefaultCommit(O3CPU *_cpu, DerivO3CPUParams *params)
-    : commitPolicy(params->smtCommitPolicy),
+DefaultCommit<Impl>::DefaultCommit(O3CPU *_cpu, const DerivO3CPUParams &params)
+    : commitPolicy(params.smtCommitPolicy),
       cpu(_cpu),
-      iewToCommitDelay(params->iewToCommitDelay),
-      commitToIEWDelay(params->commitToIEWDelay),
-      renameToROBDelay(params->renameToROBDelay),
-      fetchToCommitDelay(params->commitToFetchDelay),
-      renameWidth(params->renameWidth),
-      commitWidth(params->commitWidth),
-      numThreads(params->numThreads),
+      iewToCommitDelay(params.iewToCommitDelay),
+      commitToIEWDelay(params.commitToIEWDelay),
+      renameToROBDelay(params.renameToROBDelay),
+      fetchToCommitDelay(params.commitToFetchDelay),
+      renameWidth(params.renameWidth),
+      commitWidth(params.commitWidth),
+      numThreads(params.numThreads),
       drainPending(false),
       drainImminent(false),
-      trapLatency(params->trapLatency),
+      trapLatency(params.trapLatency),
       canHandleInterrupts(true),
       avoidQuiesceLiveLock(false),
       stats(_cpu, this)
@@ -149,28 +147,35 @@ template <class Impl>
 DefaultCommit<Impl>::CommitStats::CommitStats(O3CPU *cpu,
                                               DefaultCommit *commit)
     : Stats::Group(cpu, "commit"),
-      ADD_STAT(commitSquashedInsts, "The number of squashed insts skipped by"
-          " commit"),
-      ADD_STAT(commitNonSpecStalls, "The number of times commit has been"
-          " forced to stall to communicate backwards"),
-      ADD_STAT(branchMispredicts, "The number of times a branch was"
-          " mispredicted"),
-      ADD_STAT(numCommittedDist, "Number of insts commited each cycle"),
-      ADD_STAT(instsCommitted, "Number of instructions committed"),
-      ADD_STAT(opsCommitted, "Number of ops (including micro ops) committed"),
-      ADD_STAT(memRefs, "Number of memory references committed"),
-      ADD_STAT(loads, "Number of loads committed"),
-      ADD_STAT(amos, "Number of atomic instructions committed"),
-      ADD_STAT(membars, "Number of memory barriers committed"),
-      ADD_STAT(branches, "Number of branches committed"),
-      ADD_STAT(vector, "Number of committed Vector instructions."),
-      ADD_STAT(floating, "Number of committed floating point"
-          " instructions."),
-      ADD_STAT(integer, "Number of committed integer instructions."),
-      ADD_STAT(functionCalls, "Number of function calls committed."),
-      ADD_STAT(committedInstType, "Class of committed instruction"),
-      ADD_STAT(commitEligibleSamples, "number cycles where commit BW limit"
-          " reached")
+      ADD_STAT(commitSquashedInsts, UNIT_COUNT,
+               "The number of squashed insts skipped by commit"),
+      ADD_STAT(commitNonSpecStalls, UNIT_COUNT,
+               "The number of times commit has been forced to stall to "
+               "communicate backwards"),
+      ADD_STAT(branchMispredicts, UNIT_COUNT,
+               "The number of times a branch was mispredicted"),
+      ADD_STAT(numCommittedDist, UNIT_COUNT,
+               "Number of insts commited each cycle"),
+      ADD_STAT(instsCommitted, UNIT_COUNT, "Number of instructions committed"),
+      ADD_STAT(opsCommitted, UNIT_COUNT,
+               "Number of ops (including micro ops) committed"),
+      ADD_STAT(memRefs, UNIT_COUNT, "Number of memory references committed"),
+      ADD_STAT(loads, UNIT_COUNT, "Number of loads committed"),
+      ADD_STAT(amos, UNIT_COUNT, "Number of atomic instructions committed"),
+      ADD_STAT(membars, UNIT_COUNT, "Number of memory barriers committed"),
+      ADD_STAT(branches, UNIT_COUNT, "Number of branches committed"),
+      ADD_STAT(vectorInstructions, UNIT_COUNT,
+               "Number of committed Vector instructions."),
+      ADD_STAT(floating, UNIT_COUNT,
+               "Number of committed floating point instructions."),
+      ADD_STAT(integer, UNIT_COUNT,
+               "Number of committed integer instructions."),
+      ADD_STAT(functionCalls, UNIT_COUNT,
+               "Number of function calls committed."),
+      ADD_STAT(committedInstType, UNIT_COUNT,
+               "Class of committed instruction"),
+      ADD_STAT(commitEligibleSamples, UNIT_CYCLE,
+               "number cycles where commit BW limit reached")
 {
     using namespace Stats;
 
@@ -210,7 +215,7 @@ DefaultCommit<Impl>::CommitStats::CommitStats(O3CPU *cpu,
         .init(cpu->numThreads)
         .flags(total);
 
-    vector
+    vectorInstructions
         .init(cpu->numThreads)
         .flags(total);
 
@@ -292,7 +297,7 @@ DefaultCommit<Impl>::setIEWStage(IEW *iew_stage)
 
 template<class Impl>
 void
-DefaultCommit<Impl>::setActiveThreads(list<ThreadID> *at_ptr)
+DefaultCommit<Impl>::setActiveThreads(std::list<ThreadID> *at_ptr)
 {
     activeThreads = at_ptr;
 }
@@ -428,7 +433,7 @@ template <class Impl>
 void
 DefaultCommit<Impl>::deactivateThread(ThreadID tid)
 {
-    list<ThreadID>::iterator thread_it = std::find(priority_list.begin(),
+    std::list<ThreadID>::iterator thread_it = std::find(priority_list.begin(),
             priority_list.end(), tid);
 
     if (thread_it != priority_list.end()) {
@@ -463,8 +468,8 @@ void
 DefaultCommit<Impl>::updateStatus()
 {
     // reset ROB changed variable
-    list<ThreadID>::iterator threads = activeThreads->begin();
-    list<ThreadID>::iterator end = activeThreads->end();
+    std::list<ThreadID>::iterator threads = activeThreads->begin();
+    std::list<ThreadID>::iterator end = activeThreads->end();
 
     while (threads != end) {
         ThreadID tid = *threads++;
@@ -493,8 +498,8 @@ template <class Impl>
 bool
 DefaultCommit<Impl>::changedROBEntries()
 {
-    list<ThreadID>::iterator threads = activeThreads->begin();
-    list<ThreadID>::iterator end = activeThreads->end();
+    std::list<ThreadID>::iterator threads = activeThreads->begin();
+    std::list<ThreadID>::iterator end = activeThreads->end();
 
     while (threads != end) {
         ThreadID tid = *threads++;
@@ -524,7 +529,7 @@ DefaultCommit<Impl>::generateTrapEvent(ThreadID tid, Fault inst_fault)
         [this, tid]{ processTrapEvent(tid); },
         "Trap", true, Event::CPU_Tick_Pri);
 
-    Cycles latency = dynamic_pointer_cast<SyscallRetryFault>(inst_fault) ?
+    Cycles latency = std::dynamic_pointer_cast<SyscallRetryFault>(inst_fault) ?
                      cpu->syscallRetryLatency : trapLatency;
 
     // hardware transactional memory
@@ -661,8 +666,8 @@ DefaultCommit<Impl>::tick()
     if (activeThreads->empty())
         return;
 
-    list<ThreadID>::iterator threads = activeThreads->begin();
-    list<ThreadID>::iterator end = activeThreads->end();
+    std::list<ThreadID>::iterator threads = activeThreads->begin();
+    std::list<ThreadID>::iterator end = activeThreads->end();
 
     // Check if any of the threads are done squashing.  Change the
     // status if they are done.
@@ -701,7 +706,7 @@ DefaultCommit<Impl>::tick()
             // will be active.
             _nextStatus = Active;
 
-            const DynInstPtr &inst M5_VAR_USED = rob->readHeadInst(tid);
+            M5_VAR_USED const DynInstPtr &inst = rob->readHeadInst(tid);
 
             DPRINTF(Commit,"[tid:%i] Instruction [sn:%llu] PC %s is head of"
                     " ROB and ready to commit\n",
@@ -822,8 +827,8 @@ DefaultCommit<Impl>::commit()
     ////////////////////////////////////
     // Check for any possible squashes, handle them first
     ////////////////////////////////////
-    list<ThreadID>::iterator threads = activeThreads->begin();
-    list<ThreadID>::iterator end = activeThreads->end();
+    std::list<ThreadID>::iterator threads = activeThreads->begin();
+    std::list<ThreadID>::iterator end = activeThreads->end();
 
     int num_squashing_threads = 0;
 
@@ -1196,7 +1201,7 @@ DefaultCommit<Impl>::commitHead(const DynInstPtr &head_inst, unsigned inst_num)
         // Make sure we are only trying to commit un-executed instructions we
         // think are possible.
         assert(head_inst->isNonSpeculative() || head_inst->isStoreConditional()
-               || head_inst->isMemBarrier() || head_inst->isWriteBarrier()
+               || head_inst->isReadBarrier() || head_inst->isWriteBarrier()
                || head_inst->isAtomic()
                || (head_inst->isLoad() && head_inst->strictlyOrdered()));
 
@@ -1231,11 +1236,6 @@ DefaultCommit<Impl>::commitHead(const DynInstPtr &head_inst, unsigned inst_num)
         }
 
         return false;
-    }
-
-    if (head_inst->isThreadSync()) {
-        // Not handled for now.
-        panic("Thread sync instructions are not handled yet.\n");
     }
 
     // Check if the instruction caused a fault.  If so, trap.
@@ -1349,8 +1349,8 @@ DefaultCommit<Impl>::commitHead(const DynInstPtr &head_inst, unsigned inst_num)
 
     // Update the commit rename map
     for (int i = 0; i < head_inst->numDestRegs(); i++) {
-        renameMap[tid]->setEntry(head_inst->flattenedDestRegIdx(i),
-                                 head_inst->renamedDestRegIdx(i));
+        renameMap[tid]->setEntry(head_inst->regs.flattenedDestIdx(i),
+                                 head_inst->regs.renamedDestIdx(i));
     }
 
     // hardware transactional memory
@@ -1467,7 +1467,7 @@ DefaultCommit<Impl>::updateComInstStats(const DynInstPtr &inst)
         }
     }
 
-    if (inst->isMemBarrier()) {
+    if (inst->isFullMemBarrier()) {
         stats.membars[tid]++;
     }
 
@@ -1480,7 +1480,7 @@ DefaultCommit<Impl>::updateComInstStats(const DynInstPtr &inst)
         stats.floating[tid]++;
     // Vector Instruction
     if (inst->isVector())
-        stats.vector[tid]++;
+        stats.vectorInstructions[tid]++;
 
     // Function Calls
     if (inst->isCall())
@@ -1533,8 +1533,8 @@ template<class Impl>
 ThreadID
 DefaultCommit<Impl>::roundRobin()
 {
-    list<ThreadID>::iterator pri_iter = priority_list.begin();
-    list<ThreadID>::iterator end      = priority_list.end();
+    std::list<ThreadID>::iterator pri_iter = priority_list.begin();
+    std::list<ThreadID>::iterator end      = priority_list.end();
 
     while (pri_iter != end) {
         ThreadID tid = *pri_iter;
@@ -1564,8 +1564,8 @@ DefaultCommit<Impl>::oldestReady()
     unsigned oldest = 0;
     bool first = true;
 
-    list<ThreadID>::iterator threads = activeThreads->begin();
-    list<ThreadID>::iterator end = activeThreads->end();
+    std::list<ThreadID>::iterator threads = activeThreads->begin();
+    std::list<ThreadID>::iterator end = activeThreads->end();
 
     while (threads != end) {
         ThreadID tid = *threads++;

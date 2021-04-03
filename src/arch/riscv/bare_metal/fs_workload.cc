@@ -32,14 +32,16 @@
 #include "arch/riscv/faults.hh"
 #include "base/loader/object_file.hh"
 #include "sim/system.hh"
+#include "sim/workload.hh"
 
 namespace RiscvISA
 {
 
-BareMetal::BareMetal(Params *p) : RiscvISA::FsWorkload(p),
-      bootloader(Loader::createObjectFile(p->bootloader))
+BareMetal::BareMetal(const Params &p) : Workload(p),
+    _isBareMetal(p.bare_metal), _resetVect(p.reset_vect),
+    bootloader(Loader::createObjectFile(p.bootloader))
 {
-    fatal_if(!bootloader, "Could not load bootloader file %s.", p->bootloader);
+    fatal_if(!bootloader, "Could not load bootloader file %s.", p.bootloader);
     _resetVect = bootloader->entryPoint();
     bootloaderSymtab = bootloader->symtab();
 }
@@ -52,7 +54,7 @@ BareMetal::~BareMetal()
 void
 BareMetal::initState()
 {
-    RiscvISA::FsWorkload::initState();
+    Workload::initState();
 
     for (auto *tc: system->threads) {
         RiscvISA::Reset().invoke(tc);
@@ -69,9 +71,3 @@ BareMetal::initState()
 }
 
 } // namespace RiscvISA
-
-RiscvISA::BareMetal *
-RiscvBareMetalParams::create()
-{
-    return new RiscvISA::BareMetal(this);
-}

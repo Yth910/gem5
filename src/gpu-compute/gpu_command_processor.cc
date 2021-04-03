@@ -29,8 +29,6 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Anthony Gutierrez
  */
 
 #include "gpu-compute/gpu_command_processor.hh"
@@ -39,9 +37,12 @@
 #include "debug/GPUKernelInfo.hh"
 #include "gpu-compute/dispatcher.hh"
 #include "params/GPUCommandProcessor.hh"
+#include "sim/process.hh"
+#include "sim/proxy_ptr.hh"
+#include "sim/syscall_emul_buf.hh"
 
-GPUCommandProcessor::GPUCommandProcessor(const Params *p)
-    : HSADevice(p), dispatcher(*p->dispatcher)
+GPUCommandProcessor::GPUCommandProcessor(const Params &p)
+    : HSADevice(p), dispatcher(*p.dispatcher), driver(nullptr)
 {
     dispatcher.setCommandProcessor(this);
 }
@@ -93,6 +94,10 @@ GPUCommandProcessor::submitDispatchPkt(void *raw_pkt, uint32_t queue_id,
     DPRINTF(GPUCommandProc, "GPU machine code is %lli bytes from start of the "
         "kernel object\n", akc.kernel_code_entry_byte_offset);
 
+    DPRINTF(GPUCommandProc,"GPUCommandProc: Sending dispatch pkt to %lu\n",
+        (uint64_t)tc->cpuId());
+
+
     Addr machine_code_addr = (Addr)disp_pkt->kernel_object
         + akc.kernel_code_entry_byte_offset;
 
@@ -142,6 +147,57 @@ GPUCommandProcessor::submitDispatchPkt(void *raw_pkt, uint32_t queue_id,
     ++dynamic_task_id;
 }
 
+uint64_t
+GPUCommandProcessor::functionalReadHsaSignal(Addr signal_handle)
+{
+    Addr value_addr = getHsaSignalValueAddr(signal_handle);
+    auto tc = system()->threads[0];
+    ConstVPtr<Addr> prev_value(value_addr, tc);
+    return *prev_value;
+}
+
+void
+GPUCommandProcessor::updateHsaSignal(Addr signal_handle, uint64_t signal_value)
+{
+    // The signal value is aligned 8 bytes from
+    // the actual handle in the runtime
+    Addr value_addr = getHsaSignalValueAddr(signal_handle);
+    Addr mailbox_addr = getHsaSignalMailboxAddr(signal_handle);
+    Addr event_addr = getHsaSignalEventAddr(signal_handle);
+    DPRINTF(GPUCommandProc, "Triggering completion signal: %x!\n", value_addr);
+
+    Addr *new_signal = new Addr;
+    *new_signal = signal_value;
+
+    dmaWriteVirt(value_addr, sizeof(Addr), nullptr, new_signal, 0);
+
+    auto tc = system()->threads[0];
+    ConstVPtr<uint64_t> mailbox_ptr(mailbox_addr, tc);
+
+    // Notifying an event with its mailbox pointer is
+    // not supported in the current implementation. Just use
+    // mailbox pointer to distinguish between interruptible
+    // and default signal. Interruptible signal will have
+    // a valid mailbox pointer.
+    if (*mailbox_ptr != 0) {
+        // This is an interruptible signal. Now, read the
+        // event ID and directly communicate with the driver
+        // about that event notification.
+        ConstVPtr<uint32_t> event_val(event_addr, tc);
+
+        DPRINTF(GPUCommandProc, "Calling signal wakeup event on "
+                "signal event value %d\n", *event_val);
+        signalWakeupEvent(*event_val);
+    }
+}
+
+void
+GPUCommandProcessor::attachDriver(HSADriver *hsa_driver)
+{
+    fatal_if(driver, "Should not overwrite driver.");
+    driver = hsa_driver;
+}
+
 /**
  * submitVendorPkt() is for accepting vendor-specific packets from
  * the HSAPP. Vendor-specific packets may be used by the runtime to
@@ -167,6 +223,54 @@ GPUCommandProcessor::submitVendorPkt(void *raw_pkt, uint32_t queue_id,
 }
 
 /**
+ * submitAgentDispatchPkt() is for accepting agent dispatch packets.
+ * These packets will control the dispatch of Wg on the device, and inform
+ * the host when a specified number of Wg have been executed on the device.
+ *
+ * For now it simply finishes the pkt.
+ */
+void
+GPUCommandProcessor::submitAgentDispatchPkt(void *raw_pkt, uint32_t queue_id,
+    Addr host_pkt_addr)
+{
+    //Parse the Packet, see what it wants us to do
+    _hsa_agent_dispatch_packet_t * agent_pkt =
+        (_hsa_agent_dispatch_packet_t *)raw_pkt;
+
+    if (agent_pkt->type == AgentCmd::Nop) {
+        DPRINTF(GPUCommandProc, "Agent Dispatch Packet NOP\n");
+    } else if (agent_pkt->type == AgentCmd::Steal) {
+        //This is where we steal the HSA Task's completion signal
+        int kid = agent_pkt->arg[0];
+        DPRINTF(GPUCommandProc,
+            "Agent Dispatch Packet Stealing signal handle for kernel %d\n",
+            kid);
+
+        HSAQueueEntry *task = dispatcher.hsaTask(kid);
+        uint64_t signal_addr = task->completionSignal();// + sizeof(uint64_t);
+
+        uint64_t return_address = agent_pkt->return_address;
+        DPRINTF(GPUCommandProc, "Return Addr: %p\n",return_address);
+        //*return_address = signal_addr;
+        Addr *new_signal_addr = new Addr;
+        *new_signal_addr  = (Addr)signal_addr;
+        dmaWriteVirt(return_address, sizeof(Addr), nullptr, new_signal_addr, 0);
+
+        DPRINTF(GPUCommandProc,
+            "Agent Dispatch Packet Stealing signal handle from kid %d :" \
+            "(%x:%x) writing into %x\n",
+            kid,signal_addr,new_signal_addr,return_address);
+
+    } else
+    {
+        panic("The agent dispatch packet provided an unknown argument in" \
+        "arg[0],currently only 0(nop) or 1(return kernel signal) is accepted");
+    }
+
+    hsaPP->finishPkt(raw_pkt, queue_id);
+}
+
+/**
  * Once the CP has finished extracting all relevant information about
  * a task and has initialized the ABI state, we send a description of
  * the task to the dispatcher. The dispatcher will create and dispatch
@@ -176,6 +280,12 @@ void
 GPUCommandProcessor::dispatchPkt(HSAQueueEntry *task)
 {
     dispatcher.dispatch(task);
+}
+
+void
+GPUCommandProcessor::signalWakeupEvent(uint32_t event_id)
+{
+    driver->signalWakeupEvent(event_id);
 }
 
 /**
@@ -220,10 +330,4 @@ Shader*
 GPUCommandProcessor::shader()
 {
     return _shader;
-}
-
-GPUCommandProcessor*
-GPUCommandProcessorParams::create()
-{
-    return new GPUCommandProcessor(this);
 }

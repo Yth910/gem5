@@ -53,12 +53,12 @@
 
 using namespace ArmISA;
 
-TableWalker::TableWalker(const Params *p)
+TableWalker::TableWalker(const Params &p)
     : ClockedObject(p),
       stage2Mmu(NULL), port(NULL), requestorId(Request::invldRequestorId),
-      isStage2(p->is_stage2), tlb(NULL),
+      isStage2(p.is_stage2), tlb(NULL),
       currState(NULL), pending(false),
-      numSquashable(p->num_squash_per_cycle),
+      numSquashable(p.num_squash_per_cycle),
       stats(this),
       pendingReqs(0),
       pendingChangeTick(curTick()),
@@ -76,17 +76,17 @@ TableWalker::TableWalker(const Params *p)
 
     // Cache system-level properties
     if (FullSystem) {
-        ArmSystem *armSys = dynamic_cast<ArmSystem *>(p->sys);
+        ArmSystem *armSys = dynamic_cast<ArmSystem *>(p.sys);
         assert(armSys);
         haveSecurity = armSys->haveSecurity();
         _haveLPAE = armSys->haveLPAE();
         _haveVirtualization = armSys->haveVirtualization();
-        physAddrRange = armSys->physAddrRange();
+        _physAddrRange = armSys->physAddrRange();
         _haveLargeAsid64 = armSys->haveLargeAsid64();
     } else {
         haveSecurity = _haveLPAE = _haveVirtualization = false;
         _haveLargeAsid64 = false;
-        physAddrRange = 32;
+        _physAddrRange = 48;
     }
 
 }
@@ -178,7 +178,7 @@ TableWalker::drain()
 void
 TableWalker::drainResume()
 {
-    if (params()->sys->isTimingMode() && currState) {
+    if (params().sys->isTimingMode() && currState) {
         delete currState;
         currState = NULL;
         pendingChange();
@@ -252,7 +252,7 @@ TableWalker::walk(const RequestPtr &_req, ThreadContext *_tc, uint16_t _asid,
     currState->mode = _mode;
     currState->tranType = tranType;
     currState->isSecure = secure;
-    currState->physAddrRange = physAddrRange;
+    currState->physAddrRange = _physAddrRange;
 
     /** @todo These should be cached or grabbed from cached copies in
      the TLB, all these miscreg reads are expensive */
@@ -648,7 +648,7 @@ TableWalker::processWalkLPAE()
                 MISCREG_TTBR0, currState->tc, !currState->isSecure));
             tsz = currState->ttbcr.t0sz;
             currState->isUncacheable = currState->ttbcr.irgn0 == 0;
-            if (ttbr0_max < (1ULL << 30))  // Upper limit < 1 GB
+            if (ttbr0_max < (1ULL << 30))  // Upper limit < 1 GiB
                 start_lookup_level = L2;
         } else if (currState->vaddr >= ttbr1_min) {
             DPRINTF(TLB, " - Selecting TTBR1 (long-desc.)\n");
@@ -673,7 +673,7 @@ TableWalker::processWalkLPAE()
                 MISCREG_TTBR1, currState->tc, !currState->isSecure));
             tsz = currState->ttbcr.t1sz;
             currState->isUncacheable = currState->ttbcr.irgn1 == 0;
-            // Lower limit >= 3 GB
+            // Lower limit >= 3 GiB
             if (ttbr1_min >= (1ULL << 31) + (1ULL << 30))
                 start_lookup_level = L2;
         } else {
@@ -746,21 +746,28 @@ TableWalker::processWalkLPAE()
     return f;
 }
 
-unsigned
-TableWalker::adjustTableSizeAArch64(unsigned tsz)
+bool
+TableWalker::checkVAddrSizeFaultAArch64(Addr addr, int top_bit,
+    GrainSize tg, int tsz, bool low_range)
 {
-    if (tsz < 25)
-        return 25;
-    if (tsz > 48)
-        return 48;
-    return tsz;
+    // The effective maximum input size is 48 if ARMv8.2-LVA is not
+    // supported or if the translation granule that is in use is 4KB or
+    // 16KB in size. When ARMv8.2-LVA is supported, for the 64KB
+    // translation granule size only, the effective minimum value of
+    // 52.
+    int in_max = (HaveLVA(currState->tc) && tg == Grain64KB) ? 52 : 48;
+    int in_min = 64 - (tg == Grain64KB ? 47 : 48);
+
+    return tsz > in_max || tsz < in_min || (low_range ?
+        bits(currState->vaddr, top_bit, tsz) != 0x0 :
+        bits(currState->vaddr, top_bit, tsz) != mask(top_bit - tsz + 1));
 }
 
 bool
-TableWalker::checkAddrSizeFaultAArch64(Addr addr, int currPhysAddrRange)
+TableWalker::checkAddrSizeFaultAArch64(Addr addr, int pa_range)
 {
-    return (currPhysAddrRange != MaxPhysAddrRange &&
-            bits(addr, MaxPhysAddrRange - 1, currPhysAddrRange));
+    return (pa_range != _physAddrRange &&
+            bits(addr, _physAddrRange - 1, pa_range));
 }
 
 Fault
@@ -784,8 +791,14 @@ TableWalker::processWalkAArch64()
     GrainSize tg = Grain4KB; // grain size computed from tg* field
     bool fault = false;
 
-    LookupLevel start_lookup_level = MAX_LOOKUP_LEVELS;
+    int top_bit = computeAddrTop(currState->tc,
+        bits(currState->vaddr, 55),
+        currState->mode==TLB::Execute,
+        currState->tcr,
+        currState->el);
 
+    LookupLevel start_lookup_level = MAX_LOOKUP_LEVELS;
+    bool vaddr_fault = false;
     switch (currState->el) {
       case EL0:
         {
@@ -804,24 +817,28 @@ TableWalker::processWalkAArch64()
               case 0:
                 DPRINTF(TLB, " - Selecting TTBR0 (AArch64)\n");
                 ttbr = ttbr0;
-                tsz = adjustTableSizeAArch64(64 - currState->tcr.t0sz);
+                tsz = 64 - currState->tcr.t0sz;
                 tg = GrainMap_tg0[currState->tcr.tg0];
                 currState->hpd = currState->tcr.hpd0;
                 currState->isUncacheable = currState->tcr.irgn0 == 0;
-                if (bits(currState->vaddr, 63, tsz) != 0x0 ||
-                    currState->tcr.epd0)
-                  fault = true;
+                vaddr_fault = checkVAddrSizeFaultAArch64(currState->vaddr,
+                    top_bit, tg, tsz, true);
+
+                if (vaddr_fault || currState->tcr.epd0)
+                    fault = true;
                 break;
               case 0xffff:
                 DPRINTF(TLB, " - Selecting TTBR1 (AArch64)\n");
                 ttbr = ttbr1;
-                tsz = adjustTableSizeAArch64(64 - currState->tcr.t1sz);
+                tsz = 64 - currState->tcr.t1sz;
                 tg = GrainMap_tg1[currState->tcr.tg1];
                 currState->hpd = currState->tcr.hpd1;
                 currState->isUncacheable = currState->tcr.irgn1 == 0;
-                if (bits(currState->vaddr, 63, tsz) != mask(64-tsz) ||
-                    currState->tcr.epd1)
-                  fault = true;
+                vaddr_fault = checkVAddrSizeFaultAArch64(currState->vaddr,
+                    top_bit, tg, tsz, false);
+
+                if (vaddr_fault || currState->tcr.epd1)
+                    fault = true;
                 break;
               default:
                 // top two bytes must be all 0s or all 1s, else invalid addr
@@ -858,28 +875,32 @@ TableWalker::processWalkAArch64()
             ps = currState->vtcr.ps;
             currState->isUncacheable = currState->vtcr.irgn0 == 0;
         } else {
-            switch (bits(currState->vaddr, 63,48)) {
+            switch (bits(currState->vaddr, top_bit)) {
               case 0:
-                DPRINTF(TLB, " - Selecting TTBR0 (AArch64)\n");
+                DPRINTF(TLB, " - Selecting TTBR0_EL1 (AArch64)\n");
                 ttbr = currState->tc->readMiscReg(MISCREG_TTBR0_EL1);
-                tsz = adjustTableSizeAArch64(64 - currState->tcr.t0sz);
+                tsz = 64 - currState->tcr.t0sz;
                 tg = GrainMap_tg0[currState->tcr.tg0];
                 currState->hpd = currState->tcr.hpd0;
                 currState->isUncacheable = currState->tcr.irgn0 == 0;
-                if (bits(currState->vaddr, 63, tsz) != 0x0 ||
-                    currState->tcr.epd0)
-                  fault = true;
+                vaddr_fault = checkVAddrSizeFaultAArch64(currState->vaddr,
+                    top_bit, tg, tsz, true);
+
+                if (vaddr_fault || currState->tcr.epd0)
+                    fault = true;
                 break;
-              case 0xffff:
-                DPRINTF(TLB, " - Selecting TTBR1 (AArch64)\n");
+              case 0x1:
+                DPRINTF(TLB, " - Selecting TTBR1_EL1 (AArch64)\n");
                 ttbr = currState->tc->readMiscReg(MISCREG_TTBR1_EL1);
-                tsz = adjustTableSizeAArch64(64 - currState->tcr.t1sz);
+                tsz = 64 - currState->tcr.t1sz;
                 tg = GrainMap_tg1[currState->tcr.tg1];
                 currState->hpd = currState->tcr.hpd1;
                 currState->isUncacheable = currState->tcr.irgn1 == 0;
-                if (bits(currState->vaddr, 63, tsz) != mask(64-tsz) ||
-                    currState->tcr.epd1)
-                  fault = true;
+                vaddr_fault = checkVAddrSizeFaultAArch64(currState->vaddr,
+                    top_bit, tg, tsz, false);
+
+                if (vaddr_fault || currState->tcr.epd1)
+                    fault = true;
                 break;
               default:
                 // top two bytes must be all 0s or all 1s, else invalid addr
@@ -889,27 +910,34 @@ TableWalker::processWalkAArch64()
         }
         break;
       case EL2:
-        switch(bits(currState->vaddr, 63,48)) {
+        switch(bits(currState->vaddr, top_bit)) {
           case 0:
             DPRINTF(TLB, " - Selecting TTBR0_EL2 (AArch64)\n");
             ttbr = currState->tc->readMiscReg(MISCREG_TTBR0_EL2);
-            tsz = adjustTableSizeAArch64(64 - currState->tcr.t0sz);
+            tsz = 64 - currState->tcr.t0sz;
             tg = GrainMap_tg0[currState->tcr.tg0];
             currState->hpd = currState->hcr.e2h ?
                 currState->tcr.hpd0 : currState->tcr.hpd;
             currState->isUncacheable = currState->tcr.irgn0 == 0;
+            vaddr_fault = checkVAddrSizeFaultAArch64(currState->vaddr,
+                top_bit, tg, tsz, true);
+
+            if (vaddr_fault || (currState->hcr.e2h && currState->tcr.epd0))
+                fault = true;
             break;
 
-          case 0xffff:
+          case 0x1:
             DPRINTF(TLB, " - Selecting TTBR1_EL2 (AArch64)\n");
             ttbr = currState->tc->readMiscReg(MISCREG_TTBR1_EL2);
-            tsz = adjustTableSizeAArch64(64 - currState->tcr.t1sz);
+            tsz = 64 - currState->tcr.t1sz;
             tg = GrainMap_tg1[currState->tcr.tg1];
             currState->hpd = currState->tcr.hpd1;
             currState->isUncacheable = currState->tcr.irgn1 == 0;
-            if (bits(currState->vaddr, 63, tsz) != mask(64-tsz) ||
-                currState->tcr.epd1 || !currState->hcr.e2h)
-              fault = true;
+            vaddr_fault = checkVAddrSizeFaultAArch64(currState->vaddr,
+                top_bit, tg, tsz, false);
+
+            if (vaddr_fault || !currState->hcr.e2h || currState->tcr.epd1)
+                fault = true;
             break;
 
            default:
@@ -919,18 +947,23 @@ TableWalker::processWalkAArch64()
         ps = currState->hcr.e2h ? currState->tcr.ips: currState->tcr.ps;
         break;
       case EL3:
-        switch(bits(currState->vaddr, 63,48)) {
-            case 0:
-                DPRINTF(TLB, " - Selecting TTBR0_EL3 (AArch64)\n");
-                ttbr = currState->tc->readMiscReg(MISCREG_TTBR0_EL3);
-                tsz = adjustTableSizeAArch64(64 - currState->tcr.t0sz);
-                tg = GrainMap_tg0[currState->tcr.tg0];
-                currState->hpd = currState->tcr.hpd;
-                currState->isUncacheable = currState->tcr.irgn0 == 0;
-                break;
-            default:
-                // invalid addr if top two bytes are not all 0s
+        switch(bits(currState->vaddr, top_bit)) {
+          case 0:
+            DPRINTF(TLB, " - Selecting TTBR0_EL3 (AArch64)\n");
+            ttbr = currState->tc->readMiscReg(MISCREG_TTBR0_EL3);
+            tsz = 64 - currState->tcr.t0sz;
+            tg = GrainMap_tg0[currState->tcr.tg0];
+            currState->hpd = currState->tcr.hpd;
+            currState->isUncacheable = currState->tcr.irgn0 == 0;
+            vaddr_fault = checkVAddrSizeFaultAArch64(currState->vaddr,
+                top_bit, tg, tsz, true);
+
+            if (vaddr_fault)
                 fault = true;
+            break;
+          default:
+            // invalid addr if top two bytes are not all 0s
+            fault = true;
         }
         ps = currState->tcr.ps;
         break;
@@ -1008,20 +1041,29 @@ TableWalker::processWalkAArch64()
                  "Table walker couldn't find lookup level\n");
     }
 
-    int stride = tg - 3;
+    // Clamp to lower limit
+    int pa_range = decodePhysAddrRange64(ps);
+    if (pa_range > _physAddrRange) {
+        currState->physAddrRange = _physAddrRange;
+    } else {
+        currState->physAddrRange = pa_range;
+    }
 
     // Determine table base address
+    int stride = tg - 3;
     int base_addr_lo = 3 + tsz - stride * (3 - start_lookup_level) - tg;
-    Addr base_addr = mbits(ttbr, 47, base_addr_lo);
+    Addr base_addr = 0;
+
+    if (pa_range == 52) {
+        int z = (base_addr_lo < 6) ? 6 : base_addr_lo;
+        base_addr = mbits(ttbr, 47, z);
+        base_addr |= (bits(ttbr, 5, 2) << 48);
+    } else {
+        base_addr = mbits(ttbr, 47, base_addr_lo);
+    }
 
     // Determine physical address size and raise an Address Size Fault if
     // necessary
-    int pa_range = decodePhysAddrRange64(ps);
-    // Clamp to lower limit
-    if (pa_range > physAddrRange)
-        currState->physAddrRange = physAddrRange;
-    else
-        currState->physAddrRange = pa_range;
     if (checkAddrSizeFaultAArch64(base_addr, currState->physAddrRange)) {
         DPRINTF(TLB, "Address size fault before any lookup\n");
         Fault f;
@@ -1051,7 +1093,7 @@ TableWalker::processWalkAArch64()
         }
         return f;
 
-   }
+    }
 
     // Determine descriptor address
     Addr desc_addr = base_addr |
@@ -1086,6 +1128,7 @@ TableWalker::processWalkAArch64()
     currState->longDesc.lookupLevel = start_lookup_level;
     currState->longDesc.aarch64 = true;
     currState->longDesc.grainSize = tg;
+    currState->longDesc.physAddrRange = _physAddrRange;
 
     if (currState->timing) {
         fetchDescriptor(desc_addr, (uint8_t*) &currState->longDesc.data,
@@ -1712,10 +1755,8 @@ TableWalker::doLongDescriptor()
         {
             auto fault_source = ArmFault::FaultSourceInvalid;
             // Check for address size fault
-            if (checkAddrSizeFaultAArch64(
-                    mbits(currState->longDesc.data, MaxPhysAddrRange - 1,
-                          currState->longDesc.offsetBits()),
-                    currState->physAddrRange)) {
+            if (checkAddrSizeFaultAArch64(currState->longDesc.paddr(),
+                currState->physAddrRange)) {
 
                 DPRINTF(TLB, "L%d descriptor causing Address Size Fault\n",
                         currState->longDesc.lookupLevel);
@@ -2210,12 +2251,6 @@ TableWalker::insertTableEntry(DescriptorBase &descriptor, bool longDescriptor)
     }
 }
 
-ArmISA::TableWalker *
-ArmTableWalkerParams::create()
-{
-    return new ArmISA::TableWalker(this);
-}
-
 LookupLevel
 TableWalker::toLookupLevel(uint8_t lookup_level_as_int)
 {
@@ -2272,6 +2307,7 @@ TableWalker::pageSizeNtoStatBin(uint8_t N)
         case 25: return 6; // 32M (using 16K granule in v8-64)
         case 29: return 7; // 512M (using 64K granule in v8-64)
         case 30: return 8; // 1G-LPAE
+        case 42: return 9; // 1G-LPAE
         default:
             panic("unknown page size");
             return 255;
@@ -2281,25 +2317,31 @@ TableWalker::pageSizeNtoStatBin(uint8_t N)
 
 TableWalker::TableWalkerStats::TableWalkerStats(Stats::Group *parent)
     : Stats::Group(parent),
-    ADD_STAT(walks, "Table walker walks requested"),
-    ADD_STAT(walksShortDescriptor, "Table walker walks initiated with"
-        " short descriptors"),
-    ADD_STAT(walksLongDescriptor, "Table walker walks initiated with"
-        " long descriptors"),
-    ADD_STAT(walksShortTerminatedAtLevel, "Level at which table walker"
-        " walks with short descriptors terminate"),
-    ADD_STAT(walksLongTerminatedAtLevel, "Level at which table walker"
-        " walks with long descriptors terminate"),
-    ADD_STAT(squashedBefore, "Table walks squashed before starting"),
-    ADD_STAT(squashedAfter, "Table walks squashed after completion"),
-    ADD_STAT(walkWaitTime, "Table walker wait (enqueue to first request)"
-        " latency"),
-    ADD_STAT(walkServiceTime, "Table walker service (enqueue to completion)"
-        " latency"),
-    ADD_STAT(pendingWalks, "Table walker pending requests distribution"),
-    ADD_STAT(pageSizes, "Table walker page sizes translated"),
-    ADD_STAT(requestOrigin, "Table walker requests started/completed,"
-        " data/inst")
+    ADD_STAT(walks, UNIT_COUNT, "Table walker walks requested"),
+    ADD_STAT(walksShortDescriptor, UNIT_COUNT,
+             "Table walker walks initiated with short descriptors"),
+    ADD_STAT(walksLongDescriptor, UNIT_COUNT,
+             "Table walker walks initiated with long descriptors"),
+    ADD_STAT(walksShortTerminatedAtLevel, UNIT_COUNT,
+             "Level at which table walker walks with short descriptors "
+             "terminate"),
+    ADD_STAT(walksLongTerminatedAtLevel, UNIT_COUNT,
+             "Level at which table walker walks with long descriptors "
+             "terminate"),
+    ADD_STAT(squashedBefore, UNIT_COUNT,
+             "Table walks squashed before starting"),
+    ADD_STAT(squashedAfter, UNIT_COUNT,
+             "Table walks squashed after completion"),
+    ADD_STAT(walkWaitTime, UNIT_TICK,
+             "Table walker wait (enqueue to first request) latency"),
+    ADD_STAT(walkServiceTime, UNIT_TICK,
+             "Table walker service (enqueue to completion) latency"),
+    ADD_STAT(pendingWalks, UNIT_TICK,
+             "Table walker pending requests distribution"),
+    ADD_STAT(pageSizes, UNIT_COUNT,
+             "Table walker page sizes translated"),
+    ADD_STAT(requestOrigin, UNIT_COUNT,
+             "Table walker requests started/completed, data/inst")
 {
     walksShortDescriptor
         .flags(Stats::nozero);
@@ -2341,17 +2383,18 @@ TableWalker::TableWalkerStats::TableWalkerStats(Stats::Group *parent)
         .flags(Stats::pdf | Stats::dist | Stats::nozero | Stats::nonan);
 
     pageSizes // see DDI 0487A D4-1661
-        .init(9)
+        .init(10)
         .flags(Stats::total | Stats::pdf | Stats::dist | Stats::nozero);
-    pageSizes.subname(0, "4K");
-    pageSizes.subname(1, "16K");
-    pageSizes.subname(2, "64K");
-    pageSizes.subname(3, "1M");
-    pageSizes.subname(4, "2M");
-    pageSizes.subname(5, "16M");
-    pageSizes.subname(6, "32M");
-    pageSizes.subname(7, "512M");
-    pageSizes.subname(8, "1G");
+    pageSizes.subname(0, "4KiB");
+    pageSizes.subname(1, "16KiB");
+    pageSizes.subname(2, "64KiB");
+    pageSizes.subname(3, "1MiB");
+    pageSizes.subname(4, "2MiB");
+    pageSizes.subname(5, "16MiB");
+    pageSizes.subname(6, "32MiB");
+    pageSizes.subname(7, "512MiB");
+    pageSizes.subname(8, "1GiB");
+    pageSizes.subname(9, "4TiB");
 
     requestOrigin
         .init(2,2) // Instruction/Data, requests/completed

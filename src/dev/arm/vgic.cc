@@ -45,10 +45,10 @@
 #include "mem/packet.hh"
 #include "mem/packet_access.hh"
 
-VGic::VGic(const Params *p)
-    : PioDevice(p), gicvIIDR(p->gicv_iidr), platform(p->platform),
-      gic(p->gic), vcpuAddr(p->vcpu_addr), hvAddr(p->hv_addr),
-      pioDelay(p->pio_delay), maintInt(p->maint_int)
+VGic::VGic(const Params &p)
+    : PioDevice(p), gicvIIDR(p.gicv_iidr), platform(p.platform),
+      gic(p.gic), vcpuAddr(p.vcpu_addr), hvAddr(p.hv_addr),
+      pioDelay(p.pio_delay), maintInt(p.maint_int)
 {
     for (int x = 0; x < VGIC_CPU_MAX; x++) {
         postVIntEvent[x] = new EventFunctionWrapper(
@@ -551,10 +551,4 @@ VGic::vcpuIntData::unserialize(CheckpointIn &cp)
         ScopedCheckpointSection sec_lr(cp, csprintf("LR%d", i));
         paramIn(cp, "lr", LR[i]);
     }
-}
-
-VGic *
-VGicParams::create()
-{
-    return new VGic(this);
 }

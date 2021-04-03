@@ -33,8 +33,6 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Andreas Hansson
  */
 
 #include "mem/dramsim3.hh"
@@ -45,14 +43,14 @@
 #include "debug/Drain.hh"
 #include "sim/system.hh"
 
-DRAMsim3::DRAMsim3(const Params* p) :
+DRAMsim3::DRAMsim3(const Params &p) :
     AbstractMemory(p),
     port(name() + ".port", *this),
     read_cb(std::bind(&DRAMsim3::readComplete,
                       this, 0, std::placeholders::_1)),
     write_cb(std::bind(&DRAMsim3::writeComplete,
                        this, 0, std::placeholders::_1)),
-    wrapper(p->configFile, p->filePath, read_cb, write_cb),
+    wrapper(p.configFile, p.filePath, read_cb, write_cb),
     retryReq(false), retryResp(false), startTick(0),
     nbrOutstandingReads(0), nbrOutstandingWrites(0),
     sendResponseEvent([this]{ sendResponse(); }, name()),
@@ -386,10 +384,4 @@ void
 DRAMsim3::MemoryPort::recvRespRetry()
 {
     memory.recvRespRetry();
-}
-
-DRAMsim3*
-DRAMsim3Params::create()
-{
-    return new DRAMsim3(this);
 }

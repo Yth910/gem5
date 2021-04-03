@@ -60,7 +60,7 @@ namespace Minor
 
 Execute::Execute(const std::string &name_,
     MinorCPU &cpu_,
-    MinorCPUParams &params,
+    const MinorCPUParams &params,
     Latch<ForwardInstData>::Output inp_,
     Latch<BranchData>::Input out_) :
     Named(name_),
@@ -224,8 +224,7 @@ Execute::tryToBranch(MinorDynInstPtr inst, Fault fault, BranchData &branch)
         !inst->isFault() &&
         inst->isLastOpInInst() &&
         (inst->staticInst->isSerializeAfter() ||
-         inst->staticInst->isSquashAfter() ||
-         inst->staticInst->isIprAccess());
+         inst->staticInst->isSquashAfter());
 
     DPRINTF(Branch, "tryToBranch before: %s after: %s%s\n",
         pc_before, target, (force_branch ? " (forcing)" : ""));
@@ -782,7 +781,7 @@ Execute::issue(ThreadID thread_id)
 
             /* Mark up barriers in the LSQ */
             if (!discarded && inst->isInst() &&
-                inst->staticInst->isMemBarrier())
+                inst->staticInst->isFullMemBarrier())
             {
                 DPRINTF(MinorMem, "Issuing memory barrier inst: %s\n", *inst);
                 lsq.issuedMemBarrierInst(inst);
@@ -867,7 +866,6 @@ Execute::doInstCommitAccounting(MinorDynInstPtr inst)
         thread->numInst++;
         thread->threadStats.numInsts++;
         cpu.stats.numInsts++;
-        cpu.system->totalNumInsts++;
 
         /* Act on events related to instruction counts */
         thread->comInstEventQueue.serviceEvents(thread->numInst);
@@ -952,7 +950,7 @@ Execute::commitInst(MinorDynInstPtr inst, bool early_memory_issue,
             completed_inst = completed_mem_inst;
         }
         completed_mem_issue = completed_inst;
-    } else if (inst->isInst() && inst->staticInst->isMemBarrier() &&
+    } else if (inst->isInst() && inst->staticInst->isFullMemBarrier() &&
         !lsq.canPushIntoStoreBuffer())
     {
         DPRINTF(MinorExecute, "Can't commit data barrier inst: %s yet as"
@@ -1369,7 +1367,7 @@ Execute::commit(ThreadID thread_id, bool only_commit_microops, bool discard,
             ex_info.inFlightInsts->pop();
 
             /* Complete barriers in the LSQ/move to store buffer */
-            if (inst->isInst() && inst->staticInst->isMemBarrier()) {
+            if (inst->isInst() && inst->staticInst->isFullMemBarrier()) {
                 DPRINTF(MinorMem, "Completing memory barrier"
                     " inst: %s committed: %d\n", *inst, committed_inst);
                 lsq.completeMemBarrierInst(inst, committed_inst);

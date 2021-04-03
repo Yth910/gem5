@@ -29,9 +29,6 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import print_function
-from __future__ import absolute_import
-
 import optparse, os, re, getpass
 import math
 import glob
@@ -174,7 +171,7 @@ parser.add_option("--numLdsBanks", type="int", default=32,
                   help="number of physical banks per LDS module")
 parser.add_option("--ldsBankConflictPenalty", type="int", default=1,
                   help="number of cycles per LDS bank conflict")
-parser.add_options("--lds-size", type="int", default=65536,
+parser.add_option("--lds-size", type="int", default=65536,
                    help="Size of the LDS in bytes")
 parser.add_option('--fast-forward-pseudo-op', action='store_true',
                   help = 'fast forward using kvm until the m5_switchcpu'
@@ -182,6 +179,8 @@ parser.add_option('--fast-forward-pseudo-op', action='store_true',
                   ' m5_switchcpu pseudo-ops will toggle back and forth')
 parser.add_option("--num-hw-queues", type="int", default=10,
                   help="number of hw queues in packet processor")
+parser.add_option("--reg-alloc-policy",type="string", default="simple",
+                  help="register allocation policy (simple/dynamic)")
 
 Ruby.define_options(parser)
 
@@ -236,23 +235,15 @@ shader = Shader(n_wf = options.wfs_per_simd,
                     voltage_domain = VoltageDomain(
                         voltage = options.gpu_voltage)))
 
-# GPU_RfO(Read For Ownership) implements SC/TSO memory model.
-# Other GPU protocols implement release consistency at GPU side.
-# So, all GPU protocols other than GPU_RfO should make their writes
-# visible to the global memory and should read from global memory
-# during kernal boundary. The pipeline initiates(or do not initiate)
-# the acquire/release operation depending on these impl_kern_launch_rel
-# and impl_kern_end_rel flags.  The flag=true means pipeline initiates
-# a acquire/release operation at kernel launch/end.
-# VIPER protocols (GPU_VIPER, GPU_VIPER_Region and GPU_VIPER_Baseline)
-# are write-through based, and thus only imple_kern_launch_acq needs to
-# set.
-if buildEnv['PROTOCOL'] == 'GPU_RfO':
-    shader.impl_kern_launch_acq = False
-    shader.impl_kern_end_rel = False
-elif (buildEnv['PROTOCOL'] != 'GPU_VIPER' or
-        buildEnv['PROTOCOL'] != 'GPU_VIPER_Region' or
-        buildEnv['PROTOCOL'] != 'GPU_VIPER_Baseline'):
+# VIPER GPU protocol implements release consistency at GPU side. So,
+# we make their writes visible to the global memory and should read
+# from global memory during kernal boundary. The pipeline initiates
+# (or do not initiate) the acquire/release operation depending on
+# these impl_kern_launch_rel and impl_kern_end_rel flags. The flag=true
+# means pipeline initiates a acquire/release operation at kernel launch/end.
+# VIPER protocol is write-through based, and thus only impl_kern_launch_acq
+# needs to set.
+if (buildEnv['PROTOCOL'] == 'GPU_VIPER'):
     shader.impl_kern_launch_acq = True
     shader.impl_kern_end_rel = False
 else:
@@ -299,22 +290,32 @@ for i in range(n_cu):
     vrf_pool_mgrs = []
     srfs = []
     srf_pool_mgrs = []
-    for j in xrange(options.simds_per_cu):
-        for k in xrange(shader.n_wf):
+    for j in range(options.simds_per_cu):
+        for k in range(shader.n_wf):
             wavefronts.append(Wavefront(simdId = j, wf_slot_id = k,
                                         wf_size = options.wf_size))
-        vrf_pool_mgrs.append(SimplePoolManager(pool_size = \
+
+        if options.reg_alloc_policy == "simple":
+            vrf_pool_mgrs.append(SimplePoolManager(pool_size = \
                                                options.vreg_file_size,
+                                               min_alloc = \
+                                               options.vreg_min_alloc))
+            srf_pool_mgrs.append(SimplePoolManager(pool_size = \
+                                               options.sreg_file_size,
+                                               min_alloc = \
+                                               options.vreg_min_alloc))
+        elif options.reg_alloc_policy == "dynamic":
+            vrf_pool_mgrs.append(DynPoolManager(pool_size = \
+                                               options.vreg_file_size,
+                                               min_alloc = \
+                                               options.vreg_min_alloc))
+            srf_pool_mgrs.append(DynPoolManager(pool_size = \
+                                               options.sreg_file_size,
                                                min_alloc = \
                                                options.vreg_min_alloc))
 
         vrfs.append(VectorRegisterFile(simd_id=j, wf_size=options.wf_size,
                                        num_regs=options.vreg_file_size))
-
-        srf_pool_mgrs.append(SimplePoolManager(pool_size = \
-                                               options.sreg_file_size,
-                                               min_alloc = \
-                                               options.vreg_min_alloc))
         srfs.append(ScalarRegisterFile(simd_id=j, wf_size=options.wf_size,
                                        num_regs=options.sreg_file_size))
 
@@ -469,7 +470,7 @@ else:
                "/usr/lib/x86_64-linux-gnu"
            ]),
            'HOME=%s' % os.getenv('HOME','/'),
-           "HSA_ENABLE_INTERRUPT=0"]
+           "HSA_ENABLE_INTERRUPT=1"]
 
 process = Process(executable = executable, cmd = [options.cmd]
                   + options.options.split(), drivers = [gpu_driver], env = env)
@@ -500,7 +501,8 @@ cpu_list = cpu_list + [shader] + cp_list
 system = System(cpu = cpu_list,
                 mem_ranges = [AddrRange(options.mem_size)],
                 cache_line_size = options.cacheline_size,
-                mem_mode = mem_mode)
+                mem_mode = mem_mode,
+                workload = SEWorkload.init_compatible(executable))
 if fast_forward:
     system.future_cpu = future_cpu_list
 system.voltage_domain = VoltageDomain(voltage = options.sys_voltage)
@@ -550,8 +552,8 @@ for i in range(options.num_cpus):
         system.cpu[i].interrupts[0].int_master = system.piobus.slave
         system.cpu[i].interrupts[0].int_slave = system.piobus.master
         if fast_forward:
-            system.cpu[i].itb.walker.port = ruby_port.slave
-            system.cpu[i].dtb.walker.port = ruby_port.slave
+            system.cpu[i].mmu.connectWalkerPorts(
+                ruby_port.slave, ruby_port.slave)
 
 # attach CU ports to Ruby
 # Because of the peculiarities of the CP core, you may have 1 CPU but 2
@@ -565,6 +567,16 @@ gpu_port_idx = len(system.ruby._cpu_ports) \
                - options.num_scalar_cache
 gpu_port_idx = gpu_port_idx - options.num_cp * 2
 
+# Connect token ports. For this we need to search through the list of all
+# sequencers, since the TCP coalescers will not necessarily be first. Only
+# TCP coalescers use a token port for back pressure.
+token_port_idx = 0
+for i in range(len(system.ruby._cpu_ports)):
+    if isinstance(system.ruby._cpu_ports[i], VIPERCoalescer):
+        system.cpu[shader_idx].CUs[token_port_idx].gmTokenPort = \
+            system.ruby._cpu_ports[i].gmTokenPort
+        token_port_idx += 1
+
 wavefront_size = options.wf_size
 for i in range(n_cu):
     # The pipeline issues wavefront_size number of uncoalesced requests
@@ -572,8 +584,6 @@ for i in range(n_cu):
     for j in range(wavefront_size):
         system.cpu[shader_idx].CUs[i].memory_port[j] = \
                   system.ruby._cpu_ports[gpu_port_idx].slave[j]
-    system.cpu[shader_idx].CUs[i].gmTokenPort = \
-            system.ruby._cpu_ports[gpu_port_idx].gmTokenPort
     gpu_port_idx += 1
 
 for i in range(n_cu):
@@ -584,7 +594,7 @@ for i in range(n_cu):
             system.ruby._cpu_ports[gpu_port_idx].slave
 gpu_port_idx = gpu_port_idx + 1
 
-for i in xrange(n_cu):
+for i in range(n_cu):
     if i > 0 and not i % options.cu_per_scalar_cache:
         print("incrementing idx on ", i)
         gpu_port_idx += 1

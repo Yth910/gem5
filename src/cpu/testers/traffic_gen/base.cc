@@ -51,6 +51,7 @@
 #include "cpu/testers/traffic_gen/nvm_gen.hh"
 #include "cpu/testers/traffic_gen/random_gen.hh"
 #include "cpu/testers/traffic_gen/stream_gen.hh"
+#include "cpu/testers/traffic_gen/strided_gen.hh"
 #include "debug/Checkpoint.hh"
 #include "debug/TrafficGen.hh"
 #include "enums/AddrMap.hh"
@@ -64,17 +65,15 @@
 #endif
 
 
-using namespace std;
-
-BaseTrafficGen::BaseTrafficGen(const BaseTrafficGenParams* p)
+BaseTrafficGen::BaseTrafficGen(const BaseTrafficGenParams &p)
     : ClockedObject(p),
-      system(p->system),
-      elasticReq(p->elastic_req),
-      progressCheck(p->progress_check),
+      system(p.system),
+      elasticReq(p.elastic_req),
+      progressCheck(p.progress_check),
       noProgressEvent([this]{ noProgress(); }, name()),
       nextTransitionTick(0),
       nextPacketTick(0),
-      maxOutstandingReqs(p->max_outstanding_reqs),
+      maxOutstandingReqs(p.max_outstanding_reqs),
       port(name() + ".port", *this),
       retryPkt(NULL),
       retryPktTick(0), blockedWaitingResp(false),
@@ -90,7 +89,7 @@ BaseTrafficGen::~BaseTrafficGen()
 }
 
 Port &
-BaseTrafficGen::getPort(const string &if_name, PortID idx)
+BaseTrafficGen::getPort(const std::string &if_name, PortID idx)
 {
     if (if_name == "port") {
         return port;
@@ -183,12 +182,12 @@ BaseTrafficGen::update()
         // try to pick and assign them to the new packet
         if (streamGenerator) {
             auto sid = streamGenerator->pickStreamID();
-            auto ssid = streamGenerator->pickSubStreamID();
+            auto ssid = streamGenerator->pickSubstreamID();
 
             pkt->req->setStreamId(sid);
 
             if (streamGenerator->ssidValid()) {
-                pkt->req->setSubStreamId(ssid);
+                pkt->req->setSubstreamId(ssid);
             }
         }
 
@@ -333,25 +332,31 @@ BaseTrafficGen::noProgress()
 
 BaseTrafficGen::StatGroup::StatGroup(Stats::Group *parent)
     : Stats::Group(parent),
-      ADD_STAT(numSuppressed,
+      ADD_STAT(numSuppressed, UNIT_COUNT,
                "Number of suppressed packets to non-memory space"),
-      ADD_STAT(numPackets, "Number of packets generated"),
-      ADD_STAT(numRetries, "Number of retries"),
-      ADD_STAT(retryTicks, "Time spent waiting due to back-pressure (ticks)"),
-      ADD_STAT(bytesRead, "Number of bytes read"),
-      ADD_STAT(bytesWritten, "Number of bytes written"),
-      ADD_STAT(totalReadLatency, "Total latency of read requests"),
-      ADD_STAT(totalWriteLatency, "Total latency of write requests"),
-      ADD_STAT(totalReads, "Total num of reads"),
-      ADD_STAT(totalWrites, "Total num of writes"),
-      ADD_STAT(avgReadLatency, "Avg latency of read requests",
-               totalReadLatency / totalReads),
-      ADD_STAT(avgWriteLatency, "Avg latency of write requests",
+      ADD_STAT(numPackets, UNIT_COUNT, "Number of packets generated"),
+      ADD_STAT(numRetries, UNIT_COUNT, "Number of retries"),
+      ADD_STAT(retryTicks, UNIT_TICK,
+               "Time spent waiting due to back-pressure"),
+      ADD_STAT(bytesRead, UNIT_BYTE, "Number of bytes read"),
+      ADD_STAT(bytesWritten, UNIT_BYTE, "Number of bytes written"),
+      ADD_STAT(totalReadLatency, UNIT_TICK,
+               "Total latency of read requests"),
+      ADD_STAT(totalWriteLatency, UNIT_TICK,
+               "Total latency of write requests"),
+      ADD_STAT(totalReads, UNIT_COUNT, "Total num of reads"),
+      ADD_STAT(totalWrites, UNIT_COUNT, "Total num of writes"),
+      ADD_STAT(avgReadLatency,
+               UNIT_RATE(Stats::Units::Tick, Stats::Units::Count),
+               "Avg latency of read requests", totalReadLatency / totalReads),
+      ADD_STAT(avgWriteLatency,
+               UNIT_RATE(Stats::Units::Tick, Stats::Units::Count),
+               "Avg latency of write requests",
                totalWriteLatency / totalWrites),
-      ADD_STAT(readBW, "Read bandwidth in bytes/s",
-               bytesRead / simSeconds),
-      ADD_STAT(writeBW, "Write bandwidth in bytes/s",
-               bytesWritten / simSeconds)
+      ADD_STAT(readBW, UNIT_RATE(Stats::Units::Byte, Stats::Units::Second),
+               "Read bandwidth", bytesRead / simSeconds),
+      ADD_STAT(writeBW, UNIT_RATE(Stats::Units::Byte, Stats::Units::Second),
+               "Write bandwidth", bytesWritten / simSeconds)
 {
 }
 
@@ -513,6 +518,22 @@ BaseTrafficGen::createNvm(Tick duration,
                                                 nbr_of_banks_util,
                                                 addr_mapping,
                                                 nbr_of_ranks));
+}
+
+std::shared_ptr<BaseGen>
+BaseTrafficGen::createStrided(Tick duration,
+                             Addr start_addr, Addr end_addr, Addr blocksize,
+                             Addr stride_size, int gen_id,
+                             Tick min_period, Tick max_period,
+                             uint8_t read_percent, Addr data_limit)
+{
+    return std::shared_ptr<BaseGen>(new StridedGen(*this, requestorId,
+                                                  duration, start_addr,
+                                                  end_addr, blocksize,
+                                                  system->cacheLineSize(),
+                                                  stride_size, gen_id,
+                                                  min_period, max_period,
+                                                  read_percent, data_limit));
 }
 
 std::shared_ptr<BaseGen>

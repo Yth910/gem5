@@ -59,9 +59,9 @@
 
 namespace X86ISA {
 
-TLB::TLB(const Params *p)
-    : BaseTLB(p), configAddress(0), size(p->size),
-      tlb(size), lruSeq(0), m5opRange(p->system->m5opRange()), stats(this)
+TLB::TLB(const Params &p)
+    : BaseTLB(p), configAddress(0), size(p.size),
+      tlb(size), lruSeq(0), m5opRange(p.system->m5opRange()), stats(this)
 {
     if (!size)
         fatal("TLBs must have a non-zero size.\n");
@@ -71,7 +71,7 @@ TLB::TLB(const Params *p)
         freeList.push_back(&tlb[x]);
     }
 
-    walker = p->walker;
+    walker = p.walker;
     walker->setTLB(this);
 }
 
@@ -520,10 +520,10 @@ TLB::getWalker()
 
 TLB::TlbStats::TlbStats(Stats::Group *parent)
   : Stats::Group(parent),
-    ADD_STAT(rdAccesses, "TLB accesses on read requests"),
-    ADD_STAT(wrAccesses, "TLB accesses on write requests"),
-    ADD_STAT(rdMisses, "TLB misses on read requests"),
-    ADD_STAT(wrMisses, "TLB misses on write requests")
+    ADD_STAT(rdAccesses, UNIT_COUNT, "TLB accesses on read requests"),
+    ADD_STAT(wrAccesses, UNIT_COUNT, "TLB accesses on write requests"),
+    ADD_STAT(rdMisses, UNIT_COUNT, "TLB misses on read requests"),
+    ADD_STAT(wrMisses, UNIT_COUNT, "TLB misses on write requests")
 {
 }
 
@@ -571,9 +571,3 @@ TLB::getTableWalkerPort()
 }
 
 } // namespace X86ISA
-
-X86ISA::TLB *
-X86TLBParams::create()
-{
-    return new X86ISA::TLB(this);
-}

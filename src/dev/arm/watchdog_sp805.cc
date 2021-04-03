@@ -42,7 +42,7 @@
 #include "mem/packet_access.hh"
 #include "params/Sp805.hh"
 
-Sp805::Sp805(Sp805Params const* params)
+Sp805::Sp805(const Sp805Params &params)
     : AmbaIntDevice(params, 0x1000),
       timeoutInterval(0xffffffff),
       timeoutStartTick(MaxTick),
@@ -258,10 +258,4 @@ Sp805::unserialize(CheckpointIn &cp)
         UNSERIALIZE_SCALAR(when);
         reschedule(timeoutEvent, when, true);
     }
-}
-
-Sp805 *
-Sp805Params::create()
-{
-    return new Sp805(this);
 }

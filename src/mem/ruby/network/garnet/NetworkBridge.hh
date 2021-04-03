@@ -29,8 +29,6 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Srikant Bharadwaj
  */
 
 #ifndef __MEM_RUBY_NETWORK_GARNET_0_NETWORK_BRIDGE_HH__
@@ -54,7 +52,7 @@ class NetworkBridge: public CreditLink
 {
   public:
     typedef NetworkBridgeParams Params;
-    NetworkBridge(const Params *p);
+    NetworkBridge(const Params &p);
     ~NetworkBridge();
 
     void initBridge(NetworkBridge *coBrid, bool cdc_en, bool serdes_en);

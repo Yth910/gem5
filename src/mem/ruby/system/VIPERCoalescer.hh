@@ -46,16 +46,16 @@
 
 class DataBlock;
 class CacheMsg;
-class MachineID;
+struct MachineID;
 class CacheMemory;
 
-class VIPERCoalescerParams;
+struct VIPERCoalescerParams;
 
 class VIPERCoalescer : public GPUCoalescer
 {
   public:
     typedef VIPERCoalescerParams Params;
-    VIPERCoalescer(const Params *);
+    VIPERCoalescer(const Params &);
     ~VIPERCoalescer();
     void writeCompleteCallback(Addr address, uint64_t instSeqNum);
     void invTCPCallback(Addr address);

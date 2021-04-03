@@ -111,21 +111,9 @@ inUserMode(CPSR cpsr)
 }
 
 static inline bool
-inUserMode(ThreadContext *tc)
-{
-    return inUserMode(tc->readMiscRegNoEffect(MISCREG_CPSR));
-}
-
-static inline bool
 inPrivilegedMode(CPSR cpsr)
 {
     return !inUserMode(cpsr);
-}
-
-static inline bool
-inPrivilegedMode(ThreadContext *tc)
-{
-    return !inUserMode(tc);
 }
 
 bool isSecure(ThreadContext *tc);
@@ -153,6 +141,7 @@ currEL(CPSR cpsr)
 
 bool HavePACExt(ThreadContext *tc);
 bool HaveVirtHostExt(ThreadContext *tc);
+bool HaveLVA(ThreadContext *tc);
 bool HaveSecureEL2Ext(ThreadContext *tc);
 bool IsSecureEL2Enabled(ThreadContext *tc);
 bool EL2Enabled(ThreadContext *tc);
@@ -399,8 +388,6 @@ isGenericTimerSystemAccessTrapEL3(const MiscRegIndex miscReg,
 
 bool SPAlignmentCheckEnabled(ThreadContext* tc);
 
-uint64_t getArgument(ThreadContext *tc, int &number, uint16_t size, bool fp);
-
 inline void
 advancePC(PCState &pc, const StaticInstPtr &inst)
 {
@@ -409,12 +396,6 @@ advancePC(PCState &pc, const StaticInstPtr &inst)
 
 Addr truncPage(Addr addr);
 Addr roundPage(Addr addr);
-
-inline uint64_t
-getExecutingAsid(ThreadContext *tc)
-{
-    return tc->readMiscReg(MISCREG_CONTEXTIDR);
-}
 
 // Decodes the register index to access based on the fields used in a MSR
 // or MRS instruction

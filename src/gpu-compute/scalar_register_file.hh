@@ -29,9 +29,6 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: John Kalamatianos,
- *          Mark Wyse
  */
 
 #ifndef __GPU_COMPUTE_SCALAR_REGISTER_FILE_HH__
@@ -53,7 +50,7 @@ class ScalarRegisterFile : public RegisterFile
   public:
     using ScalarRegU32 = TheGpuISA::ScalarRegU32;
 
-    ScalarRegisterFile(const ScalarRegisterFileParams *p);
+    ScalarRegisterFile(const ScalarRegisterFileParams &p);
     ~ScalarRegisterFile() { }
 
     virtual bool operandsReady(Wavefront *w, GPUDynInstPtr ii) const override;

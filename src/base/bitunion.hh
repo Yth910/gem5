@@ -35,6 +35,7 @@
 #include <typeinfo>
 
 #include "base/bitfield.hh"
+#include "sim/serialize_handlers.hh"
 
 //      The following implements the BitUnion system of defining bitfields
 //on top of an underlying class. This is done through the pervasive use of
@@ -259,35 +260,126 @@ namespace BitfieldBackend
 
         BitUnionOperators() {}
 
+        //Conversion operators.
         operator const typename Base::__StorageType () const
         {
             return Base::__storage;
         }
 
-        typename Base::__StorageType
+        //Basic assignment operators.
+        BitUnionOperators &
         operator=(typename Base::__StorageType const &val)
         {
             Base::__storage = val;
-            return val;
+            return *this;
         }
 
-        typename Base::__StorageType
+        BitUnionOperators &
         operator=(BitUnionOperators const &other)
         {
-            Base::__storage = other;
-            return Base::__storage;
+            return operator=(other.__storage);
         }
 
-        bool
-        operator<(Base const &base) const
+        //Increment and decrement operators.
+        BitUnionOperators &
+        operator++()
         {
-            return Base::__storage < base.__storage;
+            Base::__storage++;
+            return *this;
         }
 
-        bool
-        operator==(Base const &base) const
+        BitUnionOperators
+        operator++(int)
         {
-            return Base::__storage == base.__storage;
+            BitUnionOperators ret = *this;
+            operator++();
+            return ret;
+        }
+
+        BitUnionOperators &
+        operator--()
+        {
+            Base::__storage--;
+            return *this;
+        }
+
+        BitUnionOperators
+        operator--(int)
+        {
+            BitUnionOperators ret = *this;
+            operator--();
+            return ret;
+        }
+
+        //Operation and assignment operators
+        BitUnionOperators &
+        operator+=(typename Base::__StorageType const &val)
+        {
+            Base::__storage += val;
+            return *this;
+        }
+
+        BitUnionOperators &
+        operator-=(typename Base::__StorageType const &val)
+        {
+            Base::__storage -= val;
+            return *this;
+        }
+
+        BitUnionOperators &
+        operator*=(typename Base::__StorageType const &val)
+        {
+            Base::__storage *= val;
+            return *this;
+        }
+
+        BitUnionOperators &
+        operator/=(typename Base::__StorageType const &val)
+        {
+            Base::__storage /= val;
+            return *this;
+        }
+
+        BitUnionOperators &
+        operator%=(typename Base::__StorageType const &val)
+        {
+            Base::__storage %= val;
+            return *this;
+        }
+
+        BitUnionOperators &
+        operator&=(typename Base::__StorageType const &val)
+        {
+            Base::__storage &= val;
+            return *this;
+        }
+
+        BitUnionOperators &
+        operator|=(typename Base::__StorageType const &val)
+        {
+            Base::__storage |= val;
+            return *this;
+        }
+
+        BitUnionOperators &
+        operator^=(typename Base::__StorageType const &val)
+        {
+            Base::__storage ^= val;
+            return *this;
+        }
+
+        BitUnionOperators &
+        operator<<=(typename Base::__StorageType const &val)
+        {
+            Base::__storage <<= val;
+            return *this;
+        }
+
+        BitUnionOperators &
+        operator>>=(typename Base::__StorageType const &val)
+        {
+            Base::__storage >>= val;
+            return *this;
         }
     };
 }
@@ -504,5 +596,31 @@ operator << (std::ostream &os, const BitUnionType<T> &bu)
     return BitfieldBackend::bitfieldBackendPrinter(
             os, (BitUnionBaseType<T>)bu);
 }
+
+// Specialization for BitUnion types.
+template <class T>
+struct ParseParam<BitUnionType<T>>
+{
+    static bool
+    parse(const std::string &s, BitUnionType<T> &value)
+    {
+        // Zero initialize storage to avoid leaking an uninitialized value
+        BitUnionBaseType<T> storage = BitUnionBaseType<T>();
+        auto res = to_number(s, storage);
+        value = storage;
+        return res;
+    }
+};
+
+template <class T>
+struct ShowParam<BitUnionType<T>>
+{
+    static void
+    show(std::ostream &os, const BitUnionType<T> &value)
+    {
+        ShowParam<BitUnionBaseType<T>>::show(
+                os, static_cast<const BitUnionBaseType<T> &>(value));
+    }
+};
 
 #endif // __BASE_BITUNION_HH__

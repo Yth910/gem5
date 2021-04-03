@@ -33,9 +33,6 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import print_function
-from __future__ import absolute_import
-
 import argparse
 
 import m5
@@ -92,6 +89,8 @@ system = System(membus = IOXBar(width = 32))
 system.clk_domain = SrcClockDomain(clock = '2.0GHz',
                                    voltage_domain =
                                    VoltageDomain(voltage = '1V'))
+
+system.workload = SEWorkload()
 
 # We are fine with 256 MB memory for now.
 mem_range = AddrRange('256MB')

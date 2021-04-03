@@ -42,8 +42,8 @@
 #include "arch/arm/faults.hh"
 #include "arch/arm/interrupts.hh"
 #include "arch/arm/isa_traits.hh"
+#include "arch/arm/mmu.hh"
 #include "arch/arm/system.hh"
-#include "arch/arm/tlb.hh"
 #include "cpu/base.hh"
 #include "cpu/checker/cpu.hh"
 #include "cpu/thread_context.hh"
@@ -52,67 +52,6 @@
 
 namespace ArmISA
 {
-
-uint64_t
-getArgument(ThreadContext *tc, int &number, uint16_t size, bool fp)
-{
-    if (!FullSystem) {
-        panic("getArgument() only implemented for full system mode.\n");
-        M5_DUMMY_RETURN
-    }
-
-    if (fp)
-        panic("getArgument(): Floating point arguments not implemented\n");
-
-    if (inAArch64(tc)) {
-        if (size == (uint16_t)(-1))
-            size = sizeof(uint64_t);
-
-        if (number < 8 /*NumArgumentRegs64*/) {
-               return tc->readIntReg(number);
-        } else {
-            panic("getArgument(): No support reading stack args for AArch64\n");
-        }
-    } else {
-        if (size == (uint16_t)(-1))
-            size = sizeof(uint32_t);
-
-        if (number < NumArgumentRegs) {
-            // If the argument is 64 bits, it must be in an even regiser
-            // number. Increment the number here if it isn't even.
-            if (size == sizeof(uint64_t)) {
-                if ((number % 2) != 0)
-                    number++;
-                // Read the two halves of the data. Number is inc here to
-                // get the second half of the 64 bit reg.
-                uint64_t tmp;
-                tmp = tc->readIntReg(number++);
-                tmp |= tc->readIntReg(number) << 32;
-                return tmp;
-            } else {
-               return tc->readIntReg(number);
-            }
-        } else {
-            Addr sp = tc->readIntReg(StackPointerReg);
-            PortProxy &vp = tc->getVirtProxy();
-            uint64_t arg;
-            if (size == sizeof(uint64_t)) {
-                // If the argument is even it must be aligned
-                if ((number % 2) != 0)
-                    number++;
-                arg = vp.read<uint64_t>(sp +
-                        (number-NumArgumentRegs) * sizeof(uint32_t));
-                // since two 32 bit args == 1 64 bit arg, increment number
-                number++;
-            } else {
-                arg = vp.read<uint32_t>(sp +
-                               (number-NumArgumentRegs) * sizeof(uint32_t));
-            }
-            return arg;
-        }
-    }
-    panic("getArgument() should always return\n");
-}
 
 static void
 copyVecRegs(ThreadContext *src, ThreadContext *dest)
@@ -157,8 +96,7 @@ copyRegs(ThreadContext *src, ThreadContext *dest)
     dest->pcState(src->pcState());
 
     // Invalidate the tlb misc register cache
-    dynamic_cast<TLB *>(dest->getITBPtr())->invalidateMiscReg();
-    dynamic_cast<TLB *>(dest->getDTBPtr())->invalidateMiscReg();
+    static_cast<MMU *>(dest->getMMUPtr())->invalidateMiscReg();
 }
 
 void
@@ -327,6 +265,13 @@ HaveVirtHostExt(ThreadContext *tc)
 {
     AA64MMFR1 id_aa64mmfr1 = tc->readMiscReg(MISCREG_ID_AA64MMFR1_EL1);
     return id_aa64mmfr1.vh;
+}
+
+bool
+HaveLVA(ThreadContext *tc)
+{
+    const AA64MMFR2 mm_fr2 = tc->readMiscReg(MISCREG_ID_AA64MMFR2_EL1);
+    return (bool)mm_fr2.varange;
 }
 
 ExceptionLevel
@@ -656,12 +601,14 @@ mcrMrc15TrapToHyp(const MiscRegIndex miscReg, ThreadContext *tc, uint32_t iss,
               case MISCREG_ID_MMFR1:
               case MISCREG_ID_MMFR2:
               case MISCREG_ID_MMFR3:
+              case MISCREG_ID_MMFR4:
               case MISCREG_ID_ISAR0:
               case MISCREG_ID_ISAR1:
               case MISCREG_ID_ISAR2:
               case MISCREG_ID_ISAR3:
               case MISCREG_ID_ISAR4:
               case MISCREG_ID_ISAR5:
+              case MISCREG_ID_ISAR6:
                 trapToHype = hcr.tid3;
                 break;
               case MISCREG_DCISW:
@@ -1392,9 +1339,9 @@ decodePhysAddrRange64(uint8_t pa_enc)
       case 0x4:
         return 44;
       case 0x5:
-      case 0x6:
-      case 0x7:
         return 48;
+      case 0x6:
+        return 52;
       default:
         panic("Invalid phys. address range encoding");
     }
@@ -1416,6 +1363,8 @@ encodePhysAddrRange64(int pa_size)
         return 0x4;
       case 48:
         return 0x5;
+      case 52:
+        return 0x6;
       default:
         panic("Invalid phys. address range");
     }

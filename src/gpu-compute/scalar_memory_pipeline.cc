@@ -29,8 +29,6 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: John Kalamatianos
  */
 
 #include "gpu-compute/scalar_memory_pipeline.hh"
@@ -43,10 +41,10 @@
 #include "gpu-compute/shader.hh"
 #include "gpu-compute/wavefront.hh"
 
-ScalarMemPipeline::ScalarMemPipeline(const ComputeUnitParams* p,
+ScalarMemPipeline::ScalarMemPipeline(const ComputeUnitParams &p,
                                      ComputeUnit &cu)
     : computeUnit(cu), _name(cu.name() + ".ScalarMemPipeline"),
-      queueSize(p->scalar_mem_queue_size),
+      queueSize(p.scalar_mem_queue_size),
       inflightStores(0), inflightLoads(0)
 {
 }
@@ -141,9 +139,4 @@ ScalarMemPipeline::exec()
         DPRINTF(GPUMem, "CU%d: WF[%d][%d] Popping scalar mem_op\n",
                 computeUnit.cu_id, mp->simdId, mp->wfSlotId);
     }
-}
-
-void
-ScalarMemPipeline::regStats()
-{
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 ARM Limited
+ * Copyright (c) 2019,2021 ARM Limited
  * All rights reserved.
  *
  * The license below extends only to copyright in the software and shall
@@ -59,8 +59,6 @@
 #include "sim/simulate.hh"
 #include "sim/system.hh"
 
-using namespace std;
-
 bool RubySystem::m_randomization;
 uint32_t RubySystem::m_block_size_bytes;
 uint32_t RubySystem::m_block_size_bits;
@@ -71,16 +69,16 @@ bool RubySystem::m_warmup_enabled = false;
 unsigned RubySystem::m_systems_to_warmup = 0;
 bool RubySystem::m_cooldown_enabled = false;
 
-RubySystem::RubySystem(const Params *p)
-    : ClockedObject(p), m_access_backing_store(p->access_backing_store),
+RubySystem::RubySystem(const Params &p)
+    : ClockedObject(p), m_access_backing_store(p.access_backing_store),
       m_cache_recorder(NULL)
 {
-    m_randomization = p->randomization;
+    m_randomization = p.randomization;
 
-    m_block_size_bytes = p->block_size_bytes;
+    m_block_size_bytes = p.block_size_bytes;
     assert(isPowerOf2(m_block_size_bytes));
     m_block_size_bits = floorLog2(m_block_size_bytes);
-    m_memory_size_bits = p->memory_size_bits;
+    m_memory_size_bits = p.memory_size_bits;
 
     // Resize to the size of different machine types
     m_abstract_controls.resize(MachineType_NUM);
@@ -89,7 +87,7 @@ RubySystem::RubySystem(const Params *p)
     Stats::registerDumpCallback([this]() { collateStats(); });
     // Create the profiler
     m_profiler = new Profiler(p, this);
-    m_phys_mem = p->phys_mem;
+    m_phys_mem = p.phys_mem;
 }
 
 void
@@ -155,7 +153,7 @@ RubySystem::registerRequestorIDs()
     }
 
     // Default all other requestor IDs to network 0
-    for (auto id = 0; id < params()->system->maxRequestors(); ++id) {
+    for (auto id = 0; id < params().system->maxRequestors(); ++id) {
         if (!requestorToNetwork.count(id)) {
             requestorToNetwork.insert(std::make_pair(id, 0));
         }
@@ -172,7 +170,7 @@ RubySystem::makeCacheRecorder(uint8_t *uncompressed_trace,
                               uint64_t cache_trace_size,
                               uint64_t block_size_bytes)
 {
-    vector<Sequencer*> sequencer_map;
+    std::vector<Sequencer*> sequencer_map;
     Sequencer* sequencer_ptr = NULL;
 
     for (int cntrl = 0; cntrl < m_abs_cntrl_vec.size(); cntrl++) {
@@ -219,14 +217,15 @@ RubySystem::memWriteback()
 
     // Deschedule all prior events on the event queue, but record the tick they
     // were scheduled at so they can be restored correctly later.
-    list<pair<Event*, Tick> > original_events;
+    std::list<std::pair<Event*, Tick> > original_events;
     while (!eventq->empty()) {
         Event *curr_head = eventq->getHead();
         if (curr_head->isAutoDelete()) {
             DPRINTF(RubyCacheTrace, "Event %s auto-deletes when descheduled,"
                     " not recording\n", curr_head->name());
         } else {
-            original_events.push_back(make_pair(curr_head, curr_head->when()));
+            original_events.push_back(
+                    std::make_pair(curr_head, curr_head->when()));
         }
         eventq->deschedule(curr_head);
     }
@@ -249,7 +248,7 @@ RubySystem::memWriteback()
     // done after setting curTick back to its original value so that events do
     // not seem to be scheduled in the past.
     while (!original_events.empty()) {
-        pair<Event*, Tick> event = original_events.back();
+        std::pair<Event*, Tick> event = original_events.back();
         eventq->schedule(event.first, event.second);
         original_events.pop_back();
     }
@@ -273,11 +272,11 @@ RubySystem::memWriteback()
 }
 
 void
-RubySystem::writeCompressedTrace(uint8_t *raw_data, string filename,
+RubySystem::writeCompressedTrace(uint8_t *raw_data, std::string filename,
                                  uint64_t uncompressed_trace_size)
 {
     // Create the checkpoint file for the memory
-    string thefile = CheckpointIn::dir() + "/" + filename.c_str();
+    std::string thefile = CheckpointIn::dir() + "/" + filename.c_str();
 
     int fd = creat(thefile.c_str(), 0664);
     if (fd < 0) {
@@ -321,7 +320,7 @@ RubySystem::serialize(CheckpointOut &cp) const
     uint8_t *raw_data = new uint8_t[4096];
     uint64_t cache_trace_size = m_cache_recorder->aggregateRecords(&raw_data,
                                                                  4096);
-    string cache_trace_file = name() + ".cache.gz";
+    std::string cache_trace_file = name() + ".cache.gz";
     writeCompressedTrace(raw_data, cache_trace_file, cache_trace_size);
 
     SERIALIZE_SCALAR(cache_trace_file);
@@ -340,7 +339,7 @@ RubySystem::drainResume()
 }
 
 void
-RubySystem::readCompressedTrace(string filename, uint8_t *&raw_data,
+RubySystem::readCompressedTrace(std::string filename, uint8_t *&raw_data,
                                 uint64_t &uncompressed_trace_size)
 {
     // Read the trace file
@@ -381,7 +380,7 @@ RubySystem::unserialize(CheckpointIn &cp)
     uint64_t block_size_bytes = getBlockSizeBytes();
     UNSERIALIZE_OPT_SCALAR(block_size_bytes);
 
-    string cache_trace_file;
+    std::string cache_trace_file;
     uint64_t cache_trace_size = 0;
 
     UNSERIALIZE_SCALAR(cache_trace_file);
@@ -473,6 +472,7 @@ RubySystem::resetStats()
     }
 }
 
+#ifndef PARTIAL_FUNC_READS
 bool
 RubySystem::functionalRead(PacketPtr pkt)
 {
@@ -588,6 +588,95 @@ RubySystem::functionalRead(PacketPtr pkt)
 
     return false;
 }
+#else
+bool
+RubySystem::functionalRead(PacketPtr pkt)
+{
+    Addr address(pkt->getAddr());
+    Addr line_address = makeLineAddress(address);
+
+    DPRINTF(RubySystem, "Functional Read request for %#x\n", address);
+
+    std::vector<AbstractController*> ctrl_ro;
+    std::vector<AbstractController*> ctrl_busy;
+    std::vector<AbstractController*> ctrl_others;
+    AbstractController *ctrl_rw = nullptr;
+    AbstractController *ctrl_bs = nullptr;
+
+    // Build lists of controllers that have line
+    for (auto ctrl : m_abs_cntrl_vec) {
+        switch(ctrl->getAccessPermission(line_address)) {
+            case AccessPermission_Read_Only:
+                ctrl_ro.push_back(ctrl);
+                break;
+            case AccessPermission_Busy:
+                ctrl_busy.push_back(ctrl);
+                break;
+            case AccessPermission_Read_Write:
+                assert(ctrl_rw == nullptr);
+                ctrl_rw = ctrl;
+                break;
+            case AccessPermission_Backing_Store:
+                assert(ctrl_bs == nullptr);
+                ctrl_bs = ctrl;
+                break;
+            case AccessPermission_Backing_Store_Busy:
+                assert(ctrl_bs == nullptr);
+                ctrl_bs = ctrl;
+                ctrl_busy.push_back(ctrl);
+                break;
+            default:
+                ctrl_others.push_back(ctrl);
+                break;
+        }
+    }
+
+    DPRINTF(RubySystem, "num_ro=%d, num_busy=%d , has_rw=%d, "
+                        "backing_store=%d\n",
+                ctrl_ro.size(), ctrl_busy.size(),
+                ctrl_rw != nullptr, ctrl_bs != nullptr);
+
+    // Issue functional reads to all controllers found in a stable state
+    // until we get a full copy of the line
+    WriteMask bytes;
+    if (ctrl_rw != nullptr) {
+        ctrl_rw->functionalRead(line_address, pkt, bytes);
+        // if a RW controllter has the full line that's all uptodate
+        if (bytes.isFull())
+            return true;
+    }
+
+    // Get data from RO and BS
+    for (auto ctrl : ctrl_ro)
+        ctrl->functionalRead(line_address, pkt, bytes);
+
+    ctrl_bs->functionalRead(line_address, pkt, bytes);
+
+    // if there is any busy controller or bytes still not set, then a partial
+    // and/or dirty copy of the line might be in a message buffer or the
+    // network
+    if (!ctrl_busy.empty() || !bytes.isFull()) {
+        DPRINTF(RubySystem, "Reading from busy controllers and network\n");
+        for (auto ctrl : ctrl_busy) {
+            ctrl->functionalRead(line_address, pkt, bytes);
+            ctrl->functionalReadBuffers(pkt, bytes);
+        }
+        for (auto& network : m_networks) {
+            network->functionalRead(pkt, bytes);
+        }
+        for (auto ctrl : ctrl_others) {
+            ctrl->functionalRead(line_address, pkt, bytes);
+            ctrl->functionalReadBuffers(pkt, bytes);
+        }
+    }
+    // we either got the full line or couldn't find anything at this point
+    panic_if(!(bytes.isFull() || bytes.isEmpty()),
+            "Inconsistent state on functional read for %#x %s\n",
+            address, bytes);
+
+    return bytes.isFull();
+}
+#endif
 
 // The function searches through all the buffers that exist in different
 // cache, directory and memory controllers, and in the network components
@@ -602,7 +691,7 @@ RubySystem::functionalWrite(PacketPtr pkt)
 
     DPRINTF(RubySystem, "Functional Write request for %#x\n", addr);
 
-    uint32_t M5_VAR_USED num_functional_writes = 0;
+    M5_VAR_USED uint32_t num_functional_writes = 0;
 
     // Only send functional requests within the same network.
     assert(requestorToNetwork.count(pkt->requestorId()));
@@ -637,10 +726,4 @@ RubySystem::functionalWrite(PacketPtr pkt)
     DPRINTF(RubySystem, "Messages written = %u\n", num_functional_writes);
 
     return true;
-}
-
-RubySystem *
-RubySystemParams::create()
-{
-    return new RubySystem(this);
 }

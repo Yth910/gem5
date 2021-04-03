@@ -53,17 +53,15 @@
 #include "debug/O3PipeView.hh"
 #include "params/DerivO3CPU.hh"
 
-using namespace std;
-
 template <class Impl>
-DefaultRename<Impl>::DefaultRename(O3CPU *_cpu, DerivO3CPUParams *params)
+DefaultRename<Impl>::DefaultRename(O3CPU *_cpu, const DerivO3CPUParams &params)
     : cpu(_cpu),
-      iewToRenameDelay(params->iewToRenameDelay),
-      decodeToRenameDelay(params->decodeToRenameDelay),
-      commitToRenameDelay(params->commitToRenameDelay),
-      renameWidth(params->renameWidth),
-      commitWidth(params->commitWidth),
-      numThreads(params->numThreads),
+      iewToRenameDelay(params.iewToRenameDelay),
+      decodeToRenameDelay(params.decodeToRenameDelay),
+      commitToRenameDelay(params.commitToRenameDelay),
+      renameWidth(params.renameWidth),
+      commitWidth(params.commitWidth),
+      numThreads(params.numThreads),
       stats(_cpu)
 {
     if (renameWidth > Impl::MaxWidth)
@@ -72,7 +70,7 @@ DefaultRename<Impl>::DefaultRename(O3CPU *_cpu, DerivO3CPUParams *params)
              renameWidth, static_cast<int>(Impl::MaxWidth));
 
     // @todo: Make into a parameter.
-    skidBufferMax = (decodeToRenameDelay + 1) * params->decodeWidth;
+    skidBufferMax = (decodeToRenameDelay + 1) * params.decodeWidth;
     for (uint32_t tid = 0; tid < Impl::MaxThreads; tid++) {
         renameStatus[tid] = Idle;
         renameMap[tid] = nullptr;
@@ -97,43 +95,47 @@ DefaultRename<Impl>::name() const
 template <class Impl>
 DefaultRename<Impl>::RenameStats::RenameStats(Stats::Group *parent)
     : Stats::Group(parent, "rename"),
-      ADD_STAT(squashCycles, "Number of cycles rename is squashing"),
-      ADD_STAT(idleCycles, "Number of cycles rename is idle"),
-      ADD_STAT(blockCycles, "Number of cycles rename is blocking"),
-      ADD_STAT(serializeStallCycles, "count of cycles rename stalled"
-          "for serializing inst"),
-      ADD_STAT(runCycles, "Number of cycles rename is running"),
-      ADD_STAT(unblockCycles, "Number of cycles rename is unblocking"),
-      ADD_STAT(renamedInsts, "Number of instructions processed by"
-          " rename"),
-      ADD_STAT(squashedInsts, "Number of squashed instructions"
-          " processed by rename"),
-      ADD_STAT(ROBFullEvents, "Number of times rename has blocked"
-          " due to ROB full"),
-      ADD_STAT(IQFullEvents, "Number of times rename has blocked due"
-          " to IQ full"),
-      ADD_STAT(LQFullEvents, "Number of times rename has blocked due"
-          " to LQ full" ),
-      ADD_STAT(SQFullEvents, "Number of times rename has blocked due"
-          " to SQ full"),
-      ADD_STAT(fullRegistersEvents, "Number of times there has been no"
-          " free registers"),
-      ADD_STAT(renamedOperands, "Number of destination operands rename"
-          " has renamed"),
-      ADD_STAT(lookups, "Number of register rename lookups that"
-          " rename has made"),
-      ADD_STAT(intLookups, "Number of integer rename lookups"),
-      ADD_STAT(fpLookups, "Number of floating rename lookups"),
-      ADD_STAT(vecLookups, "Number of vector rename lookups"),
-      ADD_STAT(vecPredLookups, "Number of vector predicate rename"
-          " lookups"),
-      ADD_STAT(committedMaps, "Number of HB maps that are committed"),
-      ADD_STAT(undoneMaps, "Number of HB maps that are undone due to"
-          " squashing"),
-      ADD_STAT(serializing, "count of serializing insts renamed" ),
-      ADD_STAT(tempSerializing, "count of temporary serializing insts"
-          " renamed"),
-      ADD_STAT(skidInsts, "count of insts added to the skid buffer")
+      ADD_STAT(squashCycles, UNIT_CYCLE,
+               "Number of cycles rename is squashing"),
+      ADD_STAT(idleCycles, UNIT_CYCLE, "Number of cycles rename is idle"),
+      ADD_STAT(blockCycles, UNIT_CYCLE, "Number of cycles rename is blocking"),
+      ADD_STAT(serializeStallCycles, UNIT_CYCLE,
+               "count of cycles rename stalled for serializing inst"),
+      ADD_STAT(runCycles, UNIT_CYCLE, "Number of cycles rename is running"),
+      ADD_STAT(unblockCycles, UNIT_CYCLE,
+               "Number of cycles rename is unblocking"),
+      ADD_STAT(renamedInsts, UNIT_COUNT,
+               "Number of instructions processed by rename"),
+      ADD_STAT(squashedInsts, UNIT_COUNT,
+               "Number of squashed instructions processed by rename"),
+      ADD_STAT(ROBFullEvents, UNIT_COUNT,
+               "Number of times rename has blocked due to ROB full"),
+      ADD_STAT(IQFullEvents, UNIT_COUNT,
+               "Number of times rename has blocked due to IQ full"),
+      ADD_STAT(LQFullEvents, UNIT_COUNT,
+               "Number of times rename has blocked due to LQ full" ),
+      ADD_STAT(SQFullEvents, UNIT_COUNT,
+               "Number of times rename has blocked due to SQ full"),
+      ADD_STAT(fullRegistersEvents, UNIT_COUNT,
+               "Number of times there has been no free registers"),
+      ADD_STAT(renamedOperands, UNIT_COUNT,
+               "Number of destination operands rename has renamed"),
+      ADD_STAT(lookups, UNIT_COUNT,
+               "Number of register rename lookups that rename has made"),
+      ADD_STAT(intLookups, UNIT_COUNT, "Number of integer rename lookups"),
+      ADD_STAT(fpLookups, UNIT_COUNT, "Number of floating rename lookups"),
+      ADD_STAT(vecLookups, UNIT_COUNT, "Number of vector rename lookups"),
+      ADD_STAT(vecPredLookups, UNIT_COUNT,
+               "Number of vector predicate rename lookups"),
+      ADD_STAT(committedMaps, UNIT_COUNT,
+               "Number of HB maps that are committed"),
+      ADD_STAT(undoneMaps, UNIT_COUNT,
+               "Number of HB maps that are undone due to squashing"),
+      ADD_STAT(serializing, UNIT_COUNT, "count of serializing insts renamed"),
+      ADD_STAT(tempSerializing, UNIT_COUNT,
+               "count of temporary serializing insts renamed"),
+      ADD_STAT(skidInsts, UNIT_COUNT,
+               "count of insts added to the skid buffer")
 {
     squashCycles.prereq(squashCycles);
     idleCycles.prereq(idleCycles);
@@ -271,7 +273,7 @@ DefaultRename<Impl>::resetStage()
 
 template<class Impl>
 void
-DefaultRename<Impl>::setActiveThreads(list<ThreadID> *at_ptr)
+DefaultRename<Impl>::setActiveThreads(std::list<ThreadID> *at_ptr)
 {
     activeThreads = at_ptr;
 }
@@ -401,8 +403,8 @@ DefaultRename<Impl>::tick()
 
     sortInsts();
 
-    list<ThreadID>::iterator threads = activeThreads->begin();
-    list<ThreadID>::iterator end = activeThreads->end();
+    std::list<ThreadID>::iterator threads = activeThreads->begin();
+    std::list<ThreadID>::iterator end = activeThreads->end();
 
     // Check stall and squash signals.
     while (threads != end) {
@@ -612,7 +614,8 @@ DefaultRename<Impl>::renameInsts(ThreadID tid)
 
         if (inst->isLoad()) {
             if (calcFreeLQEntries(tid) <= 0) {
-                DPRINTF(Rename, "[tid:%i] Cannot rename due to no free LQ\n");
+                DPRINTF(Rename, "[tid:%i] Cannot rename due to no free LQ\n",
+                        tid);
                 source = LQ;
                 incrFullStat(source);
                 break;
@@ -621,7 +624,8 @@ DefaultRename<Impl>::renameInsts(ThreadID tid)
 
         if (inst->isStore() || inst->isAtomic()) {
             if (calcFreeSQEntries(tid) <= 0) {
-                DPRINTF(Rename, "[tid:%i] Cannot rename due to no free SQ\n");
+                DPRINTF(Rename, "[tid:%i] Cannot rename due to no free SQ\n",
+                        tid);
                 source = SQ;
                 incrFullStat(source);
                 break;
@@ -684,8 +688,7 @@ DefaultRename<Impl>::renameInsts(ThreadID tid)
         // instructions.  This is mainly due to lack of support for
         // out-of-order operations of either of those classes of
         // instructions.
-        if ((inst->isIprAccess() || inst->isSerializeBefore()) &&
-            !inst->isSerializeHandled()) {
+        if (inst->isSerializeBefore() && !inst->isSerializeHandled()) {
             DPRINTF(Rename, "Serialize before instruction encountered.\n");
 
             if (!inst->isTempSerializeBefore()) {
@@ -816,8 +819,8 @@ template<class Impl>
 bool
 DefaultRename<Impl>::skidsEmpty()
 {
-    list<ThreadID>::iterator threads = activeThreads->begin();
-    list<ThreadID>::iterator end = activeThreads->end();
+    std::list<ThreadID>::iterator threads = activeThreads->begin();
+    std::list<ThreadID>::iterator end = activeThreads->end();
 
     while (threads != end) {
         ThreadID tid = *threads++;
@@ -835,8 +838,8 @@ DefaultRename<Impl>::updateStatus()
 {
     bool any_unblocking = false;
 
-    list<ThreadID>::iterator threads = activeThreads->begin();
-    list<ThreadID>::iterator end = activeThreads->end();
+    std::list<ThreadID>::iterator threads = activeThreads->begin();
+    std::list<ThreadID>::iterator end = activeThreads->end();
 
     while (threads != end) {
         ThreadID tid = *threads++;
@@ -1109,7 +1112,7 @@ DefaultRename<Impl>::renameDestRegs(const DynInstPtr &inst, ThreadID tid)
 
         rename_result = map->rename(flat_dest_regid);
 
-        inst->flattenDestReg(dest_idx, flat_dest_regid);
+        inst->regs.flattenedDestIdx(dest_idx, flat_dest_regid);
 
         scoreboard->unsetReg(rename_result.first);
 

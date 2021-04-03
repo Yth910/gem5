@@ -238,7 +238,7 @@ class BaseTrafficGen : public ClockedObject
     } stats;
 
   public:
-    BaseTrafficGen(const BaseTrafficGenParams* p);
+    BaseTrafficGen(const BaseTrafficGenParams &p);
 
     ~BaseTrafficGen();
 
@@ -314,6 +314,13 @@ class BaseTrafficGen : public ClockedObject
         Enums::AddrMap addr_mapping,
         unsigned int nbr_of_ranks);
 
+    std::shared_ptr<BaseGen> createStrided(
+        Tick duration,
+        Addr start_addr, Addr end_addr, Addr blocksize,
+        Addr stride_size, int gen_id,
+        Tick min_period, Tick max_period,
+        uint8_t read_percent, Addr data_limit);
+
     std::shared_ptr<BaseGen> createTrace(
         Tick duration,
         const std::string& trace_file, Addr addr_offset);
@@ -331,7 +338,7 @@ class BaseTrafficGen : public ClockedObject
     /** Currently active generator */
     std::shared_ptr<BaseGen> activeGenerator;
 
-    /** Stream/SubStreamID Generator */
+    /** Stream/SubstreamID Generator */
     std::unique_ptr<StreamGen> streamGenerator;
 };
 

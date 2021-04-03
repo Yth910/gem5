@@ -35,6 +35,7 @@
 #define __GPU_DYN_INST_HH__
 
 #include <cstdint>
+#include <memory>
 #include <string>
 
 #include "base/amo.hh"
@@ -62,12 +63,12 @@ class AtomicOpCAS : public TypedAtomicOpFunctor<T>
     void
     execute(T *b)
     {
-        computeUnit->numCASOps++;
+        computeUnit->stats.numCASOps++;
 
         if (*b == c) {
             *b = s;
         } else {
-            computeUnit->numFailedCASOps++;
+            computeUnit->stats.numFailedCASOps++;
         }
     }
     AtomicOpFunctor* clone () { return new AtomicOpCAS(c, s, computeUnit); }
@@ -179,6 +180,7 @@ class GPUDynInst : public GPUExecContext
     bool isUnconditionalJump() const;
     bool isSpecialOp() const;
     bool isWaitcnt() const;
+    bool isSleep() const;
 
     bool isBarrier() const;
     bool isMemSync() const;
@@ -255,27 +257,27 @@ class GPUDynInst : public GPUExecContext
     makeAtomicOpFunctor(c0 *reg0, c0 *reg1)
     {
         if (isAtomicAnd()) {
-            return m5::make_unique<AtomicOpAnd<c0>>(*reg0);
+            return std::make_unique<AtomicOpAnd<c0>>(*reg0);
         } else if (isAtomicOr()) {
-            return m5::make_unique<AtomicOpOr<c0>>(*reg0);
+            return std::make_unique<AtomicOpOr<c0>>(*reg0);
         } else if (isAtomicXor()) {
-            return m5::make_unique<AtomicOpXor<c0>>(*reg0);
+            return std::make_unique<AtomicOpXor<c0>>(*reg0);
         } else if (isAtomicCAS()) {
-            return m5::make_unique<AtomicOpCAS<c0>>(*reg0, *reg1, cu);
+            return std::make_unique<AtomicOpCAS<c0>>(*reg0, *reg1, cu);
         } else if (isAtomicExch()) {
-            return m5::make_unique<AtomicOpExch<c0>>(*reg0);
+            return std::make_unique<AtomicOpExch<c0>>(*reg0);
         } else if (isAtomicAdd()) {
-            return m5::make_unique<AtomicOpAdd<c0>>(*reg0);
+            return std::make_unique<AtomicOpAdd<c0>>(*reg0);
         } else if (isAtomicSub()) {
-            return m5::make_unique<AtomicOpSub<c0>>(*reg0);
+            return std::make_unique<AtomicOpSub<c0>>(*reg0);
         } else if (isAtomicInc()) {
-            return m5::make_unique<AtomicOpInc<c0>>();
+            return std::make_unique<AtomicOpInc<c0>>();
         } else if (isAtomicDec()) {
-            return m5::make_unique<AtomicOpDec<c0>>();
+            return std::make_unique<AtomicOpDec<c0>>();
         } else if (isAtomicMax()) {
-            return m5::make_unique<AtomicOpMax<c0>>(*reg0);
+            return std::make_unique<AtomicOpMax<c0>>(*reg0);
         } else if (isAtomicMin()) {
-            return m5::make_unique<AtomicOpMin<c0>>(*reg0);
+            return std::make_unique<AtomicOpMin<c0>>(*reg0);
         } else {
             fatal("Unrecognized atomic operation");
         }
@@ -305,7 +307,7 @@ class GPUDynInst : public GPUExecContext
             assert(!isEndOfKernel());
 
             // must be wbinv inst if not kernel launch/end
-            req->setCacheCoherenceFlags(Request::ACQUIRE);
+            req->setCacheCoherenceFlags(Request::INV_L1);
         }
     }
 

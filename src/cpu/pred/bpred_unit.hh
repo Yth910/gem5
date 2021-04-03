@@ -66,7 +66,7 @@ class BPredUnit : public SimObject
     /**
      * @param params The params object, that has the size of the BP and BTB.
      */
-    BPredUnit(const Params *p);
+    BPredUnit(const Params &p);
 
     void regProbePoints() override;
 
@@ -290,8 +290,8 @@ class BPredUnit : public SimObject
         Stats::Scalar BTBLookups;
         /** Stat for number of BTB hits. */
         Stats::Scalar BTBHits;
-        /** Stat for percent times an entry in BTB found. */
-        Stats::Formula BTBHitPct;
+        /** Stat for the ratio between BTB hits and BTB lookups. */
+        Stats::Formula BTBHitRatio;
         /** Stat for number of times the RAS is used to get a target. */
         Stats::Scalar RASUsed;
         /** Stat for number of times the RAS is incorrect. */

@@ -473,12 +473,18 @@ class AddrRange
      * ---------------------------------
      *
      * @param a the input address
-     * @return the new address
+     * @return the new address, or the input address if not interleaved
      *
      * @ingroup api_addr_range
      */
     inline Addr removeIntlvBits(Addr a) const
     {
+        // Directly return the address if the range is not interleaved
+        // to prevent undefined behavior.
+        if (!interleaved()) {
+            return a;
+        }
+
         // Get the LSB set from each mask
         int masks_lsb[masks.size()];
         for (int i = 0; i < masks.size(); i++) {
@@ -511,6 +517,12 @@ class AddrRange
      */
     inline Addr addIntlvBits(Addr a) const
     {
+        // Directly return the address if the range is not interleaved
+        // to prevent undefined behavior.
+        if (!interleaved()) {
+            return a;
+        }
+
         // Get the LSB set from each mask
         int masks_lsb[masks.size()];
         for (int i = 0; i < masks.size(); i++) {
@@ -523,9 +535,10 @@ class AddrRange
             const int intlv_bit = masks_lsb[i];
             if (intlv_bit > 0) {
                 // on every iteration we add one bit from the input
-                // address, and therefore the lowest invtl_bit has
-                // also shifted to the left by i positions.
-                a = insertBits(a << 1, intlv_bit + i - 1, 0, a);
+                // address, but the lowest invtl_bit in the iteration is
+                // always in the right position because they are sorted
+                // increasingly from the LSB
+                a = insertBits(a << 1, intlv_bit - 1, 0, a);
             } else {
                 a <<= 1;
             }

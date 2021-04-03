@@ -232,7 +232,7 @@ class LSQUnit
     }
 
     /** Initializes the LSQ unit with the specified number of entries. */
-    void init(O3CPU *cpu_ptr, IEW *iew_ptr, DerivO3CPUParams *params,
+    void init(O3CPU *cpu_ptr, IEW *iew_ptr, const DerivO3CPUParams &params,
             LSQ *lsq_ptr, unsigned id);
 
     /** Returns the name of the LSQ unit. */
@@ -401,7 +401,7 @@ class LSQUnit
     /** Schedule event for the cpu. */
     void schedule(Event& ev, Tick when) { cpu->schedule(ev, when); }
 
-    BaseTLB* dTLB() { return cpu->dtb; }
+    BaseMMU* getMMUPtr() { return cpu->mmu; }
 
   private:
     /** Pointer to the CPU. */

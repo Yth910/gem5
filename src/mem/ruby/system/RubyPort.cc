@@ -51,31 +51,31 @@
 #include "sim/full_system.hh"
 #include "sim/system.hh"
 
-RubyPort::RubyPort(const Params *p)
-    : ClockedObject(p), m_ruby_system(p->ruby_system), m_version(p->version),
+RubyPort::RubyPort(const Params &p)
+    : ClockedObject(p), m_ruby_system(p.ruby_system), m_version(p.version),
       m_controller(NULL), m_mandatory_q_ptr(NULL),
-      m_usingRubyTester(p->using_ruby_tester), system(p->system),
+      m_usingRubyTester(p.using_ruby_tester), system(p.system),
       pioRequestPort(csprintf("%s.pio-request-port", name()), this),
       pioResponsePort(csprintf("%s.pio-response-port", name()), this),
       memRequestPort(csprintf("%s.mem-request-port", name()), this),
       memResponsePort(csprintf("%s-mem-response-port", name()), this,
-                   p->ruby_system->getAccessBackingStore(), -1,
-                   p->no_retry_on_stall),
-      gotAddrRanges(p->port_interrupt_out_port_connection_count),
-      m_isCPUSequencer(p->is_cpu_sequencer)
+                   p.ruby_system->getAccessBackingStore(), -1,
+                   p.no_retry_on_stall),
+      gotAddrRanges(p.port_interrupt_out_port_connection_count),
+      m_isCPUSequencer(p.is_cpu_sequencer)
 {
     assert(m_version != -1);
 
     // create the response ports based on the number of connected ports
-    for (size_t i = 0; i < p->port_in_ports_connection_count; ++i) {
+    for (size_t i = 0; i < p.port_in_ports_connection_count; ++i) {
         response_ports.push_back(new MemResponsePort(csprintf
             ("%s.response_ports%d", name(), i), this,
-            p->ruby_system->getAccessBackingStore(),
-            i, p->no_retry_on_stall));
+            p.ruby_system->getAccessBackingStore(),
+            i, p.no_retry_on_stall));
     }
 
     // create the request ports based on the number of connected ports
-    for (size_t i = 0; i < p->port_interrupt_out_port_connection_count; ++i) {
+    for (size_t i = 0; i < p.port_interrupt_out_port_connection_count; ++i) {
         request_ports.push_back(new PioRequestPort(csprintf(
                     "%s.request_ports%d", name(), i), this));
     }
@@ -86,6 +86,8 @@ RubyPort::init()
 {
     assert(m_controller != NULL);
     m_mandatory_q_ptr = m_controller->getMandatoryQueue();
+    for (const auto &response_port : response_ports)
+        response_port->sendRangeChange();
 }
 
 Port &
@@ -204,7 +206,7 @@ RubyPort::PioResponsePort::recvTimingReq(PacketPtr pkt)
             if (it->contains(pkt->getAddr())) {
                 // generally it is not safe to assume success here as
                 // the port could be blocked
-                bool M5_VAR_USED success =
+                M5_VAR_USED bool success =
                     ruby_port->request_ports[i]->sendTimingReq(pkt);
                 assert(success);
                 return true;
@@ -371,7 +373,7 @@ RubyPort::MemResponsePort::recvFunctional(PacketPtr pkt)
 {
     DPRINTF(RubyPort, "Functional access for address: %#x\n", pkt->getAddr());
 
-    RubyPort *rp M5_VAR_USED = static_cast<RubyPort *>(&owner);
+    M5_VAR_USED RubyPort *rp = static_cast<RubyPort *>(&owner);
     RubySystem *rs = rp->m_ruby_system;
 
     // Check for pio requests and directly send them to the dedicated
@@ -544,7 +546,8 @@ RubyPort::MemResponsePort::hitCallback(PacketPtr pkt)
     }
 
     // Flush, acquire, release requests don't access physical memory
-    if (pkt->isFlush() || pkt->cmd == MemCmd::MemSyncReq) {
+    if (pkt->isFlush() || pkt->cmd == MemCmd::MemSyncReq
+        || pkt->cmd == MemCmd::WriteCompleteResp) {
         accessPhysMem = false;
     }
 
@@ -597,7 +600,7 @@ RubyPort::PioResponsePort::getAddrRanges() const
         ranges.splice(ranges.begin(),
                 ruby_port->request_ports[i]->getAddrRanges());
     }
-    for (const auto M5_VAR_USED &r : ranges)
+    for (M5_VAR_USED const auto &r : ranges)
         DPRINTF(RubyPort, "%s\n", r.to_string());
     return ranges;
 }

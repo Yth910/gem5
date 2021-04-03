@@ -76,9 +76,9 @@ ignore(const char *expr)
 }
 
 void
-pybind_init_debug(py::module &m_native)
+pybind_init_debug(py::module_ &m_native)
 {
-    py::module m_debug = m_native.def_submodule("debug");
+    py::module_ m_debug = m_native.def_submodule("debug");
 
     m_debug
         .def("getAllFlagsVersion", []() { return Debug::allFlagsVersion; })
@@ -94,9 +94,9 @@ pybind_init_debug(py::module &m_native)
         .def_property_readonly("desc", &Debug::Flag::desc)
         .def("enable", &Debug::Flag::enable)
         .def("disable", &Debug::Flag::disable)
-        .def_property("status",
+        .def_property("enabled",
                       [](const Debug::Flag *flag) {
-                          return flag->status();
+                          return flag->enabled();
                       },
                       [](Debug::Flag *flag, bool state) {
                           if (state) {
@@ -106,17 +106,19 @@ pybind_init_debug(py::module &m_native)
                           }
                       })
         .def("__bool__", [](const Debug::Flag *flag) {
-                return flag->status();
+                return flag->enabled();
             })
         ;
 
-    py::class_<Debug::SimpleFlag>(m_debug, "SimpleFlag", c_flag);
+    py::class_<Debug::SimpleFlag>(m_debug, "SimpleFlag", c_flag)
+        .def_property_readonly("isFormat", &Debug::SimpleFlag::isFormat)
+        ;
     py::class_<Debug::CompoundFlag>(m_debug, "CompoundFlag", c_flag)
         .def("kids", &Debug::CompoundFlag::kids)
         ;
 
 
-    py::module m_trace = m_native.def_submodule("trace");
+    py::module_ m_trace = m_native.def_submodule("trace");
     m_trace
         .def("output", &output)
         .def("ignore", &ignore)

@@ -50,12 +50,15 @@
 #include "base/loader/symtab.hh"
 #include "base/str.hh"
 #include "base/trace.hh"
+#include "config/the_isa.hh"
 #include "config/use_kvm.hh"
 #if USE_KVM
 #include "cpu/kvm/base.hh"
 #include "cpu/kvm/vm.hh"
 #endif
+#if THE_ISA != NULL_ISA
 #include "cpu/base.hh"
+#endif
 #include "cpu/thread_context.hh"
 #include "debug/Loader.hh"
 #include "debug/Quiesce.hh"
@@ -68,10 +71,7 @@
 #include "sim/full_system.hh"
 #include "sim/redirect_path.hh"
 
-using namespace std;
-using namespace TheISA;
-
-vector<System *> System::systemList;
+std::vector<System *> System::systemList;
 
 void
 System::Threads::Thread::resume()
@@ -126,7 +126,7 @@ System::Threads::insert(ThreadContext *tc, ContextID id)
 #   if THE_ISA != NULL_ISA
     int port = getRemoteGDBPort();
     if (port) {
-        t.gdb = new RemoteGDB(sys, tc, port + id);
+        t.gdb = new TheISA::RemoteGDB(sys, tc, port + id);
         t.gdb->listen();
     }
 #   endif
@@ -180,7 +180,7 @@ System::Threads::quiesce(ContextID id)
 {
     auto &t = thread(id);
 #   if THE_ISA != NULL_ISA
-    BaseCPU M5_VAR_USED *cpu = t.context->getCpuPtr();
+    M5_VAR_USED BaseCPU *cpu = t.context->getCpuPtr();
     DPRINTFS(Quiesce, cpu, "quiesce()\n");
 #   endif
     t.quiesce();
@@ -202,32 +202,30 @@ System::Threads::quiesceTick(ContextID id, Tick when)
 
 int System::numSystemsRunning = 0;
 
-System::System(Params *p)
+System::System(const Params &p)
     : SimObject(p), _systemPort("system_port", this),
-      multiThread(p->multi_thread),
+      multiThread(p.multi_thread),
       pagePtr(0),
-      init_param(p->init_param),
-      physProxy(_systemPort, p->cache_line_size),
-      workload(p->workload),
+      init_param(p.init_param),
+      physProxy(_systemPort, p.cache_line_size),
+      workload(p.workload),
 #if USE_KVM
-      kvmVM(p->kvm_vm),
+      kvmVM(p.kvm_vm),
 #else
       kvmVM(nullptr),
 #endif
-      physmem(name() + ".physmem", p->memories, p->mmap_using_noreserve,
-              p->shared_backstore),
-      memoryMode(p->mem_mode),
-      _cacheLineSize(p->cache_line_size),
+      physmem(name() + ".physmem", p.memories, p.mmap_using_noreserve,
+              p.shared_backstore),
+      memoryMode(p.mem_mode),
+      _cacheLineSize(p.cache_line_size),
       workItemsBegin(0),
       workItemsEnd(0),
-      numWorkIds(p->num_work_ids),
-      thermalModel(p->thermal_model),
-      _params(p),
-      _m5opRange(p->m5ops_base ?
-                 RangeSize(p->m5ops_base, 0x10000) :
+      numWorkIds(p.num_work_ids),
+      thermalModel(p.thermal_model),
+      _m5opRange(p.m5ops_base ?
+                 RangeSize(p.m5ops_base, 0x10000) :
                  AddrRange(1, 0)), // Create an empty range if disabled
-      totalNumInsts(0),
-      redirectPaths(p->redirect_paths)
+      redirectPaths(p.redirect_paths)
 {
     if (workload)
         workload->system = this;
@@ -247,7 +245,7 @@ System::System(Params *p)
         warn_once("Cache line size is neither 16, 32, 64 nor 128 bytes.\n");
 
     // Get the generic system requestor IDs
-    RequestorID tmp_id M5_VAR_USED;
+    M5_VAR_USED RequestorID tmp_id;
     tmp_id = getRequestorId(this, "writebacks");
     assert(tmp_id == Request::wbRequestorId);
     tmp_id = getRequestorId(this, "functional");
@@ -259,22 +257,14 @@ System::System(Params *p)
     numSystemsRunning++;
 
     // Set back pointers to the system in all memories
-    for (int x = 0; x < params()->memories.size(); x++)
-        params()->memories[x]->system(this);
+    for (int x = 0; x < params().memories.size(); x++)
+        params().memories[x]->system(this);
 }
 
 System::~System()
 {
     for (uint32_t j = 0; j < numWorkIds; j++)
         delete workItemStats[j];
-}
-
-void
-System::init()
-{
-    // check that the system port is connected
-    if (!_systemPort.isConnected())
-        panic("System port on %s is not connected.\n", name());
 }
 
 void
@@ -385,18 +375,18 @@ System::validKvmEnvironment() const
 Addr
 System::allocPhysPages(int npages)
 {
-    Addr return_addr = pagePtr << PageShift;
+    Addr return_addr = pagePtr << TheISA::PageShift;
     pagePtr += npages;
 
-    Addr next_return_addr = pagePtr << PageShift;
+    Addr next_return_addr = pagePtr << TheISA::PageShift;
 
     if (_m5opRange.contains(next_return_addr)) {
         warn("Reached m5ops MMIO region\n");
         return_addr = 0xffffffff;
-        pagePtr = 0xffffffff >> PageShift;
+        pagePtr = 0xffffffff >> TheISA::PageShift;
     }
 
-    if ((pagePtr << PageShift) > physmem.totalSize())
+    if ((pagePtr << TheISA::PageShift) > physmem.totalSize())
         fatal("Out of memory, please increase size of physical memory.");
     return return_addr;
 }
@@ -410,7 +400,7 @@ System::memSize() const
 Addr
 System::freeMemSize() const
 {
-   return physmem.totalSize() - (pagePtr << PageShift);
+   return physmem.totalSize() - (pagePtr << TheISA::PageShift);
 }
 
 bool
@@ -442,12 +432,6 @@ System::getDeviceMemory(RequestorID id) const
     panic_if(!deviceMemMap.count(id),
              "No device memory found for RequestorID %d\n", id);
     return deviceMemMap.at(id);
-}
-
-void
-System::drainResume()
-{
-    totalNumInsts = 0;
 }
 
 void
@@ -495,11 +479,11 @@ System::regStats()
     SimObject::regStats();
 
     for (uint32_t j = 0; j < numWorkIds ; j++) {
-        workItemStats[j] = new Stats::Histogram();
-        stringstream namestr;
+        workItemStats[j] = new Stats::Histogram(this);
+        std::stringstream namestr;
         ccprintf(namestr, "work_item_type%d", j);
         workItemStats[j]->init(20)
-                         .name(name() + "." + namestr.str())
+                         .name(namestr.str())
                          .desc("Run time stat for" + namestr.str())
                          .prereq(*workItemStats[j]);
     }
@@ -525,16 +509,17 @@ System::workItemEnd(uint32_t tid, uint32_t workid)
 void
 System::printSystems()
 {
-    ios::fmtflags flags(cerr.flags());
+    std::ios::fmtflags flags(std::cerr.flags());
 
-    vector<System *>::iterator i = systemList.begin();
-    vector<System *>::iterator end = systemList.end();
+    std::vector<System *>::iterator i = systemList.begin();
+    std::vector<System *>::iterator end = systemList.end();
     for (; i != end; ++i) {
         System *sys = *i;
-        cerr << "System " << sys->name() << ": " << hex << sys << endl;
+        std::cerr << "System " << sys->name() << ": " << std::hex << sys
+                  << std::endl;
     }
 
-    cerr.flags(flags);
+    std::cerr.flags(flags);
 }
 
 void
@@ -547,7 +532,7 @@ std::string
 System::stripSystemName(const std::string& requestor_name) const
 {
     if (startswith(requestor_name, name())) {
-        return requestor_name.substr(name().size());
+        return requestor_name.substr(name().size() + 1);
     } else {
         return requestor_name;
     }
@@ -655,10 +640,4 @@ System::getRequestorName(RequestorID requestor_id)
 
     const auto& requestor_info = requestors[requestor_id];
     return requestor_info.req_name;
-}
-
-System *
-SystemParams::create()
-{
-    return new System(this);
 }

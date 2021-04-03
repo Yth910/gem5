@@ -41,6 +41,8 @@
 
 #include "arch/arm/system.hh"
 #include "arch/arm/utility.hh"
+#include "base/logging.hh"
+#include "base/trace.hh"
 #include "cpu/base.hh"
 #include "debug/Timer.hh"
 #include "dev/arm/base_gic.hh"
@@ -52,12 +54,12 @@
 
 using namespace ArmISA;
 
-SystemCounter::SystemCounter(SystemCounterParams *const p)
+SystemCounter::SystemCounter(const SystemCounterParams &p)
     : SimObject(p),
       _enabled(true),
       _value(0),
       _increment(1),
-      _freqTable(p->freqs),
+      _freqTable(p.freqs),
       _activeFreqEntry(0),
       _updateTick(0),
       _freqUpdateEvent([this]{ freqUpdateCallback(); }, name()),
@@ -395,21 +397,15 @@ ArchTimer::drainResume()
     updateCounter();
 }
 
-GenericTimer::GenericTimer(GenericTimerParams *const p)
+GenericTimer::GenericTimer(const GenericTimerParams &p)
     : SimObject(p),
-      systemCounter(*p->counter),
-      system(*p->system)
+      systemCounter(*p.counter),
+      system(*p.system)
 {
-    SystemCounter::validateCounterRef(p->counter);
-    fatal_if(!p->system, "GenericTimer::GenericTimer: No system specified, "
+    SystemCounter::validateCounterRef(p.counter);
+    fatal_if(!p.system, "GenericTimer::GenericTimer: No system specified, "
              "can't instantiate architected timers\n");
     system.setGenericTimer(this);
-}
-
-const GenericTimerParams *
-GenericTimer::params() const
-{
-    return dynamic_cast<const GenericTimerParams *>(_params);
 }
 
 void
@@ -467,7 +463,7 @@ void
 GenericTimer::createTimers(unsigned cpus)
 {
     assert(timers.size() < cpus);
-    auto p = static_cast<const GenericTimerParams *>(_params);
+    auto &p = params();
 
     const unsigned old_cpu_count(timers.size());
     timers.resize(cpus);
@@ -477,10 +473,10 @@ GenericTimer::createTimers(unsigned cpus)
 
         timers[i].reset(
             new CoreTimers(*this, system, i,
-                           p->int_phys_s->get(tc),
-                           p->int_phys_ns->get(tc),
-                           p->int_virt->get(tc),
-                           p->int_hyp->get(tc)));
+                           p.int_phys_s->get(tc),
+                           p.int_phys_ns->get(tc),
+                           p.int_virt->get(tc),
+                           p.int_hyp->get(tc)));
     }
 }
 
@@ -727,7 +723,7 @@ GenericTimer::CoreTimers::CoreTimers(GenericTimer &_parent,
     ArmInterruptPin *_irqPhysS, ArmInterruptPin *_irqPhysNS,
     ArmInterruptPin *_irqVirt, ArmInterruptPin *_irqHyp)
       : parent(_parent),
-        cntfrq(parent.params()->cntfrq),
+        cntfrq(parent.params().cntfrq),
         threadContext(system.threads[cpu]),
         irqPhysS(_irqPhysS),
         irqPhysNS(_irqPhysNS),
@@ -873,23 +869,23 @@ GenericTimerISA::readMiscReg(int reg)
     return value;
 }
 
-GenericTimerFrame::GenericTimerFrame(GenericTimerFrameParams *const p)
+GenericTimerFrame::GenericTimerFrame(const GenericTimerFrameParams &p)
     : PioDevice(p),
-      timerRange(RangeSize(p->cnt_base, ArmSystem::PageBytes)),
+      timerRange(RangeSize(p.cnt_base, ArmSystem::PageBytes)),
       addrRanges({timerRange}),
-      systemCounter(*p->counter),
+      systemCounter(*p.counter),
       physTimer(csprintf("%s.phys_timer", name()),
-                *this, systemCounter, p->int_phys->get()),
+                *this, systemCounter, p.int_phys->get()),
       virtTimer(csprintf("%s.virt_timer", name()),
                 *this, systemCounter,
-                p->int_virt->get()),
+                p.int_virt->get()),
       accessBits(0x3f),
       system(*dynamic_cast<ArmSystem *>(sys))
 {
-    SystemCounter::validateCounterRef(p->counter);
+    SystemCounter::validateCounterRef(p.counter);
     // Expose optional CNTEL0Base register frame
-    if (p->cnt_el0_base != MaxAddr) {
-        timerEl0Range = RangeSize(p->cnt_el0_base, ArmSystem::PageBytes);
+    if (p.cnt_el0_base != MaxAddr) {
+        timerEl0Range = RangeSize(p.cnt_el0_base, ArmSystem::PageBytes);
         accessBitsEl0 = 0x303;
         addrRanges.push_back(timerEl0Range);
     }
@@ -1244,18 +1240,18 @@ GenericTimerFrame::timerWrite(Addr addr, size_t size, uint64_t data,
     }
 }
 
-GenericTimerMem::GenericTimerMem(GenericTimerMemParams *const p)
+GenericTimerMem::GenericTimerMem(const GenericTimerMemParams &p)
     : PioDevice(p),
-      counterCtrlRange(RangeSize(p->cnt_control_base, ArmSystem::PageBytes)),
-      counterStatusRange(RangeSize(p->cnt_read_base, ArmSystem::PageBytes)),
-      timerCtrlRange(RangeSize(p->cnt_ctl_base, ArmSystem::PageBytes)),
+      counterCtrlRange(RangeSize(p.cnt_control_base, ArmSystem::PageBytes)),
+      counterStatusRange(RangeSize(p.cnt_read_base, ArmSystem::PageBytes)),
+      timerCtrlRange(RangeSize(p.cnt_ctl_base, ArmSystem::PageBytes)),
       cnttidr(0x0),
       addrRanges{counterCtrlRange, counterStatusRange, timerCtrlRange},
-      systemCounter(*p->counter),
-      frames(p->frames),
+      systemCounter(*p.counter),
+      frames(p.frames),
       system(*dynamic_cast<ArmSystem *>(sys))
 {
-    SystemCounter::validateCounterRef(p->counter);
+    SystemCounter::validateCounterRef(p.counter);
     for (auto &range : addrRanges)
         GenericTimerMem::validateFrameRange(range);
     fatal_if(frames.size() > MAX_TIMER_FRAMES,
@@ -1583,28 +1579,4 @@ GenericTimerMem::timerCtrlWrite(Addr addr, size_t size, uint64_t data,
         warn("GenericTimerMem::timerCtrlWrite: Unexpected address "
              "(0x%x:%i), assuming WI\n", addr, size);
     }
-}
-
-SystemCounter *
-SystemCounterParams::create()
-{
-    return new SystemCounter(this);
-}
-
-GenericTimer *
-GenericTimerParams::create()
-{
-    return new GenericTimer(this);
-}
-
-GenericTimerFrame *
-GenericTimerFrameParams::create()
-{
-    return new GenericTimerFrame(this);
-}
-
-GenericTimerMem *
-GenericTimerMemParams::create()
-{
-    return new GenericTimerMem(this);
 }

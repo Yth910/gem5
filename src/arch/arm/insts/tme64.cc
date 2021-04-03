@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 ARM Limited
+ * Copyright (c) 2020-2021 ARM Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -83,7 +83,6 @@ MicroTfence64::MicroTfence64(ExtMachInst machInst)
     _numVecElemDestRegs = 0;
     _numIntDestRegs = 0;
     _numCCDestRegs = 0;
-    flags[IsMemBarrier] = true;
     flags[IsMicroop] = true;
     flags[IsReadBarrier] = true;
     flags[IsWriteBarrier] = true;
@@ -117,6 +116,12 @@ MicroTfence64::completeAcc(PacketPtr pkt, ExecContext *xc,
 Tstart64::Tstart64(ExtMachInst machInst, IntRegIndex _dest)
     : TmeRegNone64("tstart", machInst, MemReadOp, _dest)
 {
+    setRegIdxArrays(
+        nullptr,
+        reinterpret_cast<RegIdArrayPtr>(
+            &std::remove_pointer_t<decltype(this)>::destRegIdxArr));
+            ;
+
     _numSrcRegs = 0;
     _numDestRegs = 0;
     _numFPDestRegs = 0;
@@ -124,12 +129,11 @@ Tstart64::Tstart64(ExtMachInst machInst, IntRegIndex _dest)
     _numVecElemDestRegs = 0;
     _numIntDestRegs = 0;
     _numCCDestRegs = 0;
-    _destRegIdx[_numDestRegs++] = RegId(IntRegClass, dest);
+    setDestRegIdx(_numDestRegs++, RegId(IntRegClass, dest));
     _numIntDestRegs++;
     flags[IsHtmStart] = true;
     flags[IsInteger] = true;
     flags[IsLoad] = true;
-    flags[IsMemRef] = true;
     flags[IsMicroop] = true;
     flags[IsNonSpeculative] = true;
 }
@@ -146,6 +150,12 @@ Tstart64::execute(
 Ttest64::Ttest64(ExtMachInst machInst, IntRegIndex _dest)
     : TmeRegNone64("ttest", machInst, MemReadOp, _dest)
 {
+    setRegIdxArrays(
+        nullptr,
+        reinterpret_cast<RegIdArrayPtr>(
+            &std::remove_pointer_t<decltype(this)>::destRegIdxArr));
+            ;
+
     _numSrcRegs = 0;
     _numDestRegs = 0;
     _numFPDestRegs = 0;
@@ -153,7 +163,7 @@ Ttest64::Ttest64(ExtMachInst machInst, IntRegIndex _dest)
     _numVecElemDestRegs = 0;
     _numIntDestRegs = 0;
     _numCCDestRegs = 0;
-    _destRegIdx[_numDestRegs++] = RegId(IntRegClass, dest);
+    setDestRegIdx(_numDestRegs++, RegId(IntRegClass, dest));
     _numIntDestRegs++;
     flags[IsInteger] = true;
     flags[IsMicroop] = true;
@@ -170,7 +180,6 @@ Tcancel64::Tcancel64(ExtMachInst machInst, uint64_t _imm)
     _numIntDestRegs = 0;
     _numCCDestRegs = 0;
     flags[IsLoad] = true;
-    flags[IsMemRef] = true;
     flags[IsMicroop] = true;
     flags[IsNonSpeculative] = true;
     flags[IsHtmCancel] = true;
@@ -213,7 +222,6 @@ MicroTcommit64::MicroTcommit64(ExtMachInst machInst)
     _numCCDestRegs = 0;
     flags[IsHtmStop] = true;
     flags[IsLoad] = true;
-    flags[IsMemRef] = true;
     flags[IsMicroop] = true;
     flags[IsNonSpeculative] = true;
 }

@@ -45,14 +45,15 @@
 
 namespace QoS {
 
-MemSinkCtrl::MemSinkCtrl(const QoSMemSinkCtrlParams* p)
-  : MemCtrl(p), requestLatency(p->request_latency),
-    responseLatency(p->response_latency),
-    memoryPacketSize(p->memory_packet_size),
-    readBufferSize(p->read_buffer_size),
-    writeBufferSize(p->write_buffer_size), port(name() + ".port", *this),
-    interface(p->interface),
-    retryRdReq(false), retryWrReq(false), nextRequest(0), nextReqEvent(this)
+MemSinkCtrl::MemSinkCtrl(const QoSMemSinkCtrlParams &p)
+  : MemCtrl(p), requestLatency(p.request_latency),
+    responseLatency(p.response_latency),
+    memoryPacketSize(p.memory_packet_size),
+    readBufferSize(p.read_buffer_size),
+    writeBufferSize(p.write_buffer_size), port(name() + ".port", *this),
+    interface(p.interface),
+    retryRdReq(false), retryWrReq(false), nextRequest(0), nextReqEvent(this),
+    stats(this)
 {
     // Resize read and write queue to allocate space
     // for configured QoS priorities
@@ -155,7 +156,7 @@ MemSinkCtrl::recvTimingReq(PacketPtr pkt)
                     "%s Read queue full, not accepting\n", __func__);
             // Remember that we have to retry this port
             retryRdReq = true;
-            numReadRetries++;
+            stats.numReadRetries++;
             req_accepted = false;
         } else {
             // Enqueue the incoming packet into corresponding
@@ -169,7 +170,7 @@ MemSinkCtrl::recvTimingReq(PacketPtr pkt)
                     "%s Write queue full, not accepting\n", __func__);
             // Remember that we have to retry this port
             retryWrReq = true;
-            numWriteRetries++;
+            stats.numWriteRetries++;
             req_accepted = false;
         } else {
             // Enqueue the incoming packet into corresponding QoS
@@ -332,18 +333,11 @@ MemSinkCtrl::drain()
     }
 }
 
-void
-MemSinkCtrl::regStats()
+MemSinkCtrl::MemSinkCtrlStats::MemSinkCtrlStats(Stats::Group *parent)
+    : Stats::Group(parent),
+      ADD_STAT(numReadRetries, UNIT_COUNT, "Number of read retries"),
+      ADD_STAT(numWriteRetries, UNIT_COUNT, "Number of write retries")
 {
-    MemCtrl::regStats();
-
-    // Initialize all the stats
-    using namespace Stats;
-
-    numReadRetries.name(name() + ".numReadRetries")
-        .desc("Number of read retries");
-    numWriteRetries.name(name() + ".numWriteRetries")
-        .desc("Number of write retries");
 }
 
 MemSinkCtrl::MemoryPort::MemoryPort(const std::string& n,
@@ -389,19 +383,7 @@ MemSinkCtrl::MemoryPort::recvTimingReq(PacketPtr pkt)
 
 } // namespace QoS
 
-QoS::MemSinkCtrl*
-QoSMemSinkCtrlParams::create()
-{
-    return new QoS::MemSinkCtrl(this);
-}
-
-QoSMemSinkInterface::QoSMemSinkInterface(const QoSMemSinkInterfaceParams* _p)
+QoSMemSinkInterface::QoSMemSinkInterface(const QoSMemSinkInterfaceParams &_p)
     : AbstractMemory(_p)
 {
-}
-
-QoSMemSinkInterface*
-QoSMemSinkInterfaceParams::create()
-{
-    return new QoSMemSinkInterface(this);
 }

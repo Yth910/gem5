@@ -48,10 +48,8 @@
 #include "params/MaltaCChip.hh"
 #include "sim/system.hh"
 
-using namespace std;
-
-MaltaCChip::MaltaCChip(Params *p)
-    : BasicPioDevice(p, 0xfffffff), malta(p->malta)
+MaltaCChip::MaltaCChip(const Params &p)
+    : BasicPioDevice(p, 0xfffffff), malta(p.malta)
 {
     warn("MaltaCCHIP::MaltaCChip() not implemented.");
 
@@ -139,10 +137,3 @@ void
 MaltaCChip::unserialize(CheckpointIn &cp)
 {
 }
-
-MaltaCChip *
-MaltaCChipParams::create()
-{
-    return new MaltaCChip(this);
-}
-

@@ -52,10 +52,9 @@ class AbstractController;
 class RubySystem : public ClockedObject
 {
   public:
-    typedef RubySystemParams Params;
-    RubySystem(const Params *p);
+    PARAMS(RubySystem);
+    RubySystem(const Params &p);
     ~RubySystem();
-    const Params *params() const { return (const Params *)_params; }
 
     // config accessors
     static int getRandomization() { return m_randomization; }
@@ -79,7 +78,6 @@ class RubySystem : public ClockedObject
 
     void regStats() override {
         ClockedObject::regStats();
-        m_profiler->regStats(name());
     }
     void collateStats() { m_profiler->collateStats(); }
     void resetStats() override;

@@ -32,9 +32,9 @@
 #include "debug/HelloExample.hh"
 #include "sim/sim_exit.hh"
 
-GoodbyeObject::GoodbyeObject(GoodbyeObjectParams *params) :
+GoodbyeObject::GoodbyeObject(const GoodbyeObjectParams &params) :
     SimObject(params), event([this]{ processEvent(); }, name() + ".event"),
-    bandwidth(params->write_bandwidth), bufferSize(params->buffer_size),
+    bandwidth(params.write_bandwidth), bufferSize(params.buffer_size),
     buffer(nullptr), bufferUsed(0)
 {
     buffer = new char[bufferSize]();
@@ -93,10 +93,4 @@ GoodbyeObject::fillBuffer()
         // Be sure to take into account the time for the last bytes
         exitSimLoop(buffer, 0, curTick() + bandwidth * bytes_copied);
     }
-}
-
-GoodbyeObject*
-GoodbyeObjectParams::create()
-{
-    return new GoodbyeObject(this);
 }

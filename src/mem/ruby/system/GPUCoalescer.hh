@@ -52,10 +52,10 @@
 
 class DataBlock;
 class CacheMsg;
-class MachineID;
+struct MachineID;
 class CacheMemory;
 
-class RubyGPUCoalescerParams;
+struct RubyGPUCoalescerParams;
 
 // List of packets that belongs to a specific instruction.
 typedef std::list<PacketPtr> PerInstPackets;
@@ -70,12 +70,18 @@ class UncoalescedTable
     bool packetAvailable();
     void printRequestTable(std::stringstream& ss);
 
+    // Modify packets remaining map. Init sets value iff the seqNum has not
+    // yet been seen before. get/set act as a regular getter/setter.
+    void initPacketsRemaining(InstSeqNum seqNum, int count);
+    int getPacketsRemaining(InstSeqNum seqNum);
+    void setPacketsRemaining(InstSeqNum seqNum, int count);
+
     // Returns a pointer to the list of packets corresponding to an
     // instruction in the instruction map or nullptr if there are no
     // instructions at the offset.
     PerInstPackets* getInstPackets(int offset);
     void updateResources();
-    bool areRequestsDone(const uint64_t instSeqNum);
+    bool areRequestsDone(const InstSeqNum instSeqNum);
 
     // Check if a packet hasn't been removed from instMap in too long.
     // Panics if a deadlock is detected and returns nothing otherwise.
@@ -88,7 +94,9 @@ class UncoalescedTable
     // which need responses. This data structure assumes the sequence number
     // is monotonically increasing (which is true for CU class) in order to
     // issue packets in age order.
-    std::map<uint64_t, PerInstPackets> instMap;
+    std::map<InstSeqNum, PerInstPackets> instMap;
+
+    std::map<InstSeqNum, int> instPktsRemaining;
 };
 
 class CoalescedRequest
@@ -222,7 +230,7 @@ class GPUCoalescer : public RubyPort
     };
 
     typedef RubyGPUCoalescerParams Params;
-    GPUCoalescer(const Params *);
+    GPUCoalescer(const Params &);
     ~GPUCoalescer();
 
     Port &getPort(const std::string &if_name,
@@ -235,7 +243,6 @@ class GPUCoalescer : public RubyPort
     void printProgress(std::ostream& out) const;
     void resetStats() override;
     void collateStats();
-    void regStats() override;
 
     // each store request needs two callbacks:
     //  (1) writeCallback is called when the store is received and processed
@@ -389,6 +396,8 @@ class GPUCoalescer : public RubyPort
 
     virtual RubyRequestType getRequestType(PacketPtr pkt);
 
+    GPUDynInstPtr getDynInst(PacketPtr pkt) const;
+
     // Attempt to remove a packet from the uncoalescedTable and coalesce
     // with a previous request from the same instruction. If there is no
     // previous instruction and the max number of outstanding requests has
@@ -420,6 +429,10 @@ class GPUCoalescer : public RubyPort
     // (typically the number of blocks in TCP). If there are duplicates of
     // an address, the are serviced in age order.
     std::map<Addr, std::deque<CoalescedRequest*>> coalescedTable;
+    // Map of instruction sequence number to coalesced requests that get
+    // created in coalescePacket, used in completeIssue to send the fully
+    // coalesced request
+    std::unordered_map<uint64_t, std::deque<CoalescedRequest*>> coalescedReqs;
 
     // a map btw an instruction sequence number and PendingWriteInst
     // this is used to do a final call back for each write when it is

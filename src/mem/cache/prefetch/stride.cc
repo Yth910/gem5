@@ -59,7 +59,7 @@
 
 namespace Prefetcher {
 
-Stride::StrideEntry::StrideEntry(const SatCounter& init_confidence)
+Stride::StrideEntry::StrideEntry(const SatCounter8& init_confidence)
   : TaggedEntry(), confidence(init_confidence)
 {
     invalidate();
@@ -68,19 +68,20 @@ Stride::StrideEntry::StrideEntry(const SatCounter& init_confidence)
 void
 Stride::StrideEntry::invalidate()
 {
+    TaggedEntry::invalidate();
     lastAddr = 0;
     stride = 0;
     confidence.reset();
 }
 
-Stride::Stride(const StridePrefetcherParams *p)
+Stride::Stride(const StridePrefetcherParams &p)
   : Queued(p),
-    initConfidence(p->confidence_counter_bits, p->initial_confidence),
-    threshConf(p->confidence_threshold/100.0),
-    useRequestorId(p->use_requestor_id),
-    degree(p->degree),
-    pcTableInfo(p->table_assoc, p->table_entries, p->table_indexing_policy,
-        p->table_replacement_policy)
+    initConfidence(p.confidence_counter_bits, p.initial_confidence),
+    threshConf(p.confidence_threshold/100.0),
+    useRequestorId(p.use_requestor_id),
+    degree(p.degree),
+    pcTableInfo(p.table_assoc, p.table_entries, p.table_indexing_policy,
+        p.table_replacement_policy)
 {
 }
 
@@ -186,7 +187,7 @@ Stride::calculatePrefetch(const PrefetchInfo &pfi,
     }
 }
 
-inline uint32_t
+uint32_t
 StridePrefetcherHashedSetAssociative::extractSet(const Addr pc) const
 {
     const Addr hash1 = pc >> 1;
@@ -201,15 +202,3 @@ StridePrefetcherHashedSetAssociative::extractTag(const Addr addr) const
 }
 
 } // namespace Prefetcher
-
-Prefetcher::StridePrefetcherHashedSetAssociative*
-StridePrefetcherHashedSetAssociativeParams::create()
-{
-    return new Prefetcher::StridePrefetcherHashedSetAssociative(this);
-}
-
-Prefetcher::Stride*
-StridePrefetcherParams::create()
-{
-    return new Prefetcher::Stride(this);
-}

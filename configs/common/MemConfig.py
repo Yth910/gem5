@@ -33,9 +33,6 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import print_function
-from __future__ import absolute_import
-
 import m5.objects
 from common import ObjectList
 from common import HMC
@@ -151,7 +148,7 @@ def config_mem(options, system):
         system.external_memory = m5.objects.ExternalSlave(
             port_type="tlm_slave",
             port_data=opt_tlm_memory,
-            port=system.membus.master,
+            port=system.membus.mem_side_ports,
             addr_ranges=system.mem_ranges)
         system.workload.addr_check = False
         return
@@ -203,7 +200,7 @@ def config_mem(options, system):
             if opt_mem_type and (not opt_nvm_type or range_iter % 2 != 0):
                 # Create the DRAM interface
                 dram_intf = create_mem_intf(intf, r, i, nbr_mem_ctrls,
-                                    intlv_bits, intlv_size, opt_xor_low_bit)
+                    intlv_bits, intlv_size, opt_xor_low_bit)
 
                 # Set the number of ranks based on the command-line
                 # options if it was explicitly set
@@ -229,18 +226,22 @@ def config_mem(options, system):
                                              static_frontend_latency = '4ns')
                 elif opt_mem_type == "SimpleMemory":
                     mem_ctrl = m5.objects.SimpleMemory()
+                elif opt_mem_type == "QoSMemSinkInterface":
+                    mem_ctrl = m5.objects.QoSMemSinkCtrl()
                 else:
                     mem_ctrl = m5.objects.MemCtrl()
 
                 # Hookup the controller to the interface and add to the list
-                if opt_mem_type != "SimpleMemory":
+                if opt_mem_type == "QoSMemSinkInterface":
+                    mem_ctrl.interface = dram_intf
+                elif opt_mem_type != "SimpleMemory":
                     mem_ctrl.dram = dram_intf
 
                 mem_ctrls.append(mem_ctrl)
 
             elif opt_nvm_type and (not opt_mem_type or range_iter % 2 == 0):
                 nvm_intf = create_mem_intf(n_intf, r, i, nbr_mem_ctrls,
-                                           intlv_bits, intlv_size)
+                    intlv_bits, intlv_size, opt_xor_low_bit)
                 # Set the number of ranks based on the command-line
                 # options if it was explicitly set
                 if issubclass(n_intf, m5.objects.NVMInterface) and \
@@ -265,12 +266,12 @@ def config_mem(options, system):
     for i in range(len(mem_ctrls)):
         if opt_mem_type == "HMC_2500_1x32":
             # Connect the controllers to the membus
-            mem_ctrls[i].port = xbar[i/4].master
+            mem_ctrls[i].port = xbar[i/4].mem_side_ports
             # Set memory device size. There is an independent controller
             # for each vault. All vaults are same size.
             mem_ctrls[i].dram.device_size = options.hmc_dev_vault_size
         else:
             # Connect the controllers to the membus
-            mem_ctrls[i].port = xbar.master
+            mem_ctrls[i].port = xbar.mem_side_ports
 
     subsystem.mem_ctrls = mem_ctrls

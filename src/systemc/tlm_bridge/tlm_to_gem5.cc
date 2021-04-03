@@ -57,6 +57,8 @@
 
 #include "systemc/tlm_bridge/tlm_to_gem5.hh"
 
+#include <utility>
+
 #include "params/TlmToGem5Bridge32.hh"
 #include "params/TlmToGem5Bridge64.hh"
 #include "sim/system.hh"
@@ -65,6 +67,27 @@
 
 namespace sc_gem5
 {
+
+namespace
+{
+/**
+ * Hold all the callbacks necessary to convert a tlm payload to gem5 packet.
+ */
+std::vector<PayloadToPacketConversionStep> extraPayloadToPacketSteps;
+}  // namespace
+
+/**
+ * Notify the Tlm2Gem5 bridge that we need an extra step to properly convert a
+ * tlm payload to gem5 packet. This can be useful when there exists a SystemC
+ * extension that carries extra information. For example, SystemC user might
+ * define an extension to store stream_id, the user may then add an extra step
+ * to set the generated request's stream_id accordingly.
+ */
+void
+addPayloadToPacketConversionStep(PayloadToPacketConversionStep step)
+{
+    extraPayloadToPacketSteps.push_back(std::move(step));
+}
 
 PacketPtr
 payload2packet(RequestorID _id, tlm::tlm_generic_payload &trans)
@@ -95,6 +118,11 @@ payload2packet(RequestorID _id, tlm::tlm_generic_payload &trans)
      */
     auto pkt = new Packet(req, cmd);
     pkt->dataStatic(trans.get_data_ptr());
+
+    // Apply all conversion steps necessary in this specific setup.
+    for (auto &step : extraPayloadToPacketSteps) {
+        step(pkt, trans);
+    }
 
     return pkt;
 }
@@ -153,7 +181,6 @@ TlmToGem5Bridge<BITWIDTH>::handleBeginReq(tlm::tlm_generic_payload &trans)
     // world and we can pipe through the original packet. Otherwise, we
     // generate a new packet based on the transaction.
     if (extension != nullptr) {
-        extension->setPipeThrough();
         pkt = extension->getPacket();
     } else {
         pkt = payload2packet(_id, trans);
@@ -278,7 +305,6 @@ TlmToGem5Bridge<BITWIDTH>::b_transport(tlm::tlm_generic_payload &trans,
     // If there is an extension, this transaction was initiated by the gem5
     // world and we can pipe through the original packet.
     if (extension != nullptr) {
-        extension->setPipeThrough();
         pkt = extension->getPacket();
     } else {
         pkt = payload2packet(_id, trans);
@@ -315,7 +341,6 @@ TlmToGem5Bridge<BITWIDTH>::transport_dbg(tlm::tlm_generic_payload &trans)
     // If there is an extension, this transaction was initiated by the gem5
     // world and we can pipe through the original packet.
     if (extension != nullptr) {
-        extension->setPipeThrough();
         bmp.sendFunctional(extension->getPacket());
     } else {
         auto pkt = payload2packet(_id, trans);
@@ -341,7 +366,6 @@ TlmToGem5Bridge<BITWIDTH>::get_direct_mem_ptr(tlm::tlm_generic_payload &trans,
     // If there is an extension, this transaction was initiated by the gem5
     // world and we can pipe through the original packet.
     if (extension != nullptr) {
-        extension->setPipeThrough();
         pkt = extension->getPacket();
     } else {
         pkt = payload2packet(_id, trans);
@@ -419,8 +443,6 @@ TlmToGem5Bridge<BITWIDTH>::recvTimingResp(PacketPtr pkt)
     // delete it. The packet travels back with the transaction.
     if (extension == nullptr)
         destroyPacket(pkt);
-    else
-        sc_assert(extension->isPipeThrough());
 
     sendBeginResp(trans, delay);
     trans.release();
@@ -477,14 +499,14 @@ TlmToGem5Bridge<BITWIDTH>::gem5_getPort(const std::string &if_name, int idx)
 
 template <unsigned int BITWIDTH>
 TlmToGem5Bridge<BITWIDTH>::TlmToGem5Bridge(
-        Params *params, const sc_core::sc_module_name &mn) :
+        const Params &params, const sc_core::sc_module_name &mn) :
     TlmToGem5BridgeBase(mn), peq(this, &TlmToGem5Bridge<BITWIDTH>::peq_cb),
     waitForRetry(false), pendingRequest(nullptr), pendingPacket(nullptr),
     needToSendRetry(false), responseInProgress(false),
     bmp(std::string(name()) + "master", *this), socket("tlm_socket"),
     wrapper(socket, std::string(name()) + ".tlm", InvalidPortID),
-    system(params->system),
-    _id(params->system->getGlobalRequestorId(
+    system(params.system),
+    _id(params.system->getGlobalRequestorId(
                 std::string("[systemc].") + name()))
 {
 }
@@ -524,15 +546,15 @@ TlmToGem5Bridge<BITWIDTH>::before_end_of_elaboration()
 } // namespace sc_gem5
 
 sc_gem5::TlmToGem5Bridge<32> *
-TlmToGem5Bridge32Params::create()
+TlmToGem5Bridge32Params::create() const
 {
     return new sc_gem5::TlmToGem5Bridge<32>(
-            this, sc_core::sc_module_name(name.c_str()));
+            *this, sc_core::sc_module_name(name.c_str()));
 }
 
 sc_gem5::TlmToGem5Bridge<64> *
-TlmToGem5Bridge64Params::create()
+TlmToGem5Bridge64Params::create() const
 {
     return new sc_gem5::TlmToGem5Bridge<64>(
-            this, sc_core::sc_module_name(name.c_str()));
+            *this, sc_core::sc_module_name(name.c_str()));
 }

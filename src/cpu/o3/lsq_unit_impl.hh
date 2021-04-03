@@ -214,8 +214,8 @@ LSQUnit<Impl>::LSQUnit(uint32_t lqEntries, uint32_t sqEntries)
 
 template<class Impl>
 void
-LSQUnit<Impl>::init(O3CPU *cpu_ptr, IEW *iew_ptr, DerivO3CPUParams *params,
-        LSQ *lsq_ptr, unsigned id)
+LSQUnit<Impl>::init(O3CPU *cpu_ptr, IEW *iew_ptr,
+        const DerivO3CPUParams &params, LSQ *lsq_ptr, unsigned id)
 {
     lsqID = id;
 
@@ -228,9 +228,9 @@ LSQUnit<Impl>::init(O3CPU *cpu_ptr, IEW *iew_ptr, DerivO3CPUParams *params,
 
     DPRINTF(LSQUnit, "Creating LSQUnit%i object.\n",lsqID);
 
-    depCheckShift = params->LSQDepCheckShift;
-    checkLoads = params->LSQCheckLoads;
-    needsTSO = params->needsTSO;
+    depCheckShift = params.LSQDepCheckShift;
+    checkLoads = params.LSQCheckLoads;
+    needsTSO = params.needsTSO;
 
     resetState();
 }
@@ -270,16 +270,21 @@ LSQUnit<Impl>::name() const
 template <class Impl>
 LSQUnit<Impl>::LSQUnitStats::LSQUnitStats(Stats::Group *parent)
     : Stats::Group(parent),
-      ADD_STAT(forwLoads, "Number of loads that had data forwarded from"
-          " stores"),
-      ADD_STAT(squashedLoads, "Number of loads squashed"),
-      ADD_STAT(ignoredResponses, "Number of memory responses ignored"
-          " because the instruction is squashed"),
-      ADD_STAT(memOrderViolation, "Number of memory ordering violations"),
-      ADD_STAT(squashedStores, "Number of stores squashed"),
-      ADD_STAT(rescheduledLoads, "Number of loads that were rescheduled"),
-      ADD_STAT(blockedByCache, "Number of times an access to memory failed"
-          " due to the cache being blocked")
+      ADD_STAT(forwLoads, UNIT_COUNT,
+               "Number of loads that had data forwarded from stores"),
+      ADD_STAT(squashedLoads, UNIT_COUNT,
+               "Number of loads squashed"),
+      ADD_STAT(ignoredResponses, UNIT_COUNT,
+               "Number of memory responses ignored because the instruction is "
+               "squashed"),
+      ADD_STAT(memOrderViolation, UNIT_COUNT,
+               "Number of memory ordering violations"),
+      ADD_STAT(squashedStores, UNIT_COUNT, "Number of stores squashed"),
+      ADD_STAT(rescheduledLoads, UNIT_COUNT,
+               "Number of loads that were rescheduled"),
+      ADD_STAT(blockedByCache, UNIT_COUNT,
+               "Number of times an access to memory failed due to the cache "
+               "being blocked")
 {
 }
 
@@ -343,6 +348,7 @@ LSQUnit<Impl>::insertLoad(const DynInstPtr &load_inst)
     assert(!loadQueue.back().valid());
     loadQueue.back().set(load_inst);
     load_inst->lqIdx = loadQueue.tail();
+    assert(load_inst->lqIdx > 0);
     load_inst->lqIt = loadQueue.getIterator(load_inst->lqIdx);
 
     ++loads;
@@ -400,7 +406,8 @@ LSQUnit<Impl>::insertStore(const DynInstPtr& store_inst)
     storeQueue.advance_tail();
 
     store_inst->sqIdx = storeQueue.tail();
-    store_inst->lqIdx = loadQueue.moduloAdd(loadQueue.tail(), 1);
+    store_inst->lqIdx = loadQueue.tail() + 1;
+    assert(store_inst->lqIdx > 0);
     store_inst->lqIt = loadQueue.end();
 
     storeQueue.back().set(store_inst);
@@ -608,7 +615,6 @@ template <class Impl>
 Fault
 LSQUnit<Impl>::executeLoad(const DynInstPtr &inst)
 {
-    using namespace TheISA;
     // Execute a specific load.
     Fault load_fault = NoFault;
 
@@ -676,7 +682,6 @@ template <class Impl>
 Fault
 LSQUnit<Impl>::executeStore(const DynInstPtr &store_inst)
 {
-    using namespace TheISA;
     // Make sure that a store exists.
     assert(stores != 0);
 

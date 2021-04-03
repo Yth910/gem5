@@ -29,21 +29,21 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Eric van Tassell
  */
 
 #ifndef __DEV_HSA_HSA_PACKET_PROCESSOR__
 #define __DEV_HSA_HSA_PACKET_PROCESSOR__
 
+#include <algorithm>
 #include <cstdint>
+#include <vector>
 
-#include <queue>
-
+#include "base/types.hh"
 #include "dev/dma_device.hh"
 #include "dev/hsa/hsa.h"
 #include "dev/hsa/hsa_queue.hh"
 #include "params/HSAPacketProcessor.hh"
+#include "sim/eventq.hh"
 
 #define AQL_PACKET_SIZE 64
 #define PAGE_SIZE 4096
@@ -302,6 +302,13 @@ class HSAPacketProcessor: public DmaDevice
         return regdQList.at(queId);
     }
 
+    uint64_t
+    inFlightPkts(uint32_t queId)
+    {
+        auto aqlBuf = regdQList.at(queId)->qCntxt.aqlBuf;
+        return aqlBuf->dispIdx() - aqlBuf->rdIdx();
+    }
+
     int numHWQueues;
     Addr pioAddr;
     Addr pioSize;
@@ -309,7 +316,7 @@ class HSAPacketProcessor: public DmaDevice
     const Tick pktProcessDelay;
 
     typedef HSAPacketProcessorParams Params;
-    HSAPacketProcessor(const Params *p);
+    HSAPacketProcessor(const Params &p);
     ~HSAPacketProcessor();
     void setDeviceQueueDesc(uint64_t hostReadIndexPointer,
                             uint64_t basePointer,
@@ -328,6 +335,10 @@ class HSAPacketProcessor: public DmaDevice
     void finishPkt(void *pkt) { finishPkt(pkt, 0); }
     void schedAQLProcessing(uint32_t rl_idx);
     void schedAQLProcessing(uint32_t rl_idx, Tick delay);
+
+    void sendAgentDispatchCompletionSignal(void *pkt,
+                                           hsa_signal_value_t signal);
+    void sendCompletionSignal(hsa_signal_value_t signal);
 
     class DepSignalsReadDmaEvent : public Event
     {

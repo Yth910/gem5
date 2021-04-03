@@ -63,16 +63,14 @@ class CommMonitor : public SimObject
   public: // Construction & SimObject interfaces
 
     /** Parameters of communication monitor */
-    typedef CommMonitorParams Params;
-    const Params* params() const
-    { return reinterpret_cast<const Params*>(_params); }
+    using Params = CommMonitorParams;
 
     /**
      * Constructor based on the Python params
      *
      * @param params Python parameters
      */
-    CommMonitor(Params* params);
+    CommMonitor(const Params &params);
 
     void init() override;
     void startup() override;
@@ -382,7 +380,7 @@ class CommMonitor : public SimObject
          * that are not statistics themselves, but used to control the
          * stats or track values during a sample period.
          */
-        MonitorStats(Stats::Group *parent, const CommMonitorParams* params);
+        MonitorStats(Stats::Group *parent, const CommMonitorParams &params);
 
         void updateReqStats(const ProbePoints::PacketInfo& pkt, bool is_atomic,
                             bool expects_response);

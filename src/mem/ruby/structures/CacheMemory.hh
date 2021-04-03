@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 ARM Limited
+ * Copyright (c) 2020-2021 ARM Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -64,8 +64,8 @@ class CacheMemory : public SimObject
 {
   public:
     typedef RubyCacheParams Params;
-    typedef std::shared_ptr<ReplacementData> ReplData;
-    CacheMemory(const Params *p);
+    typedef std::shared_ptr<ReplacementPolicy::ReplacementData> ReplData;
+    CacheMemory(const Params &p);
     ~CacheMemory();
 
     void init();
@@ -140,7 +140,6 @@ class CacheMemory : public SimObject
     void print(std::ostream& out) const;
     void printData(std::ostream& out) const;
 
-    void regStats();
     bool checkResourceAvailable(CacheResourceType res, Addr addr);
     void recordRequestType(CacheRequestType requestType, Addr addr);
 
@@ -149,30 +148,6 @@ class CacheMemory : public SimObject
     void htmCommitTransaction();
 
   public:
-    Stats::Scalar m_demand_hits;
-    Stats::Scalar m_demand_misses;
-    Stats::Formula m_demand_accesses;
-
-    Stats::Scalar m_sw_prefetches;
-    Stats::Scalar m_hw_prefetches;
-    Stats::Formula m_prefetches;
-
-    Stats::Vector m_accessModeType;
-
-    Stats::Scalar numDataArrayReads;
-    Stats::Scalar numDataArrayWrites;
-    Stats::Scalar numTagArrayReads;
-    Stats::Scalar numTagArrayWrites;
-
-    Stats::Scalar numTagArrayStalls;
-    Stats::Scalar numDataArrayStalls;
-
-    // hardware transactional memory
-    Stats::Histogram htmTransCommitReadSet;
-    Stats::Histogram htmTransCommitWriteSet;
-    Stats::Histogram htmTransAbortReadSet;
-    Stats::Histogram htmTransAbortWriteSet;
-
     int getCacheSize() const { return m_cache_size; }
     int getCacheAssoc() const { return m_cache_assoc; }
     int getNumBlocks() const { return m_cache_num_sets * m_cache_assoc; }
@@ -200,11 +175,8 @@ class CacheMemory : public SimObject
     std::unordered_map<Addr, int> m_tag_index;
     std::vector<std::vector<AbstractCacheEntry*> > m_cache;
 
-    /**
-     * We use BaseReplacementPolicy from Classic system here, hence we can use
-     * different replacement policies from Classic system in Ruby system.
-     */
-    BaseReplacementPolicy *m_replacementPolicy_ptr;
+    /** We use the replacement policies from the Classic memory system. */
+    ReplacementPolicy::Base *m_replacementPolicy_ptr;
 
     BankedArray dataArray;
     BankedArray tagArray;
@@ -232,6 +204,44 @@ class CacheMemory : public SimObject
      * false.
      */
     bool m_use_occupancy;
+
+    private:
+      struct CacheMemoryStats : public Stats::Group
+      {
+          CacheMemoryStats(Stats::Group *parent);
+
+          Stats::Scalar numDataArrayReads;
+          Stats::Scalar numDataArrayWrites;
+          Stats::Scalar numTagArrayReads;
+          Stats::Scalar numTagArrayWrites;
+
+          Stats::Scalar numTagArrayStalls;
+          Stats::Scalar numDataArrayStalls;
+
+          // hardware transactional memory
+          Stats::Histogram htmTransCommitReadSet;
+          Stats::Histogram htmTransCommitWriteSet;
+          Stats::Histogram htmTransAbortReadSet;
+          Stats::Histogram htmTransAbortWriteSet;
+
+          Stats::Scalar m_demand_hits;
+          Stats::Scalar m_demand_misses;
+          Stats::Formula m_demand_accesses;
+
+          Stats::Scalar m_prefetch_hits;
+          Stats::Scalar m_prefetch_misses;
+          Stats::Formula m_prefetch_accesses;
+
+          Stats::Vector m_accessModeType;
+      } cacheMemoryStats;
+
+    public:
+      // These function increment the number of demand hits/misses by one
+      // each time they are called
+      void profileDemandHit();
+      void profileDemandMiss();
+      void profilePrefetchHit();
+      void profilePrefetchMiss();
 };
 
 std::ostream& operator<<(std::ostream& out, const CacheMemory& obj);

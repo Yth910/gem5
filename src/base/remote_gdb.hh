@@ -44,15 +44,17 @@
 
 #include <sys/signal.h>
 
+#include <cstdint>
 #include <exception>
 #include <map>
 #include <string>
 
 #include "arch/types.hh"
-#include "base/intmath.hh"
 #include "base/pollevent.hh"
 #include "base/socket.hh"
+#include "base/types.hh"
 #include "cpu/pc_event.hh"
+#include "sim/eventq.hh"
 
 class System;
 class ThreadContext;
@@ -254,9 +256,6 @@ class BaseRemoteGDB
     void removeSoftBreak(Addr addr, size_t len);
     void insertHardBreak(Addr addr, size_t len);
     void removeHardBreak(Addr addr, size_t len);
-
-    void clearTempBreakpoint(Addr &bkpt);
-    void setTempBreakpoint(Addr bkpt);
 
     /*
      * GDB commands.

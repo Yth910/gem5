@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012-2013, 2015,2017-2019 ARM Limited
+ * Copyright (c) 2010, 2012-2013, 2015,2017-2020 ARM Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -69,15 +69,15 @@ SkipFunc::returnFromFuncIn(ThreadContext *tc)
     }
 }
 
-FsWorkload::FsWorkload(Params *p) : KernelWorkload(*p)
+FsWorkload::FsWorkload(const Params &p) : KernelWorkload(p)
 {
     if (kernelObj) {
         kernelEntry = (kernelObj->entryPoint() & loadAddrMask()) +
             loadAddrOffset();
     }
 
-    bootLoaders.reserve(p->boot_loader.size());
-    for (const auto &bl : p->boot_loader) {
+    bootLoaders.reserve(p.boot_loader.size());
+    for (const auto &bl : p.boot_loader) {
         std::unique_ptr<Loader::ObjectFile> bl_obj;
         bl_obj.reset(Loader::createObjectFile(bl));
 
@@ -117,21 +117,21 @@ FsWorkload::initState()
 
         inform("Using bootloader at address %#x", bootldr->entryPoint());
 
-        // Put the address of the boot loader into r7 so we know
+        // The address of the boot loader so we know
         // where to branch to after the reset fault
         // All other values needed by the boot loader to know what to do
-        fatal_if(!arm_sys->params()->flags_addr,
-                 "flags_addr must be set with bootloader");
+        fatal_if(!params().cpu_release_addr,
+                 "cpu_release_addr must be set with bootloader");
 
-        fatal_if(!arm_sys->params()->gic_cpu_addr && is_gic_v2,
+        fatal_if(!arm_sys->params().gic_cpu_addr && is_gic_v2,
                  "gic_cpu_addr must be set with bootloader");
 
         for (auto *tc: arm_sys->threads) {
-            if (!arm_sys->highestELIs64())
-                tc->setIntReg(3, kernelEntry);
+            tc->setIntReg(3, kernelEntry);
             if (is_gic_v2)
-                tc->setIntReg(4, arm_sys->params()->gic_cpu_addr);
-            tc->setIntReg(5, arm_sys->params()->flags_addr);
+                tc->setIntReg(4, arm_sys->params().gic_cpu_addr);
+            if (getArch() == Loader::Arm)
+                tc->setIntReg(5, params().cpu_release_addr);
         }
         inform("Using kernel entry physical address at %#x\n", kernelEntry);
     } else {
@@ -157,9 +157,3 @@ FsWorkload::getBootLoader(Loader::ObjectFile *const obj)
 }
 
 } // namespace ArmISA
-
-ArmISA::FsWorkload *
-ArmFsWorkloadParams::create()
-{
-    return new ArmISA::FsWorkload(this);
-}

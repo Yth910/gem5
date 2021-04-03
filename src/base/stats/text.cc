@@ -66,8 +66,6 @@
 #include "base/stats/info.hh"
 #include "base/str.hh"
 
-using namespace std;
-
 #ifndef NAN
 float __nan();
 /** Define Not a number. */
@@ -137,7 +135,7 @@ Text::open(const std::string &file)
         panic("stream already set!");
 
     mystream = true;
-    stream = new ofstream(file.c_str(), ios::trunc);
+    stream = new std::ofstream(file.c_str(), std::ios::trunc);
     if (!valid())
         fatal("Unable to open statistics file for writing\n");
 }
@@ -199,10 +197,10 @@ Text::noOutput(const Info &info)
     return false;
 }
 
-string
+std::string
 ValueToString(Result value, int precision)
 {
-    stringstream val;
+    std::stringstream val;
 
     if (!std::isnan(value)) {
         if (precision != -1)
@@ -210,8 +208,8 @@ ValueToString(Result value, int precision)
         else if (value == rint(value))
             val.precision(0);
 
-        val.unsetf(ios::showpoint);
-        val.setf(ios::fixed);
+        val.unsetf(std::ios::showpoint);
+        val.setf(std::ios::fixed);
         val << value;
     } else {
         val << "nan";
@@ -223,11 +221,13 @@ ValueToString(Result value, int precision)
 struct ScalarPrint
 {
     Result value;
-    string name;
-    string desc;
+    std::string name;
+    std::string desc;
+    std::string unitStr;
     Flags flags;
     bool descriptions;
     bool spaces;
+    bool units;
     int precision;
     Result pdf;
     Result cdf;
@@ -250,7 +250,7 @@ struct ScalarPrint
         }
     }
     void update(Result val, Result total);
-    void operator()(ostream &stream, bool oneLine = false) const;
+    void operator()(std::ostream &stream, bool oneLine = false) const;
 };
 
 void
@@ -264,13 +264,13 @@ ScalarPrint::update(Result val, Result total)
 }
 
 void
-ScalarPrint::operator()(ostream &stream, bool oneLine) const
+ScalarPrint::operator()(std::ostream &stream, bool oneLine) const
 {
     if ((flags.isSet(nozero) && (!oneLine) && value == 0.0) ||
         (flags.isSet(nonan) && std::isnan(value)))
         return;
 
-    stringstream pdfstr, cdfstr;
+    std::stringstream pdfstr, cdfstr;
 
     if (!std::isnan(pdf))
         ccprintf(pdfstr, "%.2f%%", pdf * 100.0);
@@ -293,18 +293,23 @@ ScalarPrint::operator()(ostream &stream, bool oneLine) const
             if (!desc.empty())
                 ccprintf(stream, " # %s", desc);
         }
-        stream << endl;
+        if (units && !unitStr.empty()) {
+            ccprintf(stream, " (%s)", unitStr);
+        }
+        stream << std::endl;
     }
 }
 
 struct VectorPrint
 {
-    string name;
-    string separatorString;
-    string desc;
-    vector<string> subnames;
-    vector<string> subdescs;
+    std::string name;
+    std::string separatorString;
+    std::string desc;
+    std::string unitStr;
+    std::vector<std::string> subnames;
+    std::vector<std::string> subdescs;
     Flags flags;
+    bool units;
     bool descriptions;
     bool spaces;
     int precision;
@@ -321,7 +326,7 @@ struct VectorPrint
             nameSpaces = 0;
         }
     }
-    void operator()(ostream &stream) const;
+    void operator()(std::ostream &stream) const;
 };
 
 void
@@ -336,13 +341,15 @@ VectorPrint::operator()(std::ostream &stream) const
         }
     }
 
-    string base = name + separatorString;
+    std::string base = name + separatorString;
 
     ScalarPrint print(spaces);
     print.name = name;
     print.desc = desc;
+    print.unitStr = unitStr;
     print.precision = precision;
     print.descriptions = descriptions;
+    print.units = units;
     print.flags = flags;
     print.pdf = _total ? 0.0 : NAN;
     print.cdf = _total ? 0.0 : NAN;
@@ -372,6 +379,7 @@ VectorPrint::operator()(std::ostream &stream) const
 
             print.name = base + (havesub ? subnames[i] : std::to_string(i));
             print.desc = subdescs.empty() ? desc : subdescs[i];
+            print.unitStr = unitStr;
 
             print.update(vec[i], _total);
             print(stream, flags.isSet(oneline));
@@ -382,7 +390,10 @@ VectorPrint::operator()(std::ostream &stream) const
                 if (!desc.empty())
                     ccprintf(stream, " # %s", desc);
             }
-            stream << endl;
+            if (units && !unitStr.empty()) {
+                ccprintf(stream, " (%s)", unitStr);
+            }
+            stream << std::endl;
         }
     }
 
@@ -391,6 +402,7 @@ VectorPrint::operator()(std::ostream &stream) const
         print.cdf = NAN;
         print.name = base + "total";
         print.desc = desc;
+        print.unitStr = unitStr;
         print.value = total;
         print(stream);
     }
@@ -398,10 +410,12 @@ VectorPrint::operator()(std::ostream &stream) const
 
 struct DistPrint
 {
-    string name;
-    string separatorString;
-    string desc;
+    std::string name;
+    std::string separatorString;
+    std::string desc;
+    std::string unitStr;
     Flags flags;
+    bool units;
     bool descriptions;
     bool spaces;
     int precision;
@@ -412,7 +426,7 @@ struct DistPrint
     DistPrint(const Text *text, const DistInfo &info);
     DistPrint(const Text *text, const VectorDistInfo &info, int i);
     void init(const Text *text, const Info &info);
-    void operator()(ostream &stream) const;
+    void operator()(std::ostream &stream) const;
 };
 
 DistPrint::DistPrint(const Text *text, const DistInfo &info)
@@ -432,6 +446,8 @@ DistPrint::DistPrint(const Text *text, const VectorDistInfo &info,
 
     if (!info.subdescs[i].empty())
         desc = info.subdescs[i];
+
+    unitStr = info.unit->getUnitString();
 }
 
 void
@@ -440,9 +456,11 @@ DistPrint::init(const Text *text, const Info &info)
     name = text->statName(info.name);
     separatorString = info.separatorString;
     desc = info.desc;
+    unitStr = info.unit->getUnitString();
     flags = info.flags;
     precision = info.precision;
     descriptions = text->descriptions;
+    units = text->units;
     spaces = text->spaces;
     if (spaces) {
         nameSpaces = 40;
@@ -452,16 +470,17 @@ DistPrint::init(const Text *text, const Info &info)
 }
 
 void
-DistPrint::operator()(ostream &stream) const
+DistPrint::operator()(std::ostream &stream) const
 {
     if (flags.isSet(nozero) && data.samples == 0) return;
-    string base = name + separatorString;
+    std::string base = name + separatorString;
 
     ScalarPrint print(spaces);
     print.precision = precision;
     print.flags = flags;
     print.descriptions = descriptions;
     print.desc = desc;
+    print.unitStr = unitStr;
     print.pdf = NAN;
     print.cdf = NAN;
 
@@ -530,11 +549,11 @@ DistPrint::operator()(ostream &stream) const
     }
 
     for (off_type i = 0; i < size; ++i) {
-        stringstream namestr;
+        std::stringstream namestr;
         namestr << base;
 
         Counter low = i * data.bucket_size + data.min;
-        Counter high = ::min(low + data.bucket_size - 1.0, data.max);
+        Counter high = std::min(low + data.bucket_size - 1.0, data.max);
         namestr << low;
         if (low < high)
             namestr << "-" << high;
@@ -549,7 +568,10 @@ DistPrint::operator()(ostream &stream) const
             if (!desc.empty())
                 ccprintf(stream, " # %s", desc);
         }
-        stream << endl;
+        if (units && !unitStr.empty()) {
+            ccprintf(stream, " (%s)", unitStr);
+        }
+        stream << std::endl;
     }
 
     if (data.type == Dist && data.overflow != NAN) {
@@ -588,8 +610,10 @@ Text::visit(const ScalarInfo &info)
     print.value = info.result();
     print.name = statName(info.name);
     print.desc = info.desc;
+    print.unitStr = info.unit->getUnitString();
     print.flags = info.flags;
     print.descriptions = descriptions;
+    print.units = units;
     print.precision = info.precision;
     print.pdf = NAN;
     print.cdf = NAN;
@@ -609,8 +633,10 @@ Text::visit(const VectorInfo &info)
     print.name = statName(info.name);
     print.separatorString = info.separatorString;
     print.desc = info.desc;
+    print.unitStr = info.unit->getUnitString();
     print.flags = info.flags;
     print.descriptions = descriptions;
+    print.units = units;
     print.precision = info.precision;
     print.vec = info.result();
     print.total = info.total();
@@ -657,6 +683,7 @@ Text::visit(const Vector2dInfo &info)
     print.flags = info.flags;
     print.separatorString = info.separatorString;
     print.descriptions = descriptions;
+    print.units = units;
     print.precision = info.precision;
     print.forceSubnames = true;
 
@@ -685,19 +712,21 @@ Text::visit(const Vector2dInfo &info)
             info.name + "_" +
             (havesub ? info.subnames[i] : std::to_string(i)));
         print.desc = info.desc;
+        print.unitStr = info.unit->getUnitString();
         print.vec = yvec;
         print.total = total;
         print(*stream);
     }
 
     // Create a subname for printing the total
-    vector<string> total_subname;
+    std::vector<std::string> total_subname;
     total_subname.push_back("total");
 
     if (info.flags.isSet(::Stats::total) && (info.x > 1)) {
         print.name = statName(info.name);
         print.subnames = total_subname;
         print.desc = info.desc;
+        print.unitStr = info.unit->getUnitString();
         print.vec = VResult(1, info.total());
         print.flags = print.flags & ~total;
         print(*stream);
@@ -738,11 +767,13 @@ Text::visit(const FormulaInfo &info)
 */
 struct SparseHistPrint
 {
-    string name;
-    string separatorString;
-    string desc;
+    std::string name;
+    std::string separatorString;
+    std::string desc;
+    std::string unitStr;
     Flags flags;
     bool descriptions;
+    bool units;
     bool spaces;
     int precision;
 
@@ -750,7 +781,7 @@ struct SparseHistPrint
 
     SparseHistPrint(const Text *text, const SparseHistInfo &info);
     void init(const Text *text, const Info &info);
-    void operator()(ostream &stream) const;
+    void operator()(std::ostream &stream) const;
 };
 
 /* Call initialization function */
@@ -767,23 +798,27 @@ SparseHistPrint::init(const Text *text, const Info &info)
     name = text->statName(info.name);
     separatorString = info.separatorString;
     desc = info.desc;
+    unitStr = info.unit->getUnitString();
     flags = info.flags;
     precision = info.precision;
     descriptions = text->descriptions;
+    units = text->units;
     spaces = text->spaces;
 }
 
 /* Grab data from map and write to output stream */
 void
-SparseHistPrint::operator()(ostream &stream) const
+SparseHistPrint::operator()(std::ostream &stream) const
 {
-    string base = name + separatorString;
+    std::string base = name + separatorString;
 
     ScalarPrint print(spaces);
     print.precision = precision;
     print.flags = flags;
     print.descriptions = descriptions;
+    print.units = units;
     print.desc = desc;
+    print.unitStr = unitStr;
     print.pdf = NAN;
     print.cdf = NAN;
 
@@ -793,7 +828,7 @@ SparseHistPrint::operator()(ostream &stream) const
 
     MCounter::const_iterator it;
     for (it = data.cmap.begin(); it != data.cmap.end(); it++) {
-        stringstream namestr;
+        std::stringstream namestr;
         namestr << base;
 
         namestr <<(*it).first;
@@ -814,7 +849,7 @@ Text::visit(const SparseHistInfo &info)
 }
 
 Output *
-initText(const string &filename, bool desc, bool spaces)
+initText(const std::string &filename, bool desc, bool spaces)
 {
     static Text text;
     static bool connected = false;
@@ -822,6 +857,7 @@ initText(const string &filename, bool desc, bool spaces)
     if (!connected) {
         text.open(*simout.findOrCreate(filename)->stream());
         text.descriptions = desc;
+        text.units = desc; // the units are printed if descs are
         text.spaces = spaces;
         connected = true;
     }

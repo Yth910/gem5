@@ -70,10 +70,9 @@ class Flag
 
     virtual void enable() = 0;
     virtual void disable() = 0;
-    virtual bool status() const = 0;
+    virtual bool enabled() const = 0;
 
-    operator bool() const { return status(); }
-    bool operator!() const { return !status(); }
+    operator bool() const { return enabled(); }
 
     static void globalEnable();
     static void globalDisable();
@@ -82,20 +81,31 @@ class Flag
 class SimpleFlag : public Flag
 {
   protected:
-    bool _tracing; // tracing is enabled and flag is on
-    bool _status;  // flag status
+    /** Whether this flag changes debug formatting. */
+    const bool _isFormat = false;
 
-    void sync() override { _tracing = _globalEnable && _status; }
+    bool _tracing = false; // tracing is enabled and flag is on
+    bool _enabled = false; // flag enablement status
+
+    void sync() override { _tracing = _globalEnable && _enabled; }
 
   public:
-    SimpleFlag(const char *name, const char *desc)
-        : Flag(name, desc), _status(false)
-    { }
+    SimpleFlag(const char *name, const char *desc, bool is_format=false)
+      : Flag(name, desc), _isFormat(is_format)
+    {}
 
-    bool status() const override { return _tracing; }
+    bool enabled() const override { return _tracing; }
 
-    void enable() override  { _status = true;  sync(); }
-    void disable() override { _status = false; sync(); }
+    void enable() override  { _enabled = true;  sync(); }
+    void disable() override { _enabled = false; sync(); }
+
+    /**
+     * Checks whether this flag is a conventional debug flag, or a flag that
+     * modifies the way debug information is printed.
+     *
+     * @return True if this flag is a debug-formatting flag.
+     */
+    bool isFormat() const { return _isFormat; }
 };
 
 class CompoundFlag : public Flag
@@ -116,7 +126,7 @@ class CompoundFlag : public Flag
 
     void enable() override;
     void disable() override;
-    bool status() const override;
+    bool enabled() const override;
 };
 
 typedef std::map<std::string, Flag *> FlagsMap;

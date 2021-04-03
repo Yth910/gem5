@@ -39,17 +39,17 @@
 Import('*')
 
 Source('htm.cc')
-
-if env['TARGET_ISA'] == 'null':
-    Return()
-
-Source('decode_cache.cc')
-Source('decoder.cc')
+Source('mmu.cc')
 
 SimObject('BaseInterrupts.py')
 SimObject('BaseISA.py')
+SimObject('BaseMMU.py')
 SimObject('BaseTLB.py')
 SimObject('ISACommon.py')
 
 DebugFlag('TLB')
-Source('pseudo_inst.cc')
+
+if env['TARGET_ISA'] == 'null':
+    Return()
+
+Source('decoder.cc')

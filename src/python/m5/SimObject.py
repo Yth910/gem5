@@ -38,13 +38,6 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import print_function
-from __future__ import absolute_import
-from six import add_metaclass
-import six
-if six.PY3:
-    long = int
-
 import sys
 from types import FunctionType, MethodType, ModuleType
 from functools import wraps
@@ -375,7 +368,7 @@ def createCxxConfigDirectoryEntryFile(code, name, simobj, is_header):
 
     if not is_header:
         code('{')
-        if hasattr(simobj, 'abstract') and simobj.abstract:
+        if getattr(simobj, 'abstract', False):
             code('    return NULL;')
         else:
             code('    return this->create();')
@@ -707,6 +700,80 @@ class MetaSimObject(type):
     def pybind_predecls(cls, code):
         code('#include "${{cls.cxx_header}}"')
 
+    def cxx_param_def(cls, code):
+        code('''
+#include <type_traits>
+
+#include "base/compiler.hh"
+
+#include "${{cls.cxx_header}}"
+#include "params/${cls}.hh"
+
+''')
+        code()
+        code('namespace')
+        code('{')
+        code()
+        # If we can't define a default create() method for this params struct
+        # because the SimObject doesn't have the right constructor, use
+        # template magic to make it so we're actually defining a create method
+        # for this class instead.
+        code('class Dummy${cls}ParamsClass')
+        code('{')
+        code('  public:')
+        code('    ${{cls.cxx_class}} *create() const;')
+        code('};')
+        code()
+        code('template <class CxxClass, class Enable=void>')
+        code('class Dummy${cls}Shunt;')
+        code()
+        # This version directs to the real Params struct and the default
+        # behavior of create if there's an appropriate constructor.
+        code('template <class CxxClass>')
+        code('class Dummy${cls}Shunt<CxxClass, std::enable_if_t<')
+        code('    std::is_constructible<CxxClass,')
+        code('        const ${cls}Params &>::value>>')
+        code('{')
+        code('  public:')
+        code('    using Params = ${cls}Params;')
+        code('    static ${{cls.cxx_class}} *')
+        code('    create(const Params &p)')
+        code('    {')
+        code('        return new CxxClass(p);')
+        code('    }')
+        code('};')
+        code()
+        # This version diverts to the DummyParamsClass and a dummy
+        # implementation of create if the appropriate constructor does not
+        # exist.
+        code('template <class CxxClass>')
+        code('class Dummy${cls}Shunt<CxxClass, std::enable_if_t<')
+        code('    !std::is_constructible<CxxClass,')
+        code('        const ${cls}Params &>::value>>')
+        code('{')
+        code('  public:')
+        code('    using Params = Dummy${cls}ParamsClass;')
+        code('    static ${{cls.cxx_class}} *')
+        code('    create(const Params &p)')
+        code('    {')
+        code('        return nullptr;')
+        code('    }')
+        code('};')
+        code()
+        code('} // anonymous namespace')
+        code()
+        # An implementation of either the real Params struct's create
+        # method, or the Dummy one. Either an implementation is
+        # mandantory since this was shunted off to the dummy class, or
+        # one is optional which will override this weak version.
+        code('M5_VAR_USED ${{cls.cxx_class}} *')
+        code('Dummy${cls}Shunt<${{cls.cxx_class}}>::Params::create() const')
+        code('{')
+        code('    return Dummy${cls}Shunt<${{cls.cxx_class}}>::')
+        code('        create(*this);')
+        code('}')
+
+
     def pybind_decl(cls, code):
         py_class_name = cls.pybind_class
 
@@ -735,9 +802,9 @@ class MetaSimObject(type):
         code('''namespace py = pybind11;
 
 static void
-module_init(py::module &m_internal)
+module_init(py::module_ &m_internal)
 {
-    py::module m = m_internal.def_submodule("param_${cls}");
+    py::module_ m = m_internal.def_submodule("param_${cls}");
 ''')
         code.indent()
         if cls._base:
@@ -936,7 +1003,7 @@ module_init(py::module &m_internal)
         code("{")
         if not hasattr(cls, 'abstract') or not cls.abstract:
             if 'type' in cls.__dict__:
-                code("    ${{cls.cxx_type}} create();")
+                code("    ${{cls.cxx_type}} create() const;")
 
         code.indent()
         if cls == SimObject:
@@ -1105,8 +1172,7 @@ class SimObjectCliWrapper(object):
 # The SimObject class is the root of the special hierarchy.  Most of
 # the code in this class deals with the configuration hierarchy itself
 # (parent/child node relationships).
-@add_metaclass(MetaSimObject)
-class SimObject(object):
+class SimObject(object, metaclass=MetaSimObject):
     # Specify metaclass.  Any class inheriting from SimObject will
     # get this metaclass.
     type = 'SimObject'
@@ -1411,8 +1477,9 @@ class SimObject(object):
     def add_child(self, name, child):
         child = coerceSimObjectOrVector(child)
         if child.has_parent():
-            warn("add_child('%s'): child '%s' already has parent", name,
-                child.get_name())
+            warn(f"{self}.{name} already has parent (Previously declared as "
+                 f"{child._parent}.{name}).\n"
+                 f"\tNote: {name} is not a parameter of {type(self).__name__}")
         if name in self._children:
             # This code path had an undiscovered bug that would make it fail
             # at runtime. It had been here for a long time and was only

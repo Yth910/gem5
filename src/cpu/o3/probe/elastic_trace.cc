@@ -44,20 +44,20 @@
 #include "debug/ElasticTrace.hh"
 #include "mem/packet.hh"
 
-ElasticTrace::ElasticTrace(const ElasticTraceParams* params)
+ElasticTrace::ElasticTrace(const ElasticTraceParams &params)
     :  ProbeListenerObject(params),
        regEtraceListenersEvent([this]{ regEtraceListeners(); }, name()),
        firstWin(true),
        lastClearedSeqNum(0),
-       depWindowSize(params->depWindowSize),
+       depWindowSize(params.depWindowSize),
        dataTraceStream(nullptr),
        instTraceStream(nullptr),
-       startTraceInst(params->startTraceInst),
+       startTraceInst(params.startTraceInst),
        allProbesReg(false),
-       traceVirtAddr(params->traceVirtAddr),
+       traceVirtAddr(params.traceVirtAddr),
        stats(this)
 {
-    cpu = dynamic_cast<FullO3CPU<O3CPUImpl>*>(params->manager);
+    cpu = dynamic_cast<FullO3CPU<O3CPUImpl>*>(params.manager);
     fatal_if(!cpu, "Manager of %s is not of type O3CPU and thus does not "\
                 "support dependency tracing.\n", name());
 
@@ -67,14 +67,14 @@ ElasticTrace::ElasticTrace(const ElasticTraceParams* params)
     fatal_if(cpu->numThreads > 1, "numThreads = %i, %s supports tracing for"\
                 "single-threaded workload only", cpu->numThreads, name());
     // Initialize the protobuf output stream
-    fatal_if(params->instFetchTraceFile == "", "Assign instruction fetch "\
+    fatal_if(params.instFetchTraceFile == "", "Assign instruction fetch "\
                 "trace file path to instFetchTraceFile");
-    fatal_if(params->dataDepTraceFile == "", "Assign data dependency "\
+    fatal_if(params.dataDepTraceFile == "", "Assign data dependency "\
                 "trace file path to dataDepTraceFile");
     std::string filename = simout.resolve(name() + "." +
-                                            params->instFetchTraceFile);
+                                            params.instFetchTraceFile);
     instTraceStream = new ProtoOutputStream(filename);
-    filename = simout.resolve(name() + "." + params->dataDepTraceFile);
+    filename = simout.resolve(name() + "." + params.dataDepTraceFile);
     dataTraceStream = new ProtoOutputStream(filename);
     // Create a protobuf message for the header and write it to the stream
     ProtoMessage::PacketHeader inst_pkt_header;
@@ -243,7 +243,7 @@ ElasticTrace::updateRegDep(const DynInstConstPtr& dyn_inst)
         if (!src_reg.isMiscReg() &&
             !src_reg.isZeroReg()) {
             // Get the physical register index of the i'th source register.
-            PhysRegIdPtr phys_src_reg = dyn_inst->renamedSrcRegIdx(src_idx);
+            PhysRegIdPtr phys_src_reg = dyn_inst->regs.renamedSrcIdx(src_idx);
             DPRINTFR(ElasticTrace, "[sn:%lli] Check map for src reg"
                      " %i (%s)\n", seq_num,
                      phys_src_reg->flatIndex(), phys_src_reg->className());
@@ -276,7 +276,8 @@ ElasticTrace::updateRegDep(const DynInstConstPtr& dyn_inst)
             !dest_reg.isZeroReg()) {
             // Get the physical register index of the i'th destination
             // register.
-            PhysRegIdPtr phys_dest_reg = dyn_inst->renamedDestRegIdx(dest_idx);
+            PhysRegIdPtr phys_dest_reg =
+                dyn_inst->regs.renamedDestIdx(dest_idx);
             DPRINTFR(ElasticTrace, "[sn:%lli] Update map for dest reg"
                      " %i (%s)\n", seq_num, phys_dest_reg->flatIndex(),
                      dest_reg.className());
@@ -877,24 +878,28 @@ ElasticTrace::writeDepTrace(uint32_t num_to_write)
 
 ElasticTrace::ElasticTraceStats::ElasticTraceStats(Stats::Group *parent)
     : Stats::Group(parent),
-      ADD_STAT(numRegDep, "Number of register dependencies recorded during"
-          " tracing"),
-      ADD_STAT(numOrderDepStores, "Number of commit order (rob) dependencies"
-          " for a store recorded on a past load/store during tracing"),
-      ADD_STAT(numIssueOrderDepLoads, "Number of loads that got assigned"
-          " issue order dependency because they were dependency-free"),
-      ADD_STAT(numIssueOrderDepStores, "Number of stores that got assigned"
-          " issue order dependency because they were dependency-free"),
-      ADD_STAT(numIssueOrderDepOther, "Number of non load/store insts that"
-          " got assigned issue order dependency because they were"
-          " dependency-free"),
-      ADD_STAT(numFilteredNodes, "No. of nodes filtered out before writing"
-          " the output trace"),
-      ADD_STAT(maxNumDependents, "Maximum number or dependents on any"
-          " instruction"),
-      ADD_STAT(maxTempStoreSize, "Maximum size of the temporary store during"
-          " the run"),
-      ADD_STAT(maxPhysRegDepMapSize, "Maximum size of register dependency map")
+      ADD_STAT(numRegDep, UNIT_COUNT,
+               "Number of register dependencies recorded during tracing"),
+      ADD_STAT(numOrderDepStores, UNIT_COUNT,
+               "Number of commit order (rob) dependencies for a store "
+               "recorded on a past load/store during tracing"),
+      ADD_STAT(numIssueOrderDepLoads, UNIT_COUNT,
+               "Number of loads that got assigned issue order dependency "
+               "because they were dependency-free"),
+      ADD_STAT(numIssueOrderDepStores, UNIT_COUNT,
+               "Number of stores that got assigned issue order dependency "
+               "because they were dependency-free"),
+      ADD_STAT(numIssueOrderDepOther, UNIT_COUNT,
+               "Number of non load/store insts that got assigned issue order "
+               "dependency because they were dependency-free"),
+      ADD_STAT(numFilteredNodes, UNIT_COUNT,
+               "No. of nodes filtered out before writing the output trace"),
+      ADD_STAT(maxNumDependents, UNIT_COUNT,
+               "Maximum number or dependents on any instruction"),
+      ADD_STAT(maxTempStoreSize, UNIT_COUNT,
+               "Maximum size of the temporary store during the run"),
+      ADD_STAT(maxPhysRegDepMapSize, UNIT_COUNT,
+               "Maximum size of register dependency map")
 {
 }
 
@@ -918,10 +923,4 @@ ElasticTrace::flushTraces()
     // Delete the stream objects
     delete dataTraceStream;
     delete instTraceStream;
-}
-
-ElasticTrace*
-ElasticTraceParams::create()
-{
-    return new ElasticTrace(this);
 }

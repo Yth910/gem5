@@ -98,8 +98,10 @@ class Multi : public Base
 
   public:
     typedef MultiCompressorParams Params;
-    Multi(const Params *p);
+    Multi(const Params &p);
     ~Multi();
+
+    void setCache(BaseCache *_cache) override;
 
     std::unique_ptr<Base::CompressionData> compress(
         const std::vector<Base::Chunk>& chunks,

@@ -45,6 +45,8 @@
 #ifndef __CPU_MINOR_FETCH2_HH__
 #define __CPU_MINOR_FETCH2_HH__
 
+#include <vector>
+
 #include "cpu/minor/buffers.hh"
 #include "cpu/minor/cpu.hh"
 #include "cpu/minor/pipe_data.hh"
@@ -203,7 +205,7 @@ class Fetch2 : public Named
   public:
     Fetch2(const std::string &name,
         MinorCPU &cpu_,
-        MinorCPUParams &params,
+        const MinorCPUParams &params,
         Latch<ForwardLineData>::Output inp_,
         Latch<BranchData>::Output branchInp_,
         Latch<BranchData>::Input predictionOut_,

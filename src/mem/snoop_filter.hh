@@ -91,10 +91,11 @@ class SnoopFilter : public SimObject {
 
     typedef std::vector<QueuedResponsePort*> SnoopList;
 
-    SnoopFilter (const SnoopFilterParams *p) :
+    SnoopFilter (const SnoopFilterParams &p) :
         SimObject(p), reqLookupResult(cachedLocations.end()),
-        linesize(p->system->cacheLineSize()), lookupLatency(p->lookup_latency),
-        maxEntryCount(p->max_capacity / p->system->cacheLineSize())
+        linesize(p.system->cacheLineSize()), lookupLatency(p.lookup_latency),
+        maxEntryCount(p.max_capacity / p.system->cacheLineSize()),
+        stats(this)
     {
     }
 
@@ -310,13 +311,17 @@ class SnoopFilter : public SimObject {
     };
 
     /** Statistics */
-    Stats::Scalar totRequests;
-    Stats::Scalar hitSingleRequests;
-    Stats::Scalar hitMultiRequests;
+    struct SnoopFilterStats : public Stats::Group {
+        SnoopFilterStats(Stats::Group *parent);
 
-    Stats::Scalar totSnoops;
-    Stats::Scalar hitSingleSnoops;
-    Stats::Scalar hitMultiSnoops;
+        Stats::Scalar totRequests;
+        Stats::Scalar hitSingleRequests;
+        Stats::Scalar hitMultiRequests;
+
+        Stats::Scalar totSnoops;
+        Stats::Scalar hitSingleSnoops;
+        Stats::Scalar hitMultiSnoops;
+    } stats;
 };
 
 inline SnoopFilter::SnoopMask

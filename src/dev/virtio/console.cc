@@ -41,11 +41,11 @@
 #include "params/VirtIOConsole.hh"
 #include "sim/system.hh"
 
-VirtIOConsole::VirtIOConsole(Params *params)
+VirtIOConsole::VirtIOConsole(const Params &params)
     : VirtIODeviceBase(params, ID_CONSOLE, sizeof(Config), F_SIZE),
-      qRecv(params->system->physProxy, byteOrder, params->qRecvSize, *this),
-      qTrans(params->system->physProxy, byteOrder, params->qTransSize, *this),
-      device(*params->device)
+      qRecv(params.system->physProxy, byteOrder, params.qRecvSize, *this),
+      qTrans(params.system->physProxy, byteOrder, params.qTransSize, *this),
+      device(*params.device)
 {
     registerQueue(qRecv);
     registerQueue(qTrans);
@@ -111,10 +111,4 @@ VirtIOConsole::TermTransQueue::onNotifyDescriptor(VirtDescriptor *desc)
     // Tell the guest that we are done with this descriptor.
     produceDescriptor(desc, 0);
     parent.kick();
-}
-
-VirtIOConsole *
-VirtIOConsoleParams::create()
-{
-    return new VirtIOConsole(this);
 }

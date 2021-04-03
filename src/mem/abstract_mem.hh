@@ -204,9 +204,9 @@ class AbstractMemory : public ClockedObject
 
   public:
 
-    typedef AbstractMemoryParams Params;
+    PARAMS(AbstractMemory);
 
-    AbstractMemory(const Params* p);
+    AbstractMemory(const Params &p);
     virtual ~AbstractMemory() {}
 
     void initState() override;
@@ -217,7 +217,7 @@ class AbstractMemory : public ClockedObject
      *
      * @return true if null
      */
-    bool isNull() const { return params()->null; }
+    bool isNull() const { return params().null; }
 
     /**
      * Set the host memory backing store to be used by this memory
@@ -227,16 +227,31 @@ class AbstractMemory : public ClockedObject
      */
     void setBackingStore(uint8_t* pmem_addr);
 
+    void
+    getBackdoor(MemBackdoorPtr &bd_ptr)
+    {
+        if (lockedAddrList.empty() && backdoor.ptr())
+            bd_ptr = &backdoor;
+    }
+
     /**
      * Get the list of locked addresses to allow checkpointing.
      */
-    const std::list<LockedAddr>& getLockedAddrList() const
-    { return lockedAddrList; }
+    const std::list<LockedAddr> &
+    getLockedAddrList() const
+    {
+        return lockedAddrList;
+    }
 
     /**
      * Add a locked address to allow for checkpointing.
      */
-    void addLockedAddr(LockedAddr addr) { lockedAddrList.push_back(addr); }
+    void
+    addLockedAddr(LockedAddr addr)
+    {
+        backdoor.invalidate();
+        lockedAddrList.push_back(addr);
+    }
 
     /** read the system pointer
      * Implemented for completeness with the setter
@@ -250,12 +265,6 @@ class AbstractMemory : public ClockedObject
      * @param sys system pointer to set
      */
     void system(System *sys) { _system = sys; }
-
-    const Params *
-    params() const
-    {
-        return dynamic_cast<const Params *>(_params);
-    }
 
     /**
      * Get the address range

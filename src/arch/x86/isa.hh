@@ -57,10 +57,9 @@ namespace X86ISA
       public:
         void clear();
 
-        typedef X86ISAParams Params;
+        using Params = X86ISAParams;
 
-        ISA(Params *p);
-        const Params *params() const;
+        ISA(const Params &p);
 
         RegVal readMiscRegNoEffect(int miscReg) const;
         RegVal readMiscReg(int miscReg);
@@ -104,10 +103,22 @@ namespace X86ISA
         int flattenCCIndex(int reg) const { return reg; }
         int flattenMiscIndex(int reg) const { return reg; }
 
+        bool
+        inUserMode() const override
+        {
+            HandyM5Reg m5reg = readMiscRegNoEffect(MISCREG_M5_REG);
+            return m5reg.cpl == 3;
+        }
+
         void serialize(CheckpointOut &cp) const override;
         void unserialize(CheckpointIn &cp) override;
 
         void setThreadContext(ThreadContext *_tc) override;
+
+        std::string getVendorString() const;
+
+      private:
+        std::string vendorString;
     };
 }
 

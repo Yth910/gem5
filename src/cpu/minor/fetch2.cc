@@ -41,6 +41,8 @@
 
 #include "arch/decoder.hh"
 #include "arch/utility.hh"
+#include "base/logging.hh"
+#include "base/trace.hh"
 #include "cpu/minor/pipeline.hh"
 #include "cpu/pred/bpred_unit.hh"
 #include "debug/Branch.hh"
@@ -52,7 +54,7 @@ namespace Minor
 
 Fetch2::Fetch2(const std::string &name,
     MinorCPU &cpu_,
-    MinorCPUParams &params,
+    const MinorCPUParams &params,
     Latch<ForwardLineData>::Output inp_,
     Latch<BranchData>::Output branchInp_,
     Latch<BranchData>::Input predictionOut_,
@@ -354,7 +356,8 @@ Fetch2::evaluate()
 
                 /* Make a new instruction and pick up the line, stream,
                  *  prediction, thread ids from the incoming line */
-                dyn_inst = new MinorDynInst(line_in->id);
+                dyn_inst = new MinorDynInst(
+                        StaticInst::nullStaticInstPtr, line_in->id);
 
                 /* Fetch and prediction sequence numbers originate here */
                 dyn_inst->id.fetchSeqNum = fetch_info.fetchSeqNum;
@@ -391,9 +394,15 @@ Fetch2::evaluate()
                  *  instructions longer than sizeof(MachInst) */
 
                 if (decoder->instReady()) {
+                    /* Note that the decoder can update the given PC.
+                     *  Remember not to assign it until *after* calling
+                     *  decode */
+                    StaticInstPtr decoded_inst =
+                        decoder->decode(fetch_info.pc);
+
                     /* Make a new instruction and pick up the line, stream,
                      *  prediction, thread ids from the incoming line */
-                    dyn_inst = new MinorDynInst(line_in->id);
+                    dyn_inst = new MinorDynInst(decoded_inst, line_in->id);
 
                     /* Fetch and prediction sequence numbers originate here */
                     dyn_inst->id.fetchSeqNum = fetch_info.fetchSeqNum;
@@ -401,12 +410,6 @@ Fetch2::evaluate()
                     /* To complete the set, test that exec sequence number
                      *  has not been set */
                     assert(dyn_inst->id.execSeqNum == 0);
-
-                    /* Note that the decoder can update the given PC.
-                     *  Remember not to assign it until *after* calling
-                     *  decode */
-                    StaticInstPtr decoded_inst = decoder->decode(fetch_info.pc);
-                    dyn_inst->staticInst = decoded_inst;
 
                     dyn_inst->pc = fetch_info.pc;
                     DPRINTF(Fetch, "decoder inst %s\n", *dyn_inst);
@@ -604,18 +607,18 @@ Fetch2::isDrained()
 
 Fetch2::Fetch2Stats::Fetch2Stats(MinorCPU *cpu)
       : Stats::Group(cpu, "fetch2"),
-      ADD_STAT(intInstructions,
-       "Number of integer instructions successfully decoded"),
-      ADD_STAT(fpInstructions,
-       "Number of floating point instructions successfully decoded"),
-      ADD_STAT(vecInstructions,
-       "Number of SIMD instructions successfully decoded"),
-      ADD_STAT(loadInstructions,
-       "Number of memory load instructions successfully decoded"),
-      ADD_STAT(storeInstructions,
-       "Number of memory store instructions successfully decoded"),
-      ADD_STAT(amoInstructions,
-       "Number of memory atomic instructions successfully decoded")
+      ADD_STAT(intInstructions, UNIT_COUNT,
+               "Number of integer instructions successfully decoded"),
+      ADD_STAT(fpInstructions, UNIT_COUNT,
+               "Number of floating point instructions successfully decoded"),
+      ADD_STAT(vecInstructions, UNIT_COUNT,
+               "Number of SIMD instructions successfully decoded"),
+      ADD_STAT(loadInstructions, UNIT_COUNT,
+               "Number of memory load instructions successfully decoded"),
+      ADD_STAT(storeInstructions, UNIT_COUNT,
+               "Number of memory store instructions successfully decoded"),
+      ADD_STAT(amoInstructions, UNIT_COUNT,
+               "Number of memory atomic instructions successfully decoded")
 {
         intInstructions
             .flags(Stats::total);

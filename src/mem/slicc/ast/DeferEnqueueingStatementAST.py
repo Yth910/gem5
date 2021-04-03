@@ -29,9 +29,6 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-#
-# Authors: Tuan Ta
-#
 
 from slicc.ast.StatementAST import StatementAST
 from slicc.symbols import Var
@@ -48,7 +45,7 @@ class DeferEnqueueingStatementAST(StatementAST):
         return "[DeferEnqueueingStatementAst: %s %s %s]" % \
                (self.queue_name, self.type_ast.ident, self.statements)
 
-    def generate(self, code, return_type):
+    def generate(self, code, return_type, **kwargs):
         code("{")
         code.indent()
         self.symtab.pushFrame()

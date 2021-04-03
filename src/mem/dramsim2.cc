@@ -44,11 +44,11 @@
 #include "debug/Drain.hh"
 #include "sim/system.hh"
 
-DRAMSim2::DRAMSim2(const Params* p) :
+DRAMSim2::DRAMSim2(const Params &p) :
     AbstractMemory(p),
     port(name() + ".port", *this),
-    wrapper(p->deviceConfigFile, p->systemConfigFile, p->filePath,
-            p->traceFile, p->range.size() / 1024 / 1024, p->enableDebug),
+    wrapper(p.deviceConfigFile, p.systemConfigFile, p.filePath,
+            p.traceFile, p.range.size() / 1024 / 1024, p.enableDebug),
     retryReq(false), retryResp(false), startTick(0),
     nbrOutstandingReads(0), nbrOutstandingWrites(0),
     sendResponseEvent([this]{ sendResponse(); }, name()),
@@ -386,10 +386,4 @@ void
 DRAMSim2::MemoryPort::recvRespRetry()
 {
     memory.recvRespRetry();
-}
-
-DRAMSim2*
-DRAMSim2Params::create()
-{
-    return new DRAMSim2(this);
 }

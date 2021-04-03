@@ -59,9 +59,6 @@
 #include "sim/sim_object.hh"
 #include "sim/stats.hh"
 
-using namespace std;
-using namespace TheISA;
-
 template <class Impl>
 void
 Checker<Impl>::advancePC(const Fault &fault)
@@ -196,12 +193,12 @@ Checker<Impl>::verify(const DynInstPtr &completed_inst)
         while (!result.empty()) {
             result.pop();
         }
-        numCycles++;
+        baseStats.numCycles++;
 
         Fault fault = NoFault;
 
         // maintain $r0 semantics
-        thread->setIntReg(ZeroReg, 0);
+        thread->setIntReg(TheISA::ZeroReg, 0);
 
         // Check if any recent PC changes match up with anything we
         // expect to happen.  This is mostly to check if traps or
@@ -231,20 +228,20 @@ Checker<Impl>::verify(const DynInstPtr &completed_inst)
             Addr fetch_PC = thread->instAddr();
             fetch_PC = (fetch_PC & PCMask) + fetchOffset;
 
-            MachInst machInst;
+            TheISA::MachInst machInst;
 
             // If not in the middle of a macro instruction
             if (!curMacroStaticInst) {
                 // set up memory request for instruction fetch
                 auto mem_req = std::make_shared<Request>(
-                    fetch_PC, sizeof(MachInst), 0, requestorId, fetch_PC,
-                    thread->contextId());
+                    fetch_PC, sizeof(TheISA::MachInst), 0, requestorId,
+                    fetch_PC, thread->contextId());
 
-                mem_req->setVirt(fetch_PC, sizeof(MachInst),
+                mem_req->setVirt(fetch_PC, sizeof(TheISA::MachInst),
                                  Request::INST_FETCH, requestorId,
                                  thread->instAddr());
 
-                fault = itb->translateFunctional(
+                fault = mmu->translateFunctional(
                     mem_req, tc, BaseTLB::Execute);
 
                 if (fault != NoFault) {

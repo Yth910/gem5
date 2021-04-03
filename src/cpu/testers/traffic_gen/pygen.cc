@@ -44,7 +44,7 @@
 
 namespace py = pybind11;
 
-PyTrafficGen::PyTrafficGen(const PyTrafficGenParams *p)
+PyTrafficGen::PyTrafficGen(const PyTrafficGenParams &p)
     : BaseTrafficGen(p)
 {
 }
@@ -79,20 +79,14 @@ PyTrafficGen::nextGenerator()
 }
 
 void
-pybind_init_tracers(py::module &m_native)
+pybind_init_tracers(py::module_ &m_native)
 {
     using namespace pybind11::literals;
 
-    py::module m = m_native.def_submodule("trace");
+    py::module_ m = m_native.def_submodule("trace");
 
     py::class_<BaseGen, std::shared_ptr<BaseGen>> c_base(m, "BaseGen");
 }
 
 static EmbeddedPyBind _py_tracers("trace", pybind_init_tracers);
-
-PyTrafficGen*
-PyTrafficGenParams::create()
-{
-    return new PyTrafficGen(this);
-}
 

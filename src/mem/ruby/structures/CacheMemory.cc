@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 ARM Limited
+ * Copyright (c) 2020-2021 ARM Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -52,37 +52,30 @@
 #include "mem/ruby/protocol/AccessPermission.hh"
 #include "mem/ruby/system/RubySystem.hh"
 
-using namespace std;
-
-ostream&
-operator<<(ostream& out, const CacheMemory& obj)
+std::ostream&
+operator<<(std::ostream& out, const CacheMemory& obj)
 {
     obj.print(out);
-    out << flush;
+    out << std::flush;
     return out;
 }
 
-CacheMemory *
-RubyCacheParams::create()
-{
-    return new CacheMemory(this);
-}
-
-CacheMemory::CacheMemory(const Params *p)
+CacheMemory::CacheMemory(const Params &p)
     : SimObject(p),
-    dataArray(p->dataArrayBanks, p->dataAccessLatency,
-              p->start_index_bit, p->ruby_system),
-    tagArray(p->tagArrayBanks, p->tagAccessLatency,
-             p->start_index_bit, p->ruby_system)
+    dataArray(p.dataArrayBanks, p.dataAccessLatency,
+              p.start_index_bit, p.ruby_system),
+    tagArray(p.tagArrayBanks, p.tagAccessLatency,
+             p.start_index_bit, p.ruby_system),
+    cacheMemoryStats(this)
 {
-    m_cache_size = p->size;
-    m_cache_assoc = p->assoc;
-    m_replacementPolicy_ptr = p->replacement_policy;
-    m_start_index_bit = p->start_index_bit;
-    m_is_instruction_only_cache = p->is_icache;
-    m_resource_stalls = p->resourceStalls;
-    m_block_size = p->block_size;  // may be 0 at this point. Updated in init()
-    m_use_occupancy = dynamic_cast<WeightedLRUPolicy*>(
+    m_cache_size = p.size;
+    m_cache_assoc = p.assoc;
+    m_replacementPolicy_ptr = p.replacement_policy;
+    m_start_index_bit = p.start_index_bit;
+    m_is_instruction_only_cache = p.is_icache;
+    m_resource_stalls = p.resourceStalls;
+    m_block_size = p.block_size;  // may be 0 at this point. Updated in init()
+    m_use_occupancy = dynamic_cast<ReplacementPolicy::WeightedLRU*>(
                                     m_replacementPolicy_ptr) ? true : false;
 }
 
@@ -387,7 +380,8 @@ CacheMemory::setMRU(Addr address, int occupancy)
         // replacement policy. Depending on different replacement policies,
         // use different touch() function.
         if (m_use_occupancy) {
-            static_cast<WeightedLRUPolicy*>(m_replacementPolicy_ptr)->touch(
+            static_cast<ReplacementPolicy::WeightedLRU*>(
+                m_replacementPolicy_ptr)->touch(
                 entry->replacementData, occupancy);
         } else {
             m_replacementPolicy_ptr->touch(entry->replacementData);
@@ -414,7 +408,7 @@ void
 CacheMemory::recordCacheContents(int cntrl, CacheRecorder* tr) const
 {
     uint64_t warmedUpBlocks = 0;
-    uint64_t totalBlocks M5_VAR_USED = (uint64_t)m_cache_num_sets *
+    M5_VAR_USED uint64_t totalBlocks = (uint64_t)m_cache_num_sets *
                                        (uint64_t)m_cache_assoc;
 
     for (int i = 0; i < m_cache_num_sets; i++) {
@@ -450,28 +444,28 @@ CacheMemory::recordCacheContents(int cntrl, CacheRecorder* tr) const
 }
 
 void
-CacheMemory::print(ostream& out) const
+CacheMemory::print(std::ostream& out) const
 {
-    out << "Cache dump: " << name() << endl;
+    out << "Cache dump: " << name() << std::endl;
     for (int i = 0; i < m_cache_num_sets; i++) {
         for (int j = 0; j < m_cache_assoc; j++) {
             if (m_cache[i][j] != NULL) {
                 out << "  Index: " << i
                     << " way: " << j
-                    << " entry: " << *m_cache[i][j] << endl;
+                    << " entry: " << *m_cache[i][j] << std::endl;
             } else {
                 out << "  Index: " << i
                     << " way: " << j
-                    << " entry: NULL" << endl;
+                    << " entry: NULL" << std::endl;
             }
         }
     }
 }
 
 void
-CacheMemory::printData(ostream& out) const
+CacheMemory::printData(std::ostream& out) const
 {
-    out << "printData() not supported" << endl;
+    out << "printData() not supported" << std::endl;
 }
 
 void
@@ -519,123 +513,85 @@ CacheMemory::isLocked(Addr address, int context)
     return entry->isLocked(context);
 }
 
-void
-CacheMemory::regStats()
+CacheMemory::
+CacheMemoryStats::CacheMemoryStats(Stats::Group *parent)
+    : Stats::Group(parent),
+      ADD_STAT(numDataArrayReads, "Number of data array reads"),
+      ADD_STAT(numDataArrayWrites, "Number of data array writes"),
+      ADD_STAT(numTagArrayReads, "Number of tag array reads"),
+      ADD_STAT(numTagArrayWrites, "Number of tag array writes"),
+      ADD_STAT(numTagArrayStalls, "Number of stalls caused by tag array"),
+      ADD_STAT(numDataArrayStalls, "Number of stalls caused by data array"),
+      ADD_STAT(htmTransCommitReadSet, "Read set size of a committed "
+                                      "transaction"),
+      ADD_STAT(htmTransCommitWriteSet, "Write set size of a committed "
+                                       "transaction"),
+      ADD_STAT(htmTransAbortReadSet, "Read set size of a aborted transaction"),
+      ADD_STAT(htmTransAbortWriteSet, "Write set size of a aborted "
+                                      "transaction"),
+      ADD_STAT(m_demand_hits, "Number of cache demand hits"),
+      ADD_STAT(m_demand_misses, "Number of cache demand misses"),
+      ADD_STAT(m_demand_accesses, "Number of cache demand accesses",
+               m_demand_hits + m_demand_misses),
+      ADD_STAT(m_prefetch_hits, "Number of cache prefetch hits"),
+      ADD_STAT(m_prefetch_misses, "Number of cache prefetch misses"),
+      ADD_STAT(m_prefetch_accesses, "Number of cache prefetch accesses",
+               m_prefetch_hits + m_prefetch_misses),
+      ADD_STAT(m_accessModeType, "")
 {
-    SimObject::regStats();
+    numDataArrayReads
+        .flags(Stats::nozero);
 
-    m_demand_hits
-        .name(name() + ".demand_hits")
-        .desc("Number of cache demand hits")
-        ;
+    numDataArrayWrites
+        .flags(Stats::nozero);
 
-    m_demand_misses
-        .name(name() + ".demand_misses")
-        .desc("Number of cache demand misses")
-        ;
+    numTagArrayReads
+        .flags(Stats::nozero);
 
-    m_demand_accesses
-        .name(name() + ".demand_accesses")
-        .desc("Number of cache demand accesses")
-        ;
+    numTagArrayWrites
+        .flags(Stats::nozero);
 
-    m_demand_accesses = m_demand_hits + m_demand_misses;
+    numTagArrayStalls
+        .flags(Stats::nozero);
 
-    m_sw_prefetches
-        .name(name() + ".total_sw_prefetches")
-        .desc("Number of software prefetches")
-        .flags(Stats::nozero)
-        ;
+    numDataArrayStalls
+        .flags(Stats::nozero);
 
-    m_hw_prefetches
-        .name(name() + ".total_hw_prefetches")
-        .desc("Number of hardware prefetches")
-        .flags(Stats::nozero)
-        ;
+    htmTransCommitReadSet
+        .init(8)
+        .flags(Stats::pdf | Stats::dist | Stats::nozero | Stats::nonan);
 
-    m_prefetches
-        .name(name() + ".total_prefetches")
-        .desc("Number of prefetches")
-        .flags(Stats::nozero)
-        ;
+    htmTransCommitWriteSet
+        .init(8)
+        .flags(Stats::pdf | Stats::dist | Stats::nozero | Stats::nonan);
 
-    m_prefetches = m_sw_prefetches + m_hw_prefetches;
+    htmTransAbortReadSet
+        .init(8)
+        .flags(Stats::pdf | Stats::dist | Stats::nozero | Stats::nonan);
+
+    htmTransAbortWriteSet
+        .init(8)
+        .flags(Stats::pdf | Stats::dist | Stats::nozero | Stats::nonan);
+
+    m_prefetch_hits
+        .flags(Stats::nozero);
+
+    m_prefetch_misses
+        .flags(Stats::nozero);
+
+    m_prefetch_accesses
+        .flags(Stats::nozero);
 
     m_accessModeType
         .init(RubyRequestType_NUM)
-        .name(name() + ".access_mode")
-        .flags(Stats::pdf | Stats::total)
-        ;
+        .flags(Stats::pdf | Stats::total);
+
     for (int i = 0; i < RubyAccessMode_NUM; i++) {
         m_accessModeType
             .subname(i, RubyAccessMode_to_string(RubyAccessMode(i)))
             .flags(Stats::nozero)
             ;
     }
-
-    numDataArrayReads
-        .name(name() + ".num_data_array_reads")
-        .desc("number of data array reads")
-        .flags(Stats::nozero)
-        ;
-
-    numDataArrayWrites
-        .name(name() + ".num_data_array_writes")
-        .desc("number of data array writes")
-        .flags(Stats::nozero)
-        ;
-
-    numTagArrayReads
-        .name(name() + ".num_tag_array_reads")
-        .desc("number of tag array reads")
-        .flags(Stats::nozero)
-        ;
-
-    numTagArrayWrites
-        .name(name() + ".num_tag_array_writes")
-        .desc("number of tag array writes")
-        .flags(Stats::nozero)
-        ;
-
-    numTagArrayStalls
-        .name(name() + ".num_tag_array_stalls")
-        .desc("number of stalls caused by tag array")
-        .flags(Stats::nozero)
-        ;
-
-    numDataArrayStalls
-        .name(name() + ".num_data_array_stalls")
-        .desc("number of stalls caused by data array")
-        .flags(Stats::nozero)
-        ;
-
-    htmTransCommitReadSet
-        .init(8)
-        .name(name() + ".htm_transaction_committed_read_set")
-        .desc("read set size of a committed transaction")
-        .flags(Stats::pdf | Stats::dist | Stats::nozero | Stats::nonan)
-        ;
-
-    htmTransCommitWriteSet
-        .init(8)
-        .name(name() + ".htm_transaction_committed_write_set")
-        .desc("write set size of a committed transaction")
-        .flags(Stats::pdf | Stats::dist | Stats::nozero | Stats::nonan)
-        ;
-
-    htmTransAbortReadSet
-        .init(8)
-        .name(name() + ".htm_transaction_aborted_read_set")
-        .desc("read set size of a aborted transaction")
-        .flags(Stats::pdf | Stats::dist | Stats::nozero | Stats::nonan)
-        ;
-
-    htmTransAbortWriteSet
-        .init(8)
-        .name(name() + ".htm_transaction_aborted_write_set")
-        .desc("write set size of a aborted transaction")
-        .flags(Stats::pdf | Stats::dist | Stats::nozero | Stats::nonan)
-        ;
 }
 
 // assumption: SLICC generated files will only call this function
@@ -649,22 +605,22 @@ CacheMemory::recordRequestType(CacheRequestType requestType, Addr addr)
     case CacheRequestType_DataArrayRead:
         if (m_resource_stalls)
             dataArray.reserve(addressToCacheSet(addr));
-        numDataArrayReads++;
+        cacheMemoryStats.numDataArrayReads++;
         return;
     case CacheRequestType_DataArrayWrite:
         if (m_resource_stalls)
             dataArray.reserve(addressToCacheSet(addr));
-        numDataArrayWrites++;
+        cacheMemoryStats.numDataArrayWrites++;
         return;
     case CacheRequestType_TagArrayRead:
         if (m_resource_stalls)
             tagArray.reserve(addressToCacheSet(addr));
-        numTagArrayReads++;
+        cacheMemoryStats.numTagArrayReads++;
         return;
     case CacheRequestType_TagArrayWrite:
         if (m_resource_stalls)
             tagArray.reserve(addressToCacheSet(addr));
-        numTagArrayWrites++;
+        cacheMemoryStats.numTagArrayWrites++;
         return;
     default:
         warn("CacheMemory access_type not found: %s",
@@ -685,7 +641,7 @@ CacheMemory::checkResourceAvailable(CacheResourceType res, Addr addr)
             DPRINTF(RubyResourceStalls,
                     "Tag array stall on addr %#x in set %d\n",
                     addr, addressToCacheSet(addr));
-            numTagArrayStalls++;
+            cacheMemoryStats.numTagArrayStalls++;
             return false;
         }
     } else if (res == CacheResourceType_DataArray) {
@@ -694,7 +650,7 @@ CacheMemory::checkResourceAvailable(CacheResourceType res, Addr addr)
             DPRINTF(RubyResourceStalls,
                     "Data array stall on addr %#x in set %d\n",
                     addr, addressToCacheSet(addr));
-            numDataArrayStalls++;
+            cacheMemoryStats.numDataArrayStalls++;
             return false;
         }
     } else {
@@ -744,8 +700,8 @@ CacheMemory::htmAbortTransaction()
         }
     }
 
-    htmTransAbortReadSet.sample(htmReadSetSize);
-    htmTransAbortWriteSet.sample(htmWriteSetSize);
+    cacheMemoryStats.htmTransAbortReadSet.sample(htmReadSetSize);
+    cacheMemoryStats.htmTransAbortWriteSet.sample(htmWriteSetSize);
     DPRINTF(HtmMem, "htmAbortTransaction: read set=%u write set=%u\n",
         htmReadSetSize, htmWriteSetSize);
 }
@@ -774,8 +730,33 @@ CacheMemory::htmCommitTransaction()
         }
     }
 
-    htmTransCommitReadSet.sample(htmReadSetSize);
-    htmTransCommitWriteSet.sample(htmWriteSetSize);
+    cacheMemoryStats.htmTransCommitReadSet.sample(htmReadSetSize);
+    cacheMemoryStats.htmTransCommitWriteSet.sample(htmWriteSetSize);
     DPRINTF(HtmMem, "htmCommitTransaction: read set=%u write set=%u\n",
         htmReadSetSize, htmWriteSetSize);
 }
+
+void
+CacheMemory::profileDemandHit()
+{
+    cacheMemoryStats.m_demand_hits++;
+}
+
+void
+CacheMemory::profileDemandMiss()
+{
+    cacheMemoryStats.m_demand_misses++;
+}
+
+void
+CacheMemory::profilePrefetchHit()
+{
+    cacheMemoryStats.m_prefetch_hits++;
+}
+
+void
+CacheMemory::profilePrefetchMiss()
+{
+    cacheMemoryStats.m_prefetch_misses++;
+}
+

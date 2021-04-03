@@ -29,8 +29,6 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Anthony Gutierrez
  */
 
 #ifndef __ARCH_GCN3_INSTS_INSTRUCTIONS_HH__
@@ -79137,7 +79135,7 @@ namespace Gcn3ISA
               case 0: //vgpr_addr
                 return 8;
               case 1: //vgpr_dst
-                return 32;
+                return 1;
               default:
                 fatal("op idx %i out of bounds\n", opIdx);
                 return -1;
@@ -79261,7 +79259,7 @@ namespace Gcn3ISA
               case 0: //vgpr_addr
                 return 8;
               case 1: //vgpr_dst
-                return 32;
+                return 2;
               default:
                 fatal("op idx %i out of bounds\n", opIdx);
                 return -1;
@@ -80147,9 +80145,9 @@ namespace Gcn3ISA
               case 0: //vgpr_addr
                 return 8;
               case 1: //vgpr_src
-                return 32;
+                return 4;
               case 2: //vgpr_dst
-                return 32;
+                return 4;
               default:
                 fatal("op idx %i out of bounds\n", opIdx);
                 return -1;
@@ -80215,9 +80213,9 @@ namespace Gcn3ISA
               case 0: //vgpr_addr
                 return 8;
               case 1: //vgpr_src
-                return 32;
+                return 4;
               case 2: //vgpr_dst
-                return 32;
+                return 4;
               default:
                 fatal("op idx %i out of bounds\n", opIdx);
                 return -1;
@@ -80281,9 +80279,9 @@ namespace Gcn3ISA
               case 0: //vgpr_addr
                 return 8;
               case 1: //vgpr_src
-                return 32;
+                return 4;
               case 2: //vgpr_dst
-                return 32;
+                return 4;
               default:
                 fatal("op idx %i out of bounds\n", opIdx);
                 return -1;
@@ -80347,9 +80345,9 @@ namespace Gcn3ISA
               case 0: //vgpr_addr
                 return 8;
               case 1: //vgpr_src
-                return 32;
+                return 4;
               case 2: //vgpr_dst
-                return 32;
+                return 4;
               default:
                 fatal("op idx %i out of bounds\n", opIdx);
                 return -1;
@@ -80413,9 +80411,9 @@ namespace Gcn3ISA
               case 0: //vgpr_addr
                 return 8;
               case 1: //vgpr_src
-                return 32;
+                return 4;
               case 2: //vgpr_dst
-                return 32;
+                return 4;
               default:
                 fatal("op idx %i out of bounds\n", opIdx);
                 return -1;
@@ -80479,9 +80477,9 @@ namespace Gcn3ISA
               case 0: //vgpr_addr
                 return 8;
               case 1: //vgpr_src
-                return 32;
+                return 4;
               case 2: //vgpr_dst
-                return 32;
+                return 4;
               default:
                 fatal("op idx %i out of bounds\n", opIdx);
                 return -1;
@@ -80545,9 +80543,9 @@ namespace Gcn3ISA
               case 0: //vgpr_addr
                 return 8;
               case 1: //vgpr_src
-                return 32;
+                return 4;
               case 2: //vgpr_dst
-                return 32;
+                return 4;
               default:
                 fatal("op idx %i out of bounds\n", opIdx);
                 return -1;
@@ -80611,9 +80609,9 @@ namespace Gcn3ISA
               case 0: //vgpr_addr
                 return 8;
               case 1: //vgpr_src
-                return 32;
+                return 4;
               case 2: //vgpr_dst
-                return 32;
+                return 4;
               default:
                 fatal("op idx %i out of bounds\n", opIdx);
                 return -1;
@@ -80677,9 +80675,9 @@ namespace Gcn3ISA
               case 0: //vgpr_addr
                 return 8;
               case 1: //vgpr_src
-                return 32;
+                return 4;
               case 2: //vgpr_dst
-                return 32;
+                return 4;
               default:
                 fatal("op idx %i out of bounds\n", opIdx);
                 return -1;
@@ -80745,9 +80743,9 @@ namespace Gcn3ISA
               case 0: //vgpr_addr
                 return 8;
               case 1: //vgpr_src
-                return 32;
+                return 4;
               case 2: //vgpr_dst
-                return 32;
+                return 4;
               default:
                 fatal("op idx %i out of bounds\n", opIdx);
                 return -1;

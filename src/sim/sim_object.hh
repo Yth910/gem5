@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 ARM Limited
+ * Copyright (c) 2015, 2021 ARM Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -88,6 +88,55 @@ class ProbeManager;
  * depth-first traversal is performed (see descendants() in
  * SimObject.py). This has the effect of calling the method on the
  * parent node <i>before</i> its children.
+ *
+ * The python version of a SimObject class actually represents its Params
+ * structure which holds all its parameter settings and its name. When python
+ * needs to create a C++ instance of one of those classes, it uses the Params
+ * struct's create() method which returns one instance, set up with the
+ * parameters in the struct.
+ *
+ * When writing a SimObject class, there are three different cases as far as
+ * what you need to do to support the create() method, for hypothetical class
+ * Foo.
+ *
+ * If you have a constructor with a signature like this:
+ *
+ * Foo(const FooParams &)
+ *
+ * you don't have to do anything, a create method will be automatically
+ * defined which will call your constructor and return that instance. You
+ * should use this option most of the time.
+ *
+ * If you have a constructor with that signature but still want to define
+ * your own create method for some reason, you can do that by providing an
+ * alternative implementation which will override the default. It should have
+ * this signature:
+ *
+ * Foo *FooParams::create() const;
+ *
+ * If you don't have a constructor with that signature at all, then you must
+ * implement the create method with that signature which will build your
+ * object in some other way.
+ *
+ * A reference to the SimObjectParams will be returned via the params()
+ * API. It is quite common for a derived class (DerivSimObject) to access its
+ * derived parameters by downcasting the SimObjectParam to DerivSimObjectParams
+ *
+ * \code{.cpp}
+ *     using Params = DerivSimObjectParams;
+ *     const Params &
+ *     params() const
+ *     {
+ *         return reinterpret_cast<const Params&>(_params);
+ *     }
+ * \endcode
+ *
+ * We provide the PARAMS(..) macro as syntactic sugar to replace the code
+ * above with a much simpler:
+ *
+ * \code{.cpp}
+ *     PARAMS(DerivSimObject);
+ * \endcode
  */
 class SimObject : public EventManager, public Serializable, public Drainable,
                   public Stats::Group
@@ -107,7 +156,7 @@ class SimObject : public EventManager, public Serializable, public Drainable,
      *
      * @ingroup api_simobject
      */
-    const SimObjectParams *_params;
+    const SimObjectParams &_params;
 
   public:
     typedef SimObjectParams Params;
@@ -116,12 +165,12 @@ class SimObject : public EventManager, public Serializable, public Drainable,
      *
      * @ingroup api_simobject
      */
-    const Params *params() const { return _params; }
+    const Params &params() const { return _params; }
 
     /**
      * @ingroup api_simobject
      */
-    SimObject(const Params *_params);
+    SimObject(const Params &p);
 
     virtual ~SimObject();
 
@@ -130,7 +179,7 @@ class SimObject : public EventManager, public Serializable, public Drainable,
     /**
      * @ingroup api_simobject
      */
-    virtual const std::string name() const { return params()->name; }
+    virtual const std::string name() const { return params().name; }
 
     /**
      * init() is called after all C++ SimObjects have been created and
@@ -284,6 +333,21 @@ class SimObject : public EventManager, public Serializable, public Drainable,
      */
     static SimObject *find(const char *name);
 };
+
+/* Add PARAMS(ClassName) to every descendant of SimObject that needs
+ * params.
+ *
+ * Strictly speaking, we need static_cast here, because the types are
+ * related by inheritance, but since the target type may be
+ * incomplete, the compiler does not know the relation.
+ */
+#define PARAMS(type)                                     \
+    using Params = type ## Params;                       \
+    const Params &                                       \
+    params() const                                       \
+    {                                                    \
+        return reinterpret_cast<const Params&>(_params); \
+    }
 
 /**
  * Base class to wrap object resolving functionality.

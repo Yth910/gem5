@@ -36,8 +36,6 @@ IMPORTANT: If you modify this file, it's likely that the Learning gem5 book
            also needs to be updated. For now, email Jason <jason@lowepower.com>
 
 """
-from __future__ import print_function
-from __future__ import absolute_import
 
 # import the m5 (gem5) library created when gem5 is built
 import m5
@@ -98,6 +96,8 @@ process.cmd = [binary]
 for cpu in system.cpu:
     cpu.workload = process
     cpu.createThreads()
+
+system.workload = SEWorkload.init_compatible(binary)
 
 # Set up the pseudo file system for the threads function above
 config_filesystem(system)

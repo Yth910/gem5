@@ -29,9 +29,6 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: John Kalamatianos,
- *          Mark Wyse
  */
 
 #include "gpu-compute/register_file.hh"
@@ -48,8 +45,8 @@
 #include "gpu-compute/wavefront.hh"
 #include "params/RegisterFile.hh"
 
-RegisterFile::RegisterFile(const RegisterFileParams *p)
-    : SimObject(p), simdId(p->simd_id), _numRegs(p->num_regs)
+RegisterFile::RegisterFile(const RegisterFileParams &p)
+    : SimObject(p), simdId(p.simd_id), _numRegs(p.num_regs), stats(this)
 {
     fatal_if((_numRegs % 2) != 0, "VRF size is illegal\n");
     fatal_if(simdId < 0, "Illegal SIMD id for VRF");
@@ -171,12 +168,6 @@ RegisterFile::waveExecuteInst(Wavefront *w, GPUDynInstPtr ii)
 {
 }
 
-RegisterFile*
-RegisterFileParams::create()
-{
-    return new RegisterFile(this);
-}
-
 // Events
 
 // Mark a register as free in the scoreboard/busy vector
@@ -198,26 +189,15 @@ RegisterFile::dispatchInstruction(GPUDynInstPtr ii)
 {
 }
 
-void
-RegisterFile::regStats()
+RegisterFile::RegisterFileStats::RegisterFileStats(Stats::Group *parent)
+    : Stats::Group(parent),
+      ADD_STAT(registerReads,
+              "Total number of DWORDs read from register file"),
+      ADD_STAT(registerWrites,
+              "Total number of DWORDS written to register file"),
+      ADD_STAT(sramReads,
+              "Total number of register file bank SRAM activations for reads"),
+      ADD_STAT(sramWrites,
+              "Total number of register file bank SRAM activations for writes")
 {
-    registerReads
-        .name(name() + ".register_reads")
-        .desc("Total number of DWORDs read from register file")
-        ;
-
-    registerWrites
-        .name(name() + ".register_writes")
-        .desc("Total number of DWORDS written to register file")
-        ;
-
-    sramReads
-        .name(name() + ".sram_reads")
-        .desc("Total number of register file bank SRAM activations for reads")
-        ;
-
-    sramWrites
-        .name(name() + ".sram_writes")
-        .desc("Total number of register file bank SRAM activations for writes")
-        ;
 }

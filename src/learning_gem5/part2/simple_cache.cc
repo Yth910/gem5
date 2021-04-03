@@ -32,21 +32,20 @@
 #include "debug/SimpleCache.hh"
 #include "sim/system.hh"
 
-SimpleCache::SimpleCache(SimpleCacheParams *params) :
+SimpleCache::SimpleCache(const SimpleCacheParams &params) :
     ClockedObject(params),
-    latency(params->latency),
-    blockSize(params->system->cacheLineSize()),
-    capacity(params->size / blockSize),
-    memPort(params->name + ".mem_side", this),
+    latency(params.latency),
+    blockSize(params.system->cacheLineSize()),
+    capacity(params.size / blockSize),
+    memPort(params.name + ".mem_side", this),
     blocked(false), originalPacket(nullptr), waitingPortId(-1), stats(this)
 {
     // Since the CPU side ports are a vector of ports, create an instance of
     // the CPUSidePort for each connection. This member of params is
     // automatically created depending on the name of the vector port and
     // holds the number of connections to this port name
-    for (int i = 0; i < params->port_cpu_side_connection_count; ++i) {
-        cpuPorts.emplace_back(name() + csprintf(".cpu_side[%d]", i),
-                                                             i, this);
+    for (int i = 0; i < params.port_cpu_side_connection_count; ++i) {
+        cpuPorts.emplace_back(name() + csprintf(".cpu_side[%d]", i), i, this);
     }
 }
 
@@ -230,7 +229,7 @@ SimpleCache::handleResponse(PacketPtr pkt)
         DPRINTF(SimpleCache, "Copying data from new packet to old\n");
         // We had to upgrade a previous packet. We can functionally deal with
         // the cache access now. It better be a hit.
-        bool hit M5_VAR_USED = accessFunctional(originalPacket);
+        M5_VAR_USED bool hit = accessFunctional(originalPacket);
         panic_if(!hit, "Should always hit after inserting");
         originalPacket->makeResponse();
         delete pkt; // We may need to delay this, I'm not sure.
@@ -424,18 +423,12 @@ SimpleCache::sendRangeChange() const
 
 SimpleCache::SimpleCacheStats::SimpleCacheStats(Stats::Group *parent)
       : Stats::Group(parent),
-      ADD_STAT(hits, "Number of hits"),
-      ADD_STAT(misses, "Number of misses"),
-      ADD_STAT(missLatency, "Ticks for misses to the cache"),
-      ADD_STAT(hitRatio, "The ratio of hits to the total"
-                 "accesses to the cache", hits / (hits + misses))
+      ADD_STAT(hits, UNIT_COUNT, "Number of hits"),
+      ADD_STAT(misses, UNIT_COUNT, "Number of misses"),
+      ADD_STAT(missLatency, UNIT_TICK, "Ticks for misses to the cache"),
+      ADD_STAT(hitRatio, UNIT_RATIO,
+               "The ratio of hits to the total accesses to the cache",
+               hits / (hits + misses))
 {
     missLatency.init(16); // number of buckets
-}
-
-
-SimpleCache*
-SimpleCacheParams::create()
-{
-    return new SimpleCache(this);
 }

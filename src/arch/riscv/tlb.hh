@@ -2,6 +2,7 @@
  * Copyright (c) 2001-2005 The Regents of The University of Michigan
  * Copyright (c) 2007 MIPS Technologies, Inc.
  * Copyright (c) 2020 Barkhausen Institut
+ * Copyright (c) 2021 Huawei International
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,6 +38,7 @@
 #include "arch/riscv/isa.hh"
 #include "arch/riscv/isa_traits.hh"
 #include "arch/riscv/pagetable.hh"
+#include "arch/riscv/pma_checker.hh"
 #include "arch/riscv/utility.hh"
 #include "base/statistics.hh"
 #include "mem/request.hh"
@@ -67,14 +69,14 @@ class TLB : public BaseTLB
     struct TlbStats : public Stats::Group{
         TlbStats(Stats::Group *parent);
 
-        Stats::Scalar read_hits;
-        Stats::Scalar read_misses;
+        Stats::Scalar readHits;
+        Stats::Scalar readMisses;
         Stats::Scalar read_acv;
-        Stats::Scalar read_accesses;
-        Stats::Scalar write_hits;
-        Stats::Scalar write_misses;
+        Stats::Scalar readAccesses;
+        Stats::Scalar writeHits;
+        Stats::Scalar writeMisses;
         Stats::Scalar write_acv;
-        Stats::Scalar write_accesses;
+        Stats::Scalar writeAccesses;
 
         Stats::Formula hits;
         Stats::Formula misses;
@@ -82,12 +84,15 @@ class TLB : public BaseTLB
     } stats;
 
   public:
+    PMAChecker *pma;
+
+  public:
     typedef RiscvTLBParams Params;
-    TLB(const Params *p);
+    TLB(const Params &p);
 
     Walker *getWalker();
 
-    void takeOverFrom(BaseTLB *otlb) override {}
+    void takeOverFrom(BaseTLB *old) override {}
 
     TlbEntry *insert(Addr vpn, const TlbEntry &entry);
     void flushAll() override;
@@ -102,6 +107,18 @@ class TLB : public BaseTLB
     // Checkpointing
     void serialize(CheckpointOut &cp) const override;
     void unserialize(CheckpointIn &cp) override;
+
+    /**
+     * Get the table walker port. This is used for
+     * migrating port connections during a CPU takeOverFrom()
+     * call. For architectures that do not have a table walker,
+     * NULL is returned, hence the use of a pointer rather than a
+     * reference. For RISC-V this method will always return a valid
+     * port pointer.
+     *
+     * @return A pointer to the walker port
+     */
+    Port *getTableWalkerPort() override;
 
     Addr translateWithTLB(Addr vaddr, uint16_t asid, Mode mode);
 

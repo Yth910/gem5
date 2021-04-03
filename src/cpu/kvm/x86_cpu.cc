@@ -68,7 +68,7 @@ using namespace X86ISA;
 // data) is used to indicate that a segment has been accessed.
 #define SEG_TYPE_BIT_ACCESSED 1
 
-struct FXSave
+struct M5_ATTR_PACKED FXSave
 {
     uint16_t fcw;
     uint16_t fsw;
@@ -97,7 +97,7 @@ struct FXSave
     uint8_t xmm[16][16];
 
     uint64_t reserved[12];
-} M5_ATTR_PACKED;
+};
 
 static_assert(sizeof(FXSave) == 512, "Unexpected size of FXSave");
 
@@ -520,9 +520,9 @@ checkSeg(const char *name, const int idx, const struct kvm_segment &seg,
     // TODO: Check CS DB
 }
 
-X86KvmCPU::X86KvmCPU(X86KvmCPUParams *params)
+X86KvmCPU::X86KvmCPU(const X86KvmCPUParams &params)
     : BaseKvmCPU(params),
-      useXSave(params->useXSave)
+      useXSave(params.useXSave)
 {
     Kvm &kvm(*vm.kvm);
 
@@ -1620,10 +1620,4 @@ X86KvmCPU::setVCpuEvents(const struct kvm_vcpu_events &events)
 {
     if (ioctl(KVM_SET_VCPU_EVENTS, (void *)&events) == -1)
         panic("KVM: Failed to set guest debug registers\n");
-}
-
-X86KvmCPU *
-X86KvmCPUParams::create()
-{
-    return new X86KvmCPU(this);
 }

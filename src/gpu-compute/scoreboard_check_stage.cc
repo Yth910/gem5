@@ -44,12 +44,12 @@
 #include "gpu-compute/wavefront.hh"
 #include "params/ComputeUnit.hh"
 
-ScoreboardCheckStage::ScoreboardCheckStage(const ComputeUnitParams *p,
+ScoreboardCheckStage::ScoreboardCheckStage(const ComputeUnitParams &p,
                                            ComputeUnit &cu,
                                            ScoreboardCheckToSchedule
                                            &to_schedule)
     : computeUnit(cu), toSchedule(to_schedule),
-      _name(cu.name() + ".ScoreboardCheckStage")
+      _name(cu.name() + ".ScoreboardCheckStage"), stats(&cu)
 {
 }
 
@@ -62,7 +62,7 @@ ScoreboardCheckStage::collectStatistics(nonrdytype_e rdyStatus)
 {
     panic_if(rdyStatus == NRDY_ILLEGAL || rdyStatus >= NRDY_CONDITIONS,
              "Instruction ready status %d is illegal!!!", rdyStatus);
-    stallCycles[rdyStatus]++;
+    stats.stallCycles[rdyStatus]++;
 }
 
 // Return true if this wavefront is ready
@@ -88,6 +88,15 @@ ScoreboardCheckStage::ready(Wavefront *w, nonrdytype_e *rdyStatus,
     if (w->getStatus() == Wavefront::S_WAITCNT) {
         if (!w->waitCntsSatisfied()) {
             *rdyStatus = NRDY_WAIT_CNT;
+            return false;
+        }
+    }
+
+    // sleep instruction has been dispatched or executed: next
+    // instruction should be blocked until the sleep period expires.
+    if (w->getStatus() == Wavefront::S_STALLED_SLEEP) {
+        if (!w->sleepDone()) {
+            *rdyStatus = NRDY_SLEEP;
             return false;
         }
     }
@@ -143,7 +152,8 @@ ScoreboardCheckStage::ready(Wavefront *w, nonrdytype_e *rdyStatus,
     // through this logic and always return not ready.
     if (!(ii->isBarrier() || ii->isNop() || ii->isReturn() || ii->isBranch() ||
          ii->isALU() || ii->isLoad() || ii->isStore() || ii->isAtomic() ||
-         ii->isEndOfKernel() || ii->isMemSync() || ii->isFlat())) {
+         ii->isEndOfKernel() || ii->isMemSync() || ii->isFlat() ||
+         ii->isSleep())) {
         panic("next instruction: %s is of unknown type\n", ii->disassemble());
     }
 
@@ -266,14 +276,13 @@ ScoreboardCheckStage::exec()
     }
 }
 
-void
-ScoreboardCheckStage::regStats()
+ScoreboardCheckStage::
+ScoreboardCheckStageStats::ScoreboardCheckStageStats(Stats::Group *parent)
+    : Stats::Group(parent, "ScoreboardCheckStage"),
+      ADD_STAT(stallCycles, "number of cycles wave stalled in SCB")
 {
-    stallCycles
-        .init(NRDY_CONDITIONS)
-        .name(name() + ".stall_cycles")
-        .desc("number of cycles wave stalled in SCB")
-        ;
+    stallCycles.init(NRDY_CONDITIONS);
+
     stallCycles.subname(NRDY_WF_STOP, csprintf("WFStop"));
     stallCycles.subname(NRDY_IB_EMPTY, csprintf("IBEmpty"));
     stallCycles.subname(NRDY_WAIT_CNT, csprintf("WaitCnt"));

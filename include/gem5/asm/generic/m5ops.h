@@ -76,9 +76,9 @@
 #define M5OP_WORK_BEGIN         0x5a
 #define M5OP_WORK_END           0x5b
 
-#define M5OP_SE_SYSCALL         0x60
-#define M5OP_SE_PAGE_FAULT      0x61
 #define M5OP_DIST_TOGGLE_SYNC   0x62
+
+#define M5OP_WORKLOAD           0x70
 
 
 #define M5OP_FOREACH                                            \
@@ -106,9 +106,8 @@
     M5OP(m5_panic, M5OP_PANIC)                                  \
     M5OP(m5_work_begin, M5OP_WORK_BEGIN)                        \
     M5OP(m5_work_end, M5OP_WORK_END)                            \
-    M5OP(m5_se_syscall, M5OP_SE_SYSCALL)                        \
-    M5OP(m5_se_page_fault, M5OP_SE_PAGE_FAULT)                  \
-    M5OP(m5_dist_toggle_sync, M5OP_DIST_TOGGLE_SYNC)
+    M5OP(m5_dist_toggle_sync, M5OP_DIST_TOGGLE_SYNC)            \
+    M5OP(m5_workload, M5OP_WORKLOAD)                            \
 
 #define M5OP_MERGE_TOKENS_I(a, b) a##b
 #define M5OP_MERGE_TOKENS(a, b) M5OP_MERGE_TOKENS_I(a, b)

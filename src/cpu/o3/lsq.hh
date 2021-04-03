@@ -42,10 +42,16 @@
 #ifndef __CPU_O3_LSQ_HH__
 #define __CPU_O3_LSQ_HH__
 
+#include <cassert>
+#include <cstdint>
+#include <list>
 #include <map>
 #include <queue>
+#include <vector>
 
 #include "arch/generic/tlb.hh"
+#include "base/flags.hh"
+#include "base/types.hh"
 #include "cpu/inst_seq.hh"
 #include "cpu/o3/lsq_unit.hh"
 #include "cpu/utils.hh"
@@ -406,15 +412,12 @@ class LSQ
         addRequest(Addr addr, unsigned size,
                    const std::vector<bool>& byte_enable)
         {
-            if (byte_enable.empty() ||
-                isAnyActiveElement(byte_enable.begin(), byte_enable.end())) {
+            if (isAnyActiveElement(byte_enable.begin(), byte_enable.end())) {
                 auto request = std::make_shared<Request>(
                         addr, size, _flags, _inst->requestorId(),
                         _inst->instAddr(), _inst->contextId(),
                         std::move(_amo_op));
-                if (!byte_enable.empty()) {
-                    request->setByteEnable(byte_enable);
-                }
+                request->setByteEnable(byte_enable);
                 _requests.push_back(request);
             }
         }
@@ -850,7 +853,7 @@ class LSQ
     };
 
     /** Constructs an LSQ with the given parameters. */
-    LSQ(O3CPU *cpu_ptr, IEW *iew_ptr, DerivO3CPUParams *params);
+    LSQ(O3CPU *cpu_ptr, IEW *iew_ptr, const DerivO3CPUParams &params);
     ~LSQ() { }
 
     /** Returns the name of the LSQ. */

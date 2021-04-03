@@ -40,7 +40,8 @@
 #include <utility>
 #include <vector>
 
-#include "sim/stats.hh"
+#include "base/statistics.hh"
+#include "base/stats/group.hh"
 
 class ComputeUnit;
 class ScoreboardCheckToSchedule;
@@ -64,6 +65,7 @@ class ScoreboardCheckStage
         NRDY_WF_STOP,
         NRDY_IB_EMPTY,
         NRDY_WAIT_CNT,
+        NRDY_SLEEP,
         NRDY_BARRIER_WAIT,
         NRDY_VGPR_NRDY,
         NRDY_SGPR_NRDY,
@@ -71,14 +73,13 @@ class ScoreboardCheckStage
         NRDY_CONDITIONS
     };
 
-    ScoreboardCheckStage(const ComputeUnitParams* p, ComputeUnit &cu,
+    ScoreboardCheckStage(const ComputeUnitParams &p, ComputeUnit &cu,
                          ScoreboardCheckToSchedule &to_schedule);
     ~ScoreboardCheckStage();
     void exec();
 
     // Stats related variables and methods
     const std::string& name() const { return _name; }
-    void regStats();
 
   private:
     void collectStatistics(nonrdytype_e rdyStatus);
@@ -94,10 +95,15 @@ class ScoreboardCheckStage
      */
     ScoreboardCheckToSchedule &toSchedule;
 
-    // Stats
-    Stats::Vector stallCycles;
-
     const std::string _name;
+
+  protected:
+    struct ScoreboardCheckStageStats : public Stats::Group
+    {
+        ScoreboardCheckStageStats(Stats::Group *parent);
+
+        Stats::Vector stallCycles;
+    } stats;
 };
 
 #endif // __SCOREBOARD_CHECK_STAGE_HH__

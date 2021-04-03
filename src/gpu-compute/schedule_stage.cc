@@ -43,7 +43,7 @@
 #include "gpu-compute/vector_register_file.hh"
 #include "gpu-compute/wavefront.hh"
 
-ScheduleStage::ScheduleStage(const ComputeUnitParams *p, ComputeUnit &cu,
+ScheduleStage::ScheduleStage(const ComputeUnitParams &p, ComputeUnit &cu,
                              ScoreboardCheckToSchedule &from_scoreboard_check,
                              ScheduleToExecute &to_execute)
     : computeUnit(cu), fromScoreboardCheck(from_scoreboard_check),
@@ -51,7 +51,7 @@ ScheduleStage::ScheduleStage(const ComputeUnitParams *p, ComputeUnit &cu,
       _name(cu.name() + ".ScheduleStage"),
       vectorAluRdy(false), scalarAluRdy(false), scalarMemBusRdy(false),
       scalarMemIssueRdy(false), glbMemBusRdy(false), glbMemIssueRdy(false),
-      locMemBusRdy(false), locMemIssueRdy(false)
+      locMemBusRdy(false), locMemIssueRdy(false), stats(&cu, cu.numExeUnits())
 {
     for (int j = 0; j < cu.numExeUnits(); ++j) {
         scheduler.emplace_back(p);
@@ -121,10 +121,10 @@ ScheduleStage::exec()
         // If no wave is ready to be scheduled on the execution resource
         // then skip scheduling for this execution resource
         if (!readyListSize) {
-            rdyListEmpty[j]++;
+            stats.rdyListEmpty[j]++;
             continue;
         }
-        rdyListNotEmpty[j]++;
+        stats.rdyListNotEmpty[j]++;
 
         // Pick a wave and attempt to add it to schList
         Wavefront *wf = scheduler[j].chooseWave();
@@ -133,8 +133,8 @@ ScheduleStage::exec()
         if (!addToSchList(j, gpu_dyn_inst)) {
             // For waves not added to schList, increment count of cycles
             // this wave spends in SCH stage.
-            wf->schCycles++;
-            addToSchListStalls[j]++;
+            wf->stats.schCycles++;
+            stats.addToSchListStalls[j]++;
         } else {
             if (gpu_dyn_inst->isScalar() || gpu_dyn_inst->isGroupSeg()) {
                 wf->incLGKMInstsIssued();
@@ -143,6 +143,9 @@ ScheduleStage::exec()
                 if (gpu_dyn_inst->isFlat()) {
                     wf->incLGKMInstsIssued();
                 }
+            }
+            if (gpu_dyn_inst->isStore() && gpu_dyn_inst->isGlobalSeg()) {
+                wf->incExpInstsIssued();
             }
         }
     }
@@ -157,10 +160,10 @@ ScheduleStage::exec()
         // If no wave is ready to be scheduled on the execution resource
         // then skip scheduling for this execution resource
         if (!readyListSize) {
-            rdyListEmpty[j]++;
+            stats.rdyListEmpty[j]++;
             continue;
         }
-        rdyListNotEmpty[j]++;
+        stats.rdyListNotEmpty[j]++;
 
         // Pick a wave and attempt to add it to schList
         Wavefront *wf = scheduler[j].chooseWave();
@@ -169,8 +172,8 @@ ScheduleStage::exec()
         if (!addToSchList(j, gpu_dyn_inst)) {
             // For waves not added to schList, increment count of cycles
             // this wave spends in SCH stage.
-            wf->schCycles++;
-            addToSchListStalls[j]++;
+            wf->stats.schCycles++;
+            stats.addToSchListStalls[j]++;
         }
     }
 
@@ -238,17 +241,17 @@ ScheduleStage::schedRfWrites(int exeType, const GPUDynInstPtr &gpu_dyn_inst)
         computeUnit.srf[wf->simdId]->scheduleWriteOperands(wf, gpu_dyn_inst);
         return true;
     } else {
-        rfAccessStalls[SCH_RF_ACCESS_NRDY]++;
+        stats.rfAccessStalls[SCH_RF_ACCESS_NRDY]++;
         if (!accessSrfWr) {
-            rfAccessStalls[SCH_SRF_WR_ACCESS_NRDY]++;
+            stats.rfAccessStalls[SCH_SRF_WR_ACCESS_NRDY]++;
         }
         if (!accessVrfWr) {
-            rfAccessStalls[SCH_VRF_WR_ACCESS_NRDY]++;
+            stats.rfAccessStalls[SCH_VRF_WR_ACCESS_NRDY]++;
         }
 
         // Increment stall counts for WF
-        wf->schStalls++;
-        wf->schRfAccessStalls++;
+        wf->stats.schStalls++;
+        wf->stats.schRfAccessStalls++;
     }
     return false;
 }
@@ -311,8 +314,14 @@ ScheduleStage::addToSchList(int exeType, const GPUDynInstPtr &gpu_dyn_inst)
         computeUnit.insertInPipeMap(wf);
         wavesInSch.emplace(wf->wfDynId);
         schList.at(exeType).push_back(std::make_pair(gpu_dyn_inst, RFBUSY));
+        if (wf->isOldestInstBarrier() && wf->hasBarrier()) {
+            wf->setStatus(Wavefront::S_BARRIER);
+        }
         if (wf->isOldestInstWaitcnt()) {
             wf->setStatus(Wavefront::S_WAITCNT);
+        }
+        if (wf->isOldestInstSleep()) {
+            wf->setStatus(Wavefront::S_STALLED_SLEEP);
         }
         if (!gpu_dyn_inst->isScalar()) {
             computeUnit.vrf[wf->simdId]
@@ -326,19 +335,19 @@ ScheduleStage::addToSchList(int exeType, const GPUDynInstPtr &gpu_dyn_inst)
         return true;
     } else {
         // Number of stall cycles due to RF access denied
-        rfAccessStalls[SCH_RF_ACCESS_NRDY]++;
+        stats.rfAccessStalls[SCH_RF_ACCESS_NRDY]++;
         // Count number of denials due to each reason
         // Multiple items may contribute to the denied request
         if (!accessVrf) {
-            rfAccessStalls[SCH_VRF_RD_ACCESS_NRDY]++;
+            stats.rfAccessStalls[SCH_VRF_RD_ACCESS_NRDY]++;
         }
         if (!accessSrf) {
-            rfAccessStalls[SCH_SRF_RD_ACCESS_NRDY]++;
+            stats.rfAccessStalls[SCH_SRF_RD_ACCESS_NRDY]++;
         }
 
         // Increment stall counts for WF
-        wf->schStalls++;
-        wf->schRfAccessStalls++;
+        wf->stats.schStalls++;
+        wf->stats.schRfAccessStalls++;
         DPRINTF(GPUSched, "schList[%d]: Could not add: "
                 "SIMD[%d] WV[%d]: %d: %s\n",
                 exeType, wf->simdId, wf->wfDynId,
@@ -421,26 +430,26 @@ ScheduleStage::dispatchReady(const GPUDynInstPtr &gpu_dyn_inst)
         // TODO: Scalar NOP does not require SALU in hardware,
         // and is executed out of IB directly.
         if (gpu_dyn_inst->isScalar() && !scalarAluRdy) {
-            dispNrdyStalls[SCH_SCALAR_ALU_NRDY]++;
+            stats.dispNrdyStalls[SCH_SCALAR_ALU_NRDY]++;
             return false;
         } else if (!gpu_dyn_inst->isScalar() && !vectorAluRdy) {
-            dispNrdyStalls[SCH_VECTOR_ALU_NRDY]++;
+            stats.dispNrdyStalls[SCH_VECTOR_ALU_NRDY]++;
             return false;
         }
     } else if (gpu_dyn_inst->isEndOfKernel()) {
         // EndPgm instruction
         if (gpu_dyn_inst->isScalar() && !scalarAluRdy) {
-            dispNrdyStalls[SCH_SCALAR_ALU_NRDY]++;
+            stats.dispNrdyStalls[SCH_SCALAR_ALU_NRDY]++;
             return false;
         }
     } else if (gpu_dyn_inst->isBarrier() || gpu_dyn_inst->isBranch()
                || gpu_dyn_inst->isALU()) {
         // Barrier, Branch, or ALU instruction
         if (gpu_dyn_inst->isScalar() && !scalarAluRdy) {
-            dispNrdyStalls[SCH_SCALAR_ALU_NRDY]++;
+            stats.dispNrdyStalls[SCH_SCALAR_ALU_NRDY]++;
             return false;
         } else if (!gpu_dyn_inst->isScalar() && !vectorAluRdy) {
-            dispNrdyStalls[SCH_VECTOR_ALU_NRDY]++;
+            stats.dispNrdyStalls[SCH_VECTOR_ALU_NRDY]++;
             return false;
         }
     } else if (!gpu_dyn_inst->isScalar() && gpu_dyn_inst->isGlobalMem()) {
@@ -448,19 +457,19 @@ ScheduleStage::dispatchReady(const GPUDynInstPtr &gpu_dyn_inst)
         bool rdy = true;
         if (!glbMemIssueRdy) {
             rdy = false;
-            dispNrdyStalls[SCH_VECTOR_MEM_ISSUE_NRDY]++;
+            stats.dispNrdyStalls[SCH_VECTOR_MEM_ISSUE_NRDY]++;
         }
         if (!glbMemBusRdy) {
             rdy = false;
-            dispNrdyStalls[SCH_VECTOR_MEM_BUS_BUSY_NRDY]++;
+            stats.dispNrdyStalls[SCH_VECTOR_MEM_BUS_BUSY_NRDY]++;
         }
         if (!computeUnit.globalMemoryPipe.coalescerReady(gpu_dyn_inst)) {
             rdy = false;
-            dispNrdyStalls[SCH_VECTOR_MEM_COALESCER_NRDY]++;
+            stats.dispNrdyStalls[SCH_VECTOR_MEM_COALESCER_NRDY]++;
         }
         if (!computeUnit.globalMemoryPipe.outstandingReqsCheck(gpu_dyn_inst)) {
             rdy = false;
-            dispNrdyStalls[SCH_VECTOR_MEM_REQS_NRDY]++;
+            stats.dispNrdyStalls[SCH_VECTOR_MEM_REQS_NRDY]++;
         }
         if (!rdy) {
             return false;
@@ -470,18 +479,18 @@ ScheduleStage::dispatchReady(const GPUDynInstPtr &gpu_dyn_inst)
         bool rdy = true;
         if (!scalarMemIssueRdy) {
             rdy = false;
-            dispNrdyStalls[SCH_SCALAR_MEM_ISSUE_NRDY]++;
+            stats.dispNrdyStalls[SCH_SCALAR_MEM_ISSUE_NRDY]++;
         }
         if (!scalarMemBusRdy) {
             rdy = false;
-            dispNrdyStalls[SCH_SCALAR_MEM_BUS_BUSY_NRDY]++;
+            stats.dispNrdyStalls[SCH_SCALAR_MEM_BUS_BUSY_NRDY]++;
         }
         if (!computeUnit.scalarMemoryPipe
             .isGMReqFIFOWrRdy(wf->scalarRdGmReqsInPipe
             + wf->scalarWrGmReqsInPipe))
         {
             rdy = false;
-            dispNrdyStalls[SCH_SCALAR_MEM_FIFO_NRDY]++;
+            stats.dispNrdyStalls[SCH_SCALAR_MEM_FIFO_NRDY]++;
         }
         if (!rdy) {
             return false;
@@ -491,16 +500,16 @@ ScheduleStage::dispatchReady(const GPUDynInstPtr &gpu_dyn_inst)
         bool rdy = true;
         if (!locMemIssueRdy) {
             rdy = false;
-            dispNrdyStalls[SCH_LOCAL_MEM_ISSUE_NRDY]++;
+            stats.dispNrdyStalls[SCH_LOCAL_MEM_ISSUE_NRDY]++;
         }
         if (!locMemBusRdy) {
             rdy = false;
-            dispNrdyStalls[SCH_LOCAL_MEM_BUS_BUSY_NRDY]++;
+            stats.dispNrdyStalls[SCH_LOCAL_MEM_BUS_BUSY_NRDY]++;
         }
         if (!computeUnit.localMemoryPipe.
                 isLMReqFIFOWrRdy(wf->rdLmReqsInPipe + wf->wrLmReqsInPipe)) {
             rdy = false;
-            dispNrdyStalls[SCH_LOCAL_MEM_FIFO_NRDY]++;
+            stats.dispNrdyStalls[SCH_LOCAL_MEM_FIFO_NRDY]++;
         }
         if (!rdy) {
             return false;
@@ -510,24 +519,24 @@ ScheduleStage::dispatchReady(const GPUDynInstPtr &gpu_dyn_inst)
         bool rdy = true;
         if (!glbMemIssueRdy || !locMemIssueRdy) {
             rdy = false;
-            dispNrdyStalls[SCH_FLAT_MEM_ISSUE_NRDY]++;
+            stats.dispNrdyStalls[SCH_FLAT_MEM_ISSUE_NRDY]++;
         }
         if (!glbMemBusRdy || !locMemBusRdy) {
             rdy = false;
-            dispNrdyStalls[SCH_FLAT_MEM_BUS_BUSY_NRDY]++;
+            stats.dispNrdyStalls[SCH_FLAT_MEM_BUS_BUSY_NRDY]++;
         }
         if (!computeUnit.globalMemoryPipe.coalescerReady(gpu_dyn_inst)) {
             rdy = false;
-            dispNrdyStalls[SCH_FLAT_MEM_COALESCER_NRDY]++;
+            stats.dispNrdyStalls[SCH_FLAT_MEM_COALESCER_NRDY]++;
         }
         if (!computeUnit.globalMemoryPipe.outstandingReqsCheck(gpu_dyn_inst)) {
             rdy = false;
-            dispNrdyStalls[SCH_FLAT_MEM_REQS_NRDY]++;
+            stats.dispNrdyStalls[SCH_FLAT_MEM_REQS_NRDY]++;
         }
         if (!computeUnit.localMemoryPipe.
                 isLMReqFIFOWrRdy(wf->rdLmReqsInPipe + wf->wrLmReqsInPipe)) {
             rdy = false;
-            dispNrdyStalls[SCH_FLAT_MEM_FIFO_NRDY]++;
+            stats.dispNrdyStalls[SCH_FLAT_MEM_FIFO_NRDY]++;
         }
         if (!rdy) {
             return false;
@@ -537,7 +546,7 @@ ScheduleStage::dispatchReady(const GPUDynInstPtr &gpu_dyn_inst)
               gpu_dyn_inst->disassemble());
         return false;
     }
-    dispNrdyStalls[SCH_RDY]++;
+    stats.dispNrdyStalls[SCH_RDY]++;
     return true;
 }
 
@@ -581,10 +590,10 @@ ScheduleStage::fillDispatchList()
                 } else {
                     // Either another wave has been dispatched, or this wave
                     // was not ready, so it is stalled this cycle
-                    schIter->first->wavefront()->schStalls++;
+                    schIter->first->wavefront()->stats.schStalls++;
                     if (!dispRdy) {
                         // not ready for dispatch, increment stall stat
-                        schIter->first->wavefront()->schResourceStalls++;
+                        schIter->first->wavefront()->stats.schResourceStalls++;
                     }
                     // Examine next wave for this resource
                     schIter++;
@@ -598,9 +607,9 @@ ScheduleStage::fillDispatchList()
         // Increment stall count if no wave sent to dispatchList for
         // current execution resource
         if (!dispatched) {
-            schListToDispListStalls[j]++;
+            stats.schListToDispListStalls[j]++;
         } else {
-            schListToDispList[j]++;
+            stats.schListToDispList[j]++;
         }
     }
 }
@@ -632,9 +641,9 @@ ScheduleStage::arbitrateVrfToLdsBus()
                 reinsertToSchList(wf->localMem, toExecute
                                   .readyInst(wf->localMem));
                 // Increment stall stats for LDS-VRF arbitration
-                ldsBusArbStalls++;
+                stats.ldsBusArbStalls++;
                 toExecute.readyInst(wf->localMem)
-                    ->wavefront()->schLdsArbStalls++;
+                    ->wavefront()->stats.schLdsArbStalls++;
             }
             // With arbitration of LM pipe complete, transition the
             // LM pipe to SKIP state in the dispatchList to inform EX stage
@@ -660,7 +669,7 @@ ScheduleStage::checkRfOperandReadComplete()
 
             // Increment the number of cycles the wave spends in the
             // SCH stage, since this loop visits every wave in SCH.
-            wf->schCycles++;
+            wf->stats.schCycles++;
 
             bool vrfRdy = true;
             if (!gpu_dyn_inst->isScalar()) {
@@ -687,15 +696,15 @@ ScheduleStage::checkRfOperandReadComplete()
                 p.second = RFBUSY;
 
                 // Increment stall stats
-                wf->schStalls++;
-                wf->schOpdNrdyStalls++;
+                wf->stats.schStalls++;
+                wf->stats.schOpdNrdyStalls++;
 
-                opdNrdyStalls[SCH_RF_OPD_NRDY]++;
+                stats.opdNrdyStalls[SCH_RF_OPD_NRDY]++;
                 if (!vrfRdy) {
-                    opdNrdyStalls[SCH_VRF_OPD_NRDY]++;
+                    stats.opdNrdyStalls[SCH_VRF_OPD_NRDY]++;
                 }
                 if (!srfRdy) {
-                    opdNrdyStalls[SCH_SRF_OPD_NRDY]++;
+                    stats.opdNrdyStalls[SCH_SRF_OPD_NRDY]++;
                 }
             }
         }
@@ -749,7 +758,7 @@ ScheduleStage::reserveResources()
                 // that we've reserved a global and local memory unit. Thus,
                 // we need to mark the latter execution unit as not available.
                 if (execUnitIds.size() > 1) {
-                    int lm_exec_unit M5_VAR_USED = wf->localMem;
+                    M5_VAR_USED int lm_exec_unit = wf->localMem;
                     assert(toExecute.dispatchStatus(lm_exec_unit)
                            == SKIP);
                 }
@@ -758,7 +767,7 @@ ScheduleStage::reserveResources()
                 // Verify the GM pipe for this wave is ready to execute
                 // and the wave in the GM pipe is the same as the wave
                 // in the LM pipe
-                int gm_exec_unit M5_VAR_USED = wf->globalMem;
+                M5_VAR_USED int gm_exec_unit = wf->globalMem;
                 assert(wf->wfDynId == toExecute
                        .readyInst(gm_exec_unit)->wfDynId);
                 assert(toExecute.dispatchStatus(gm_exec_unit)
@@ -774,60 +783,40 @@ ScheduleStage::deleteFromSch(Wavefront *w)
     wavesInSch.erase(w->wfDynId);
 }
 
-void
-ScheduleStage::regStats()
+ScheduleStage::ScheduleStageStats::ScheduleStageStats(Stats::Group *parent,
+                                                      int num_exec_units)
+    : Stats::Group(parent, "ScheduleStage"),
+      ADD_STAT(rdyListEmpty ,"number of cycles no wave on ready list per "
+               "execution resource"),
+      ADD_STAT(rdyListNotEmpty, "number of cycles one or more wave on ready "
+               "list per execution resource"),
+      ADD_STAT(addToSchListStalls, "number of cycles a wave is not added to "
+               "schList per execution resource when ready list is not empty"),
+      ADD_STAT(schListToDispList, "number of cycles a wave is added to "
+               "dispatchList per execution resource"),
+      ADD_STAT(schListToDispListStalls, "number of cycles no wave is added to"
+               " dispatchList per execution resource"),
+      ADD_STAT(rfAccessStalls, "number of stalls due to RF access denied"),
+      ADD_STAT(ldsBusArbStalls, "number of stalls due to VRF->LDS bus "
+               "conflicts"),
+      ADD_STAT(opdNrdyStalls, "number of stalls in SCH due to operands not "
+               "ready"),
+      ADD_STAT(dispNrdyStalls, "number of stalls in SCH due to resource not "
+               "ready")
 {
-    rdyListNotEmpty
-        .init(computeUnit.numExeUnits())
-        .name(name() + ".rdy_list_not_empty")
-        .desc("number of cycles one or more wave on ready list per "
-              "execution resource")
-        ;
+    rdyListNotEmpty.init(num_exec_units);
+    rdyListEmpty.init(num_exec_units);
+    addToSchListStalls.init(num_exec_units);
+    schListToDispList.init(num_exec_units);
+    schListToDispListStalls.init(num_exec_units);
+    opdNrdyStalls.init(SCH_RF_OPD_NRDY_CONDITIONS);
+    dispNrdyStalls.init(SCH_NRDY_CONDITIONS);
+    rfAccessStalls.init(SCH_RF_ACCESS_NRDY_CONDITIONS);
 
-    rdyListEmpty
-        .init(computeUnit.numExeUnits())
-        .name(name() + ".rdy_list_empty")
-        .desc("number of cycles no wave on ready list per "
-              "execution resource")
-        ;
-
-    addToSchListStalls
-        .init(computeUnit.numExeUnits())
-        .name(name() + ".sch_list_add_stalls")
-        .desc("number of cycles a wave is not added to schList per "
-              "execution resource when ready list is not empty")
-        ;
-
-    schListToDispList
-        .init(computeUnit.numExeUnits())
-        .name(name() + ".sch_list_to_disp_list")
-        .desc("number of cycles a wave is added to dispatchList per "
-              "execution resource")
-        ;
-
-    schListToDispListStalls
-        .init(computeUnit.numExeUnits())
-        .name(name() + ".sch_list_to_disp_list_stalls")
-        .desc("number of cycles no wave is added to dispatchList per "
-              "execution resource")
-        ;
-
-    // Operand Readiness Stall Cycles
-    opdNrdyStalls
-        .init(SCH_RF_OPD_NRDY_CONDITIONS)
-        .name(name() + ".opd_nrdy_stalls")
-        .desc("number of stalls in SCH due to operands not ready")
-        ;
     opdNrdyStalls.subname(SCH_VRF_OPD_NRDY, csprintf("VRF"));
     opdNrdyStalls.subname(SCH_SRF_OPD_NRDY, csprintf("SRF"));
     opdNrdyStalls.subname(SCH_RF_OPD_NRDY, csprintf("RF"));
 
-    // dispatchReady Stall Cycles
-    dispNrdyStalls
-        .init(SCH_NRDY_CONDITIONS)
-        .name(name() + ".disp_nrdy_stalls")
-        .desc("number of stalls in SCH due to resource not ready")
-        ;
     dispNrdyStalls.subname(SCH_SCALAR_ALU_NRDY, csprintf("ScalarAlu"));
     dispNrdyStalls.subname(SCH_VECTOR_ALU_NRDY, csprintf("VectorAlu"));
     dispNrdyStalls.subname(SCH_VECTOR_MEM_ISSUE_NRDY,
@@ -859,21 +848,9 @@ ScheduleStage::regStats()
                                   csprintf("FlatMemFIFO"));
     dispNrdyStalls.subname(SCH_RDY, csprintf("Ready"));
 
-    // RF Access Stall Cycles
-    rfAccessStalls
-        .init(SCH_RF_ACCESS_NRDY_CONDITIONS)
-        .name(name() + ".rf_access_stalls")
-        .desc("number of stalls due to RF access denied")
-        ;
     rfAccessStalls.subname(SCH_VRF_RD_ACCESS_NRDY, csprintf("VrfRd"));
     rfAccessStalls.subname(SCH_VRF_WR_ACCESS_NRDY, csprintf("VrfWr"));
     rfAccessStalls.subname(SCH_SRF_RD_ACCESS_NRDY, csprintf("SrfRd"));
     rfAccessStalls.subname(SCH_SRF_WR_ACCESS_NRDY, csprintf("SrfWr"));
     rfAccessStalls.subname(SCH_RF_ACCESS_NRDY, csprintf("Any"));
-
-    // Stall cycles due to wave losing LDS bus arbitration
-    ldsBusArbStalls
-        .name(name() + ".lds_bus_arb_stalls")
-        .desc("number of stalls due to VRF->LDS bus conflicts")
-        ;
 }

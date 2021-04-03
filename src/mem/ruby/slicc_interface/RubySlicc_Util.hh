@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 ARM Limited
+ * Copyright (c) 2020-2021 ARM Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -47,6 +47,7 @@
 #define __MEM_RUBY_SLICC_INTERFACE_RUBYSLICC_UTIL_HH__
 
 #include <cassert>
+#include <climits>
 
 #include "debug/RubySlicc.hh"
 #include "mem/packet.hh"
@@ -55,8 +56,13 @@
 #include "mem/ruby/common/DataBlock.hh"
 #include "mem/ruby/common/TypeDefines.hh"
 #include "mem/ruby/common/WriteMask.hh"
+#include "mem/ruby/protocol/RubyRequestType.hh"
 
 inline Cycles zero_time() { return Cycles(0); }
+
+inline Cycles intToCycles(int c) { return Cycles(c); }
+
+inline Tick intToTick(int c) { return c; }
 
 inline NodeID
 intToID(int nodenum)
@@ -164,6 +170,16 @@ htmCmdToRubyRequestType(const Packet *pkt)
     else {
         panic("invalid ruby packet type\n");
     }
+}
+
+inline int
+addressOffset(Addr addr, Addr base)
+{
+    assert(addr >= base);
+    Addr offset = addr - base;
+    // sanity checks if fits in an int
+    assert(offset < INT_MAX);
+    return offset;
 }
 
 /**

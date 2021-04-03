@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020 ARM Limited
+ * Copyright (c) 2019-2021 ARM Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -81,7 +81,7 @@ class Sequencer : public RubyPort
 {
   public:
     typedef RubySequencerParams Params;
-    Sequencer(const Params *);
+    Sequencer(const Params &);
     ~Sequencer();
 
     /**
@@ -95,7 +95,6 @@ class Sequencer : public RubyPort
     virtual void wakeup(); // Used only for deadlock detection
     void resetStats() override;
     void collateStats();
-    void regStats() override;
 
     void writeCallback(Addr address,
                        DataBlock& data,
@@ -103,7 +102,15 @@ class Sequencer : public RubyPort
                        const MachineType mach = MachineType_NUM,
                        const Cycles initialRequestTime = Cycles(0),
                        const Cycles forwardRequestTime = Cycles(0),
-                       const Cycles firstResponseTime = Cycles(0));
+                       const Cycles firstResponseTime = Cycles(0),
+                       const bool noCoales = false);
+
+    // Write callback that prevents coalescing
+    void writeUniqueCallback(Addr address, DataBlock& data)
+    {
+        writeCallback(address, data, true, MachineType_NUM, Cycles(0),
+                      Cycles(0), Cycles(0), true);
+    }
 
     void readCallback(Addr address,
                       DataBlock& data,
@@ -186,7 +193,8 @@ class Sequencer : public RubyPort
                      const MachineType mach, const bool externalHit,
                      const Cycles initialRequestTime,
                      const Cycles forwardRequestTime,
-                     const Cycles firstResponseTime);
+                     const Cycles firstResponseTime,
+                     const bool was_coalesced);
 
     void recordMissLatency(SequencerRequest* srequest, bool llscSuccess,
                            const MachineType respondingMach,
@@ -212,7 +220,6 @@ class Sequencer : public RubyPort
     int m_max_outstanding_requests;
 
     CacheMemory* m_dataCache_ptr;
-    CacheMemory* m_instCache_ptr;
 
     // The cache access latency for top-level caches (L0/L1). These are
     // currently assessed at the beginning of each memory access through the

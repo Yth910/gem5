@@ -35,10 +35,6 @@ IMPORTANT: If you modify this file, it's likely that the Learning gem5 book
 
 """
 
-from __future__ import print_function
-from __future__ import absolute_import
-
-
 # import the m5 (gem5) library created when gem5 is built
 import m5
 # import all of the SimObjects
@@ -93,6 +89,8 @@ isa = str(m5.defines.buildEnv['TARGET_ISA']).lower()
 thispath = os.path.dirname(os.path.realpath(__file__))
 binary = os.path.join(thispath, '../../../',
                       'tests/test-progs/hello/bin/', isa, 'linux/hello')
+
+system.workload = SEWorkload.init_compatible(binary)
 
 # Create a process for a simple "Hello World" application
 process = Process()

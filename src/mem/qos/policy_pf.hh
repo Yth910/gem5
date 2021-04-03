@@ -59,11 +59,9 @@ namespace QoS {
 class PropFairPolicy : public Policy
 {
     using Params = QoSPropFairPolicyParams;
-    const Params *params() const
-    { return static_cast<const Params *>(_params); }
 
   public:
-    PropFairPolicy(const Params*);
+    PropFairPolicy(const Params &);
     virtual ~PropFairPolicy();
 
     /**

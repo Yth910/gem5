@@ -51,6 +51,7 @@
 #include <type_traits>
 #include <vector>
 
+#include "base/bitfield.hh"
 #include "base/statistics.hh"
 #include "base/types.hh"
 #include "mem/cache/compressors/base.hh"
@@ -98,7 +99,7 @@ class BaseDictionaryCompressor : public Base
 
   public:
     typedef BaseDictionaryCompressorParams Params;
-    BaseDictionaryCompressor(const Params *p);
+    BaseDictionaryCompressor(const Params &p);
     ~BaseDictionaryCompressor() = default;
 };
 
@@ -134,6 +135,8 @@ class DictionaryCompressor : public BaseDictionaryCompressor
     class RepeatedValuePattern;
     template <std::size_t DeltaSizeBits>
     class DeltaPattern;
+    template <unsigned N>
+    class SignExtendedPattern;
 
     /**
      * Create a factory to determine if input matches a pattern. The if else
@@ -238,14 +241,12 @@ class DictionaryCompressor : public BaseDictionaryCompressor
     std::unique_ptr<Base::CompressionData> compress(
         const std::vector<Chunk>& chunks);
 
+    std::unique_ptr<Base::CompressionData> compress(
+        const std::vector<Chunk>& chunks,
+        Cycles& comp_lat, Cycles& decomp_lat) override;
+
     using BaseDictionaryCompressor::compress;
 
-    /**
-     * Decompress data.
-     *
-     * @param comp_data Compressed cache line.
-     * @param data The cache line to be decompressed.
-     */
     void decompress(const CompressionData* comp_data, uint64_t* data) override;
 
     /**
@@ -266,7 +267,7 @@ class DictionaryCompressor : public BaseDictionaryCompressor
 
   public:
     typedef BaseDictionaryCompressorParams Params;
-    DictionaryCompressor(const Params *p);
+    DictionaryCompressor(const Params &p);
     ~DictionaryCompressor() = default;
 };
 
@@ -347,7 +348,7 @@ class DictionaryCompressor<T>::Pattern
      *
      * @return The size.
      */
-    std::size_t
+    virtual std::size_t
     getSizeBits() const
     {
         return numUnmatchedBits + length;
@@ -733,6 +734,55 @@ class DictionaryCompressor<T>::DeltaPattern
     decompress(const DictionaryEntry dict_bytes) const override
     {
         return bytes;
+    }
+};
+
+/**
+ * A pattern that checks whether the value is an N bits sign-extended value,
+ * that is, all the MSB starting from the Nth are equal to the (N-1)th bit.
+ *
+ * Therefore, if N = 8, and T has 16 bits, the values within the ranges
+ * [0x0000, 0x007F] and [0xFF80, 0xFFFF] would match this pattern.
+ *
+ * @tparam N The number of bits in the non-extended original value. It must
+ *           fit in a dictionary entry.
+ */
+template <class T>
+template <unsigned N>
+class DictionaryCompressor<T>::SignExtendedPattern
+    : public DictionaryCompressor<T>::Pattern
+{
+  private:
+    static_assert((N > 0) & (N <= (sizeof(T) * 8)),
+        "The original data's type size must be smaller than the dictionary's");
+
+    /** The non-extended original value. */
+    const T bits : N;
+
+  public:
+    SignExtendedPattern(const int number,
+        const uint64_t code,
+        const uint64_t metadata_length,
+        const DictionaryEntry bytes,
+        const bool allocate = false)
+      : DictionaryCompressor<T>::Pattern(number, code, metadata_length, N,
+            -1, allocate),
+        bits(fromDictionaryEntry(bytes) & mask(N))
+    {
+    }
+
+    static bool
+    isPattern(const DictionaryEntry& bytes,
+        const DictionaryEntry& dict_bytes, const int match_location)
+    {
+        const T data = DictionaryCompressor<T>::fromDictionaryEntry(bytes);
+        return data == sext<N>(data & mask(N));
+    }
+
+    DictionaryEntry
+    decompress(const DictionaryEntry dict_bytes) const override
+    {
+        return toDictionaryEntry(sext<N>(bits));
     }
 };
 

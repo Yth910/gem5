@@ -38,15 +38,9 @@ namespace Iris
 class Interrupts : public BaseInterrupts
 {
   public:
-    typedef IrisInterruptsParams Params;
+    using Params = IrisInterruptsParams;
 
-    const Params *
-    params() const
-    {
-        return dynamic_cast<const Params *>(_params);
-    }
-
-    Interrupts(Params *p) : BaseInterrupts(p) {}
+    Interrupts(const Params &p) : BaseInterrupts(p) {}
 
     bool checkInterrupts() const override { return false; }
     Fault getInterrupt() override { return NoFault; }

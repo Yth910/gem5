@@ -310,7 +310,7 @@ IntLogicOp::generateDisassembly(
 
     // Print the first destination only
     if (_numDestRegs > 0) {
-        printReg(ss, _destRegIdx[0]);
+        printReg(ss, destRegIdx(0));
     }
 
     // Print the first source register

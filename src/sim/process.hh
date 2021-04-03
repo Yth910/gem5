@@ -65,7 +65,7 @@ class ThreadContext;
 class Process : public SimObject
 {
   public:
-    Process(ProcessParams *params, EmulationPageTable *pTable,
+    Process(const ProcessParams &params, EmulationPageTable *pTable,
             ::Loader::ObjectFile *obj_file);
 
     void serialize(CheckpointOut &cp) const override;
@@ -104,9 +104,6 @@ class Process : public SimObject
     Addr getBias();
     Addr getStartPC();
     ::Loader::ObjectFile *getInterpreter();
-
-    // override of virtual SimObject method: register statistics
-    void regStats() override;
 
     void allocateMem(Addr vaddr, int64_t size, bool clobber = false);
 
@@ -162,8 +159,6 @@ class Process : public SimObject
     // system object which owns this process
     System *system;
 
-    Stats::Scalar numSyscalls;  // track how many system calls are executed
-
     // flag for using architecture specific page table
     bool useArchPT;
     // running KVM requires special initialization
@@ -201,13 +196,13 @@ class Process : public SimObject
          * error like file IO errors, etc., those should fail non-silently
          * with a panic or fail as normal.
          */
-        virtual Process *load(ProcessParams *params,
+        virtual Process *load(const ProcessParams &params,
                               ::Loader::ObjectFile *obj_file) = 0;
     };
 
     // Try all the Loader instance's "load" methods one by one until one is
     // successful. If none are, complain and fail.
-    static Process *tryLoaders(ProcessParams *params,
+    static Process *tryLoaders(const ProcessParams &params,
                                ::Loader::ObjectFile *obj_file);
 
     ::Loader::ObjectFile *objFile;
@@ -286,6 +281,8 @@ class Process : public SimObject
 
     // Process was forked with SIGCHLD set.
     bool *sigchld;
+
+    Stats::Scalar numSyscalls;  // track how many system calls are executed
 };
 
 #endif // __PROCESS_HH__

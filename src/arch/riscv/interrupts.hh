@@ -57,27 +57,48 @@ class Interrupts : public BaseInterrupts
     std::bitset<NumInterruptTypes> ie;
 
   public:
-    typedef RiscvInterruptsParams Params;
+    using Params = RiscvInterruptsParams;
 
-    const Params *
-    params() const
-    {
-        return dynamic_cast<const Params *>(_params);
-    }
-
-    Interrupts(Params * p) : BaseInterrupts(p), ip(0), ie(0) {}
+    Interrupts(const Params &p) : BaseInterrupts(p), ip(0), ie(0) {}
 
     std::bitset<NumInterruptTypes>
     globalMask() const
     {
         INTERRUPT mask = 0;
         STATUS status = tc->readMiscReg(MISCREG_STATUS);
-        if (status.mie)
-            mask.mei = mask.mti = mask.msi = 1;
-        if (status.sie)
-            mask.sei = mask.sti = mask.ssi = 1;
-        if (status.uie)
-            mask.uei = mask.uti = mask.usi = 1;
+        INTERRUPT mideleg = tc->readMiscReg(MISCREG_MIDELEG);
+        INTERRUPT sideleg = tc->readMiscReg(MISCREG_SIDELEG);
+        PrivilegeMode prv = (PrivilegeMode)tc->readMiscReg(MISCREG_PRV);
+        switch (prv) {
+            case PRV_U:
+                mask.mei = (!sideleg.mei) | (sideleg.mei & status.uie);
+                mask.mti = (!sideleg.mti) | (sideleg.mti & status.uie);
+                mask.msi = (!sideleg.msi) | (sideleg.msi & status.uie);
+                mask.sei = (!sideleg.sei) | (sideleg.sei & status.uie);
+                mask.sti = (!sideleg.sti) | (sideleg.sti & status.uie);
+                mask.ssi = (!sideleg.ssi) | (sideleg.ssi & status.uie);
+                if (status.uie)
+                    mask.uei = mask.uti = mask.usi = 1;
+                break;
+            case PRV_S:
+                mask.mei = (!mideleg.mei) | (mideleg.mei & status.sie);
+                mask.mti = (!mideleg.mti) | (mideleg.mti & status.sie);
+                mask.msi = (!mideleg.msi) | (mideleg.msi & status.sie);
+                if (status.sie)
+                    mask.sei = mask.sti = mask.ssi = 1;
+                mask.uei = mask.uti = mask.usi = 0;
+                break;
+            case PRV_M:
+                if (status.mie)
+                     mask.mei = mask.mti = mask.msi = 1;
+                mask.sei = mask.sti = mask.ssi = 0;
+                mask.uei = mask.uti = mask.usi = 0;
+                break;
+            default:
+                panic("Unknown privilege mode %d.", prv);
+                break;
+        }
+
         return std::bitset<NumInterruptTypes>(mask);
     }
 
@@ -92,9 +113,14 @@ class Interrupts : public BaseInterrupts
     {
         assert(checkInterrupts());
         std::bitset<NumInterruptTypes> mask = globalMask();
-        for (int c = 0; c < NumInterruptTypes; c++)
-            if (checkInterrupt(c) && mask[c])
-                return std::make_shared<InterruptFault>(c);
+        const std::vector<int> interrupt_order {
+            INT_EXT_MACHINE, INT_TIMER_MACHINE, INT_SOFTWARE_MACHINE,
+            INT_EXT_SUPER, INT_TIMER_SUPER, INT_SOFTWARE_SUPER,
+            INT_EXT_USER, INT_TIMER_USER, INT_SOFTWARE_USER
+        };
+        for (const int &id : interrupt_order)
+            if (checkInterrupt(id) && mask[id])
+                return std::make_shared<InterruptFault>(id);
         return NoFault;
     }
 

@@ -43,11 +43,15 @@
 #ifndef __CPU_TRAFFIC_GEN_BASE_GEN_HH__
 #define __CPU_TRAFFIC_GEN_BASE_GEN_HH__
 
-#include "base/bitfield.hh"
-#include "base/intmath.hh"
+#include <cstdint>
+#include <string>
+
+#include "base/types.hh"
 #include "mem/packet.hh"
+#include "mem/request.hh"
 
 class BaseTrafficGen;
+class SimObject;
 
 /**
  * Base class for all generators, with the shared functionality and

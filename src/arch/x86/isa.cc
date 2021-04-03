@@ -29,7 +29,7 @@
 #include "arch/x86/isa.hh"
 
 #include "arch/x86/decoder.hh"
-#include "arch/x86/tlb.hh"
+#include "arch/x86/mmu.hh"
 #include "cpu/base.hh"
 #include "cpu/thread_context.hh"
 #include "params/X86ISA.hh"
@@ -130,15 +130,11 @@ ISA::clear()
     regVal[MISCREG_APIC_BASE] = lApicBase;
 }
 
-ISA::ISA(Params *p) : BaseISA(p)
+ISA::ISA(const X86ISAParams &p) : BaseISA(p), vendorString(p.vendor_string)
 {
+    fatal_if(vendorString.size() != 12,
+             "CPUID vendor string must be 12 characters\n");
     clear();
-}
-
-const X86ISAParams *
-ISA::params() const
-{
-    return dynamic_cast<const Params *>(_params);
 }
 
 RegVal
@@ -239,8 +235,7 @@ ISA::setMiscReg(int miscReg, RegVal val)
                 }
             }
             if (toggled.pg) {
-                dynamic_cast<TLB *>(tc->getITBPtr())->flushAll();
-                dynamic_cast<TLB *>(tc->getDTBPtr())->flushAll();
+                tc->getMMUPtr()->flushAll();
             }
             //This must always be 1.
             newCR0.et = 1;
@@ -255,15 +250,13 @@ ISA::setMiscReg(int miscReg, RegVal val)
       case MISCREG_CR2:
         break;
       case MISCREG_CR3:
-        dynamic_cast<TLB *>(tc->getITBPtr())->flushNonGlobal();
-        dynamic_cast<TLB *>(tc->getDTBPtr())->flushNonGlobal();
+        static_cast<MMU *>(tc->getMMUPtr())->flushNonGlobal();
         break;
       case MISCREG_CR4:
         {
             CR4 toggled = regVal[miscReg] ^ val;
             if (toggled.pae || toggled.pse || toggled.pge) {
-                dynamic_cast<TLB *>(tc->getITBPtr())->flushAll();
-                dynamic_cast<TLB *>(tc->getDTBPtr())->flushAll();
+                tc->getMMUPtr()->flushAll();
             }
         }
         break;
@@ -437,10 +430,10 @@ ISA::setThreadContext(ThreadContext *_tc)
     tc->getDecoderPtr()->setM5Reg(regVal[MISCREG_M5_REG]);
 }
 
+std::string
+ISA::getVendorString() const
+{
+    return vendorString;
 }
 
-X86ISA::ISA *
-X86ISAParams::create()
-{
-    return new X86ISA::ISA(this);
 }

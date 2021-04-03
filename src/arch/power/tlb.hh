@@ -128,7 +128,7 @@ class TLB : public BaseTLB
     friend class RadixWalk;
     RadixWalk *rwalk;
     typedef PowerTLBParams Params;
-    TLB(const Params *p);
+    TLB(const Params &p);
     virtual ~TLB();
 
     void takeOverFrom(BaseTLB *otlb) override {}

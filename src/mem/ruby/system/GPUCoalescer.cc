@@ -54,8 +54,6 @@
 #include "mem/ruby/system/RubySystem.hh"
 #include "params/RubyGPUCoalescer.hh"
 
-using namespace std;
-
 UncoalescedTable::UncoalescedTable(GPUCoalescer *gc)
     : coalescer(gc)
 {
@@ -77,6 +75,26 @@ UncoalescedTable::packetAvailable()
     return !instMap.empty();
 }
 
+void
+UncoalescedTable::initPacketsRemaining(InstSeqNum seqNum, int count)
+{
+    if (!instPktsRemaining.count(seqNum)) {
+        instPktsRemaining[seqNum] = count;
+    }
+}
+
+int
+UncoalescedTable::getPacketsRemaining(InstSeqNum seqNum)
+{
+    return instPktsRemaining[seqNum];
+}
+
+void
+UncoalescedTable::setPacketsRemaining(InstSeqNum seqNum, int count)
+{
+    instPktsRemaining[seqNum] = count;
+}
+
 PerInstPackets*
 UncoalescedTable::getInstPackets(int offset)
 {
@@ -94,9 +112,20 @@ void
 UncoalescedTable::updateResources()
 {
     for (auto iter = instMap.begin(); iter != instMap.end(); ) {
-        if (iter->second.empty()) {
-            DPRINTF(GPUCoalescer, "Returning token seqNum %d\n", iter->first);
+        InstSeqNum seq_num = iter->first;
+        DPRINTF(GPUCoalescer, "%s checking remaining pkts for %d\n",
+                coalescer->name().c_str(), seq_num);
+        assert(instPktsRemaining.count(seq_num));
+
+        if (instPktsRemaining[seq_num] == 0) {
+            assert(iter->second.empty());
+
+            // Remove from both maps
             instMap.erase(iter++);
+            instPktsRemaining.erase(seq_num);
+
+            // Release the token
+            DPRINTF(GPUCoalescer, "Returning token seqNum %d\n", seq_num);
             coalescer->getGMTokenPort().sendTokens(1);
         } else {
             ++iter;
@@ -151,7 +180,7 @@ UncoalescedTable::checkDeadlock(Tick threshold)
     }
 }
 
-GPUCoalescer::GPUCoalescer(const Params *p)
+GPUCoalescer::GPUCoalescer(const Params &p)
     : RubyPort(p),
       issueEvent([this]{ completeIssue(); }, "Issue coalesced request",
                  false, Event::Progress_Event_Pri),
@@ -166,23 +195,66 @@ GPUCoalescer::GPUCoalescer(const Params *p)
 
     m_outstanding_count = 0;
 
-    coalescingWindow = p->max_coalesces_per_cycle;
+    coalescingWindow = p.max_coalesces_per_cycle;
 
     m_max_outstanding_requests = 0;
     m_instCache_ptr = nullptr;
     m_dataCache_ptr = nullptr;
 
-    m_instCache_ptr = p->icache;
-    m_dataCache_ptr = p->dcache;
-    m_max_outstanding_requests = p->max_outstanding_requests;
-    m_deadlock_threshold = p->deadlock_threshold;
+    m_instCache_ptr = p.icache;
+    m_dataCache_ptr = p.dcache;
+    m_max_outstanding_requests = p.max_outstanding_requests;
+    m_deadlock_threshold = p.deadlock_threshold;
 
     assert(m_max_outstanding_requests > 0);
     assert(m_deadlock_threshold > 0);
     assert(m_instCache_ptr);
     assert(m_dataCache_ptr);
 
-    m_runningGarnetStandalone = p->garnet_standalone;
+    m_runningGarnetStandalone = p.garnet_standalone;
+
+
+    // These statistical variables are not for display.
+    // The profiler will collate these across different
+    // coalescers and display those collated statistics.
+    m_outstandReqHist.init(10);
+    m_latencyHist.init(10);
+    m_missLatencyHist.init(10);
+
+    for (int i = 0; i < RubyRequestType_NUM; i++) {
+        m_typeLatencyHist.push_back(new Stats::Histogram());
+        m_typeLatencyHist[i]->init(10);
+
+        m_missTypeLatencyHist.push_back(new Stats::Histogram());
+        m_missTypeLatencyHist[i]->init(10);
+    }
+
+    for (int i = 0; i < MachineType_NUM; i++) {
+        m_missMachLatencyHist.push_back(new Stats::Histogram());
+        m_missMachLatencyHist[i]->init(10);
+
+        m_IssueToInitialDelayHist.push_back(new Stats::Histogram());
+        m_IssueToInitialDelayHist[i]->init(10);
+
+        m_InitialToForwardDelayHist.push_back(new Stats::Histogram());
+        m_InitialToForwardDelayHist[i]->init(10);
+
+        m_ForwardToFirstResponseDelayHist.push_back(new Stats::Histogram());
+        m_ForwardToFirstResponseDelayHist[i]->init(10);
+
+        m_FirstResponseToCompletionDelayHist.push_back(new Stats::Histogram());
+        m_FirstResponseToCompletionDelayHist[i]->init(10);
+    }
+
+    for (int i = 0; i < RubyRequestType_NUM; i++) {
+        m_missTypeMachLatencyHist.push_back(std::vector<Stats::Histogram *>());
+
+        for (int j = 0; j < MachineType_NUM; j++) {
+            m_missTypeMachLatencyHist[i].push_back(new Stats::Histogram());
+            m_missTypeMachLatencyHist[i][j]->init(10);
+        }
+    }
+
 }
 
 GPUCoalescer::~GPUCoalescer()
@@ -276,7 +348,7 @@ GPUCoalescer::resetStats()
 }
 
 void
-GPUCoalescer::printProgress(ostream& out) const
+GPUCoalescer::printProgress(std::ostream& out) const
 {
 }
 
@@ -460,7 +532,7 @@ GPUCoalescer::hitCallback(CoalescedRequest* crequest,
 {
     PacketPtr pkt = crequest->getFirstPkt();
     Addr request_address = pkt->getAddr();
-    Addr request_line_address M5_VAR_USED = makeLineAddress(request_address);
+    M5_VAR_USED Addr request_line_address = makeLineAddress(request_address);
 
     RubyRequestType type = crequest->getRubyType();
 
@@ -555,16 +627,31 @@ GPUCoalescer::makeRequest(PacketPtr pkt)
         // otherwise, this must be either read or write command
         assert(pkt->isRead() || pkt->isWrite());
 
+        InstSeqNum seq_num = pkt->req->getReqInstSeqNum();
+
+        // in the case of protocol tester, there is one packet per sequence
+        // number. The number of packets during simulation depends on the
+        // number of lanes actives for that vmem request (i.e., the popcnt
+        // of the exec_mask.
+        int num_packets = 1;
+        if (!m_usingRubyTester) {
+            num_packets = getDynInst(pkt)->exec_mask.count();
+        }
+
         // the pkt is temporarily stored in the uncoalesced table until
         // it's picked for coalescing process later in this cycle or in a
-        // future cycle
+        // future cycle. Packets remaining is set to the number of excepted
+        // requests from the instruction based on its exec_mask.
         uncoalescedTable.insertPacket(pkt);
+        uncoalescedTable.initPacketsRemaining(seq_num, num_packets);
         DPRINTF(GPUCoalescer, "Put pkt with addr 0x%X to uncoalescedTable\n",
                 pkt->getAddr());
 
         // we schedule an issue event here to process the uncoalesced table
         // and try to issue Ruby request to cache system
         if (!issueEvent.scheduled()) {
+            DPRINTF(GPUCoalescer, "Scheduled issueEvent for seqNum %d\n",
+                    seq_num);
             schedule(issueEvent, curTick());
         }
     }
@@ -577,7 +664,7 @@ GPUCoalescer::makeRequest(PacketPtr pkt)
 
 template <class KEY, class VALUE>
 std::ostream &
-operator<<(ostream &out, const std::unordered_map<KEY, VALUE> &map)
+operator<<(std::ostream &out, const std::unordered_map<KEY, VALUE> &map)
 {
     out << "[";
     for (auto i = map.begin(); i != map.end(); ++i)
@@ -588,13 +675,25 @@ operator<<(ostream &out, const std::unordered_map<KEY, VALUE> &map)
 }
 
 void
-GPUCoalescer::print(ostream& out) const
+GPUCoalescer::print(std::ostream& out) const
 {
     out << "[GPUCoalescer: " << m_version
         << ", outstanding requests: " << m_outstanding_count
         << "]";
 }
 
+GPUDynInstPtr
+GPUCoalescer::getDynInst(PacketPtr pkt) const
+{
+    RubyPort::SenderState* ss =
+            safe_cast<RubyPort::SenderState*>(pkt->senderState);
+
+    ComputeUnit::DataPort::SenderState* cu_state =
+        safe_cast<ComputeUnit::DataPort::SenderState*>
+            (ss->predecessor);
+
+    return cu_state->_gpuDynInst;
+}
 
 bool
 GPUCoalescer::coalescePacket(PacketPtr pkt)
@@ -632,10 +731,11 @@ GPUCoalescer::coalescePacket(PacketPtr pkt)
             // create a new coalecsed request and issue it immediately.
             auto reqList = std::deque<CoalescedRequest*> { creq };
             coalescedTable.insert(std::make_pair(line_addr, reqList));
-
-            DPRINTF(GPUCoalescer, "Issued req type %s seqNum %d\n",
-                    RubyRequestType_to_string(creq->getRubyType()), seqNum);
-            issueRequest(creq);
+            if (!coalescedReqs.count(seqNum)) {
+                coalescedReqs.insert(std::make_pair(seqNum, reqList));
+            } else {
+                coalescedReqs.at(seqNum).push_back(creq);
+            }
         } else {
             // The request is for a line address that is already outstanding
             // but for a different instruction. Add it as a new request to be
@@ -674,10 +774,7 @@ GPUCoalescer::coalescePacket(PacketPtr pkt)
                 // CU will use that instruction to decrement wait counters
                 // in the issuing wavefront.
                 // For Ruby tester, gpuDynInst == nullptr
-                ComputeUnit::DataPort::SenderState* cu_state =
-                    safe_cast<ComputeUnit::DataPort::SenderState*>
-                        (ss->predecessor);
-                gpuDynInst = cu_state->_gpuDynInst;
+                gpuDynInst = getDynInst(pkt);
             }
 
             PendingWriteInst& inst = pendingWriteInsts[seqNum];
@@ -698,21 +795,56 @@ GPUCoalescer::completeIssue()
     // Iterate over the maximum number of instructions we can coalesce
     // per cycle (coalescingWindow).
     for (int instIdx = 0; instIdx < coalescingWindow; ++instIdx) {
-        PerInstPackets *pktList =
+        PerInstPackets *pkt_list =
             uncoalescedTable.getInstPackets(instIdx);
 
         // getInstPackets will return nullptr if no instruction
         // exists at the current offset.
-        if (!pktList) {
+        if (!pkt_list) {
             break;
+        } else if (pkt_list->empty()) {
+            // Found something, but it has not been cleaned up by update
+            // resources yet. See if there is anything else to coalesce.
+            // Assume we can't check anymore if the coalescing window is 1.
+            continue;
         } else {
+            // All packets in the list have the same seqNum, use first.
+            InstSeqNum seq_num = pkt_list->front()->req->getReqInstSeqNum();
+
+            // The difference in list size before and after tells us the
+            // number of packets which were coalesced.
+            size_t pkt_list_size = pkt_list->size();
+
             // Since we have a pointer to the list of packets in the inst,
             // erase them from the list if coalescing is successful and
             // leave them in the list otherwise. This aggressively attempts
             // to coalesce as many packets as possible from the current inst.
-            pktList->remove_if(
+            pkt_list->remove_if(
                 [&](PacketPtr pkt) { return coalescePacket(pkt); }
             );
+
+            if (coalescedReqs.count(seq_num)) {
+                auto& creqs = coalescedReqs.at(seq_num);
+                for (auto creq : creqs) {
+                    DPRINTF(GPUCoalescer, "Issued req type %s seqNum %d\n",
+                            RubyRequestType_to_string(creq->getRubyType()),
+                                                      seq_num);
+                    issueRequest(creq);
+                }
+                coalescedReqs.erase(seq_num);
+            }
+
+            assert(pkt_list_size >= pkt_list->size());
+            size_t pkt_list_diff = pkt_list_size - pkt_list->size();
+
+            int num_remaining = uncoalescedTable.getPacketsRemaining(seq_num);
+            num_remaining -= pkt_list_diff;
+            assert(num_remaining >= 0);
+
+            uncoalescedTable.setPacketsRemaining(seq_num, num_remaining);
+            DPRINTF(GPUCoalescer,
+                    "Coalesced %d pkts for seqNum %d, %d remaining\n",
+                    pkt_list_diff, seq_num, num_remaining);
         }
     }
 
@@ -816,49 +948,3 @@ GPUCoalescer::recordMissLatency(CoalescedRequest* crequest,
 {
 }
 
-void
-GPUCoalescer::regStats()
-{
-    RubyPort::regStats();
-
-    // These statistical variables are not for display.
-    // The profiler will collate these across different
-    // coalescers and display those collated statistics.
-    m_outstandReqHist.init(10);
-    m_latencyHist.init(10);
-    m_missLatencyHist.init(10);
-
-    for (int i = 0; i < RubyRequestType_NUM; i++) {
-        m_typeLatencyHist.push_back(new Stats::Histogram());
-        m_typeLatencyHist[i]->init(10);
-
-        m_missTypeLatencyHist.push_back(new Stats::Histogram());
-        m_missTypeLatencyHist[i]->init(10);
-    }
-
-    for (int i = 0; i < MachineType_NUM; i++) {
-        m_missMachLatencyHist.push_back(new Stats::Histogram());
-        m_missMachLatencyHist[i]->init(10);
-
-        m_IssueToInitialDelayHist.push_back(new Stats::Histogram());
-        m_IssueToInitialDelayHist[i]->init(10);
-
-        m_InitialToForwardDelayHist.push_back(new Stats::Histogram());
-        m_InitialToForwardDelayHist[i]->init(10);
-
-        m_ForwardToFirstResponseDelayHist.push_back(new Stats::Histogram());
-        m_ForwardToFirstResponseDelayHist[i]->init(10);
-
-        m_FirstResponseToCompletionDelayHist.push_back(new Stats::Histogram());
-        m_FirstResponseToCompletionDelayHist[i]->init(10);
-    }
-
-    for (int i = 0; i < RubyRequestType_NUM; i++) {
-        m_missTypeMachLatencyHist.push_back(std::vector<Stats::Histogram *>());
-
-        for (int j = 0; j < MachineType_NUM; j++) {
-            m_missTypeMachLatencyHist[i].push_back(new Stats::Histogram());
-            m_missTypeMachLatencyHist[i][j]->init(10);
-        }
-    }
-}

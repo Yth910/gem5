@@ -28,6 +28,7 @@
 #ifndef __ARCH_GENERIC_INTERRUPTS_HH__
 #define __ARCH_GENERIC_INTERRUPTS_HH__
 
+#include "base/logging.hh"
 #include "params/BaseInterrupts.hh"
 #include "sim/sim_object.hh"
 
@@ -40,17 +41,11 @@ class BaseInterrupts : public SimObject
     ThreadContext *tc = nullptr;
 
   public:
-    typedef BaseInterruptsParams Params;
+    using Params = BaseInterruptsParams;
 
-    BaseInterrupts(Params *p) : SimObject(p) {}
+    BaseInterrupts(const Params &p) : SimObject(p) {}
 
     virtual void setThreadContext(ThreadContext *_tc) { tc = _tc; }
-
-    const Params *
-    params() const
-    {
-        return dynamic_cast<const Params *>(_params);
-    }
 
     /*
      * Functions for retrieving interrupts for the CPU to handle.

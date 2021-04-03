@@ -34,11 +34,15 @@
 #ifndef __FETCH_UNIT_HH__
 #define __FETCH_UNIT_HH__
 
-#include <string>
+#include <cassert>
+#include <cstdint>
+#include <deque>
+#include <map>
 #include <utility>
+#include <vector>
 
 #include "arch/gpu_decoder.hh"
-#include "base/statistics.hh"
+#include "base/types.hh"
 #include "config/the_gpu_isa.hh"
 #include "gpu-compute/scheduler.hh"
 #include "mem/packet.hh"
@@ -49,7 +53,7 @@ class Wavefront;
 class FetchUnit
 {
   public:
-    FetchUnit(const ComputeUnitParams* p, ComputeUnit &cu);
+    FetchUnit(const ComputeUnitParams &p, ComputeUnit &cu);
     ~FetchUnit();
     void init();
     void exec();

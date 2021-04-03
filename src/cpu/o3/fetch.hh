@@ -49,7 +49,7 @@
 #include "cpu/pred/bpred_unit.hh"
 #include "cpu/timebuf.hh"
 #include "cpu/translation.hh"
-#include "enums/FetchPolicy.hh"
+#include "enums/SMTFetchPolicy.hh"
 #include "mem/packet.hh"
 #include "mem/port.hh"
 #include "sim/eventq.hh"
@@ -80,9 +80,6 @@ class DefaultFetch
     /** Typedefs from the CPU policy. */
     typedef typename CPUPol::FetchStruct FetchStruct;
     typedef typename CPUPol::TimeStruct TimeStruct;
-
-    /** Typedefs from ISA. */
-    typedef TheISA::MachInst MachInst;
 
     /**
      * IcachePort class for instruction fetch.
@@ -205,7 +202,7 @@ class DefaultFetch
     ThreadStatus fetchStatus[Impl::MaxThreads];
 
     /** Fetch policy. */
-    FetchPolicy fetchPolicy;
+    SMTFetchPolicy fetchPolicy;
 
     /** List that has the threads organized by priority. */
     std::list<ThreadID> priorityList;
@@ -217,7 +214,7 @@ class DefaultFetch
 
   public:
     /** DefaultFetch constructor. */
-    DefaultFetch(O3CPU *_cpu, DerivO3CPUParams *params);
+    DefaultFetch(O3CPU *_cpu, const DerivO3CPUParams &params);
 
     /** Returns the name of fetch. */
     std::string name() const;

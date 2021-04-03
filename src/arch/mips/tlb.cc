@@ -46,7 +46,6 @@
 #include "params/MipsTLB.hh"
 #include "sim/process.hh"
 
-using namespace std;
 using namespace MipsISA;
 
 ///////////////////////////////////////////////////////////////////////
@@ -54,8 +53,7 @@ using namespace MipsISA;
 //  MIPS TLB
 //
 
-TLB::TLB(const Params *p)
-    : BaseTLB(p), size(p->size), nlu(0)
+TLB::TLB(const Params &p) : BaseTLB(p), size(p.size), nlu(0)
 {
     table = new PTE[size];
     memset(table, 0, sizeof(PTE[size]));
@@ -170,7 +168,7 @@ TLB::insertAt(PTE &pte, unsigned Index, int _smallPages)
         }
         table[Index]=pte;
         // Update fast lookup table
-        lookupTable.insert(make_pair(table[Index].VPN, Index));
+        lookupTable.insert(std::make_pair(table[Index].VPN, Index));
     }
 }
 
@@ -212,7 +210,7 @@ TLB::unserialize(CheckpointIn &cp)
         ScopedCheckpointSection sec(cp, csprintf("PTE%d", i));
         table[i].unserialize(cp);
         if (table[i].V0 || table[i].V1) {
-            lookupTable.insert(make_pair(table[i].VPN, i));
+            lookupTable.insert(std::make_pair(table[i].VPN, i));
         }
     }
 }
@@ -256,10 +254,4 @@ TLB::index(bool advance)
         nextnlu();
 
     return *pte;
-}
-
-MipsISA::TLB *
-MipsTLBParams::create()
-{
-    return new TLB(this);
 }

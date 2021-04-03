@@ -51,23 +51,23 @@
 #include "debug/Drain.hh"
 #include "debug/XBar.hh"
 
-BaseXBar::BaseXBar(const BaseXBarParams *p)
+BaseXBar::BaseXBar(const BaseXBarParams &p)
     : ClockedObject(p),
-      frontendLatency(p->frontend_latency),
-      forwardLatency(p->forward_latency),
-      responseLatency(p->response_latency),
-      headerLatency(p->header_latency),
-      width(p->width),
-      gotAddrRanges(p->port_default_connection_count +
-                          p->port_mem_side_ports_connection_count, false),
+      frontendLatency(p.frontend_latency),
+      forwardLatency(p.forward_latency),
+      responseLatency(p.response_latency),
+      headerLatency(p.header_latency),
+      width(p.width),
+      gotAddrRanges(p.port_default_connection_count +
+                          p.port_mem_side_ports_connection_count, false),
       gotAllAddrRanges(false), defaultPortID(InvalidPortID),
-      useDefaultRange(p->use_default_range),
+      useDefaultRange(p.use_default_range),
 
-      transDist(this, "trans_dist", "Transaction distribution"),
-      pktCount(this, "pkt_count",
-              "Packet count per connected requestor and responder (bytes)"),
-      pktSize(this, "pkt_size", "Cumulative packet size per connected "
-             "requestor and responder (bytes)")
+      ADD_STAT(transDist, UNIT_COUNT, "Transaction distribution"),
+      ADD_STAT(pktCount, UNIT_COUNT,
+               "Packet count per connected requestor and responder"),
+      ADD_STAT(pktSize, UNIT_BYTE,
+               "Cumulative packet size per connected requestor and responder")
 {
 }
 
@@ -141,8 +141,8 @@ BaseXBar::Layer<SrcType, DstType>::Layer(DstType& _port, BaseXBar& _xbar,
     Stats::Group(&_xbar, _name.c_str()),
     port(_port), xbar(_xbar), _name(xbar.name() + "." + _name), state(IDLE),
     waitingForPeer(NULL), releaseEvent([this]{ releaseLayer(); }, name()),
-    ADD_STAT(occupancy, "Layer occupancy (ticks)"),
-    ADD_STAT(utilization, "Layer utilization (%)")
+    ADD_STAT(occupancy, UNIT_TICK, "Layer occupancy (ticks)"),
+    ADD_STAT(utilization, UNIT_RATIO, "Layer utilization")
 {
     occupancy
         .flags(Stats::nozero);
@@ -151,7 +151,7 @@ BaseXBar::Layer<SrcType, DstType>::Layer(DstType& _port, BaseXBar& _xbar,
         .precision(1)
         .flags(Stats::nozero);
 
-    utilization = 100 * occupancy / simTicks;
+    utilization = occupancy / simTicks;
 }
 
 template <typename SrcType, typename DstType>

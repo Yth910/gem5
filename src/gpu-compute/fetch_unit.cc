@@ -33,6 +33,7 @@
 
 #include "gpu-compute/fetch_unit.hh"
 
+#include "base/bitfield.hh"
 #include "debug/GPUFetch.hh"
 #include "debug/GPUPort.hh"
 #include "debug/GPUTLB.hh"
@@ -45,9 +46,9 @@
 
 uint32_t FetchUnit::globalFetchUnitID;
 
-FetchUnit::FetchUnit(const ComputeUnitParams *p, ComputeUnit &cu)
+FetchUnit::FetchUnit(const ComputeUnitParams &p, ComputeUnit &cu)
     : timingSim(true), computeUnit(cu), fetchScheduler(p),
-      waveList(nullptr), fetchDepth(p->fetch_depth)
+      waveList(nullptr), fetchDepth(p.fetch_depth)
 {
 }
 
@@ -240,6 +241,8 @@ FetchUnit::fetch(PacketPtr pkt, Wavefront *wavefront)
      * pending, in the same cycle another instruction is trying to fetch.
      */
     if (!fetchBuf.at(wavefront->wfSlotId).isReserved(pkt->req->getVaddr())) {
+        wavefront->dropFetch = false;
+        wavefront->pendingFetch = false;
         return;
     }
 
@@ -574,7 +577,8 @@ FetchUnit::FetchBufDesc::decodeSplitInst()
     int num_dwords = sizeof(TheGpuISA::RawMachInst) / dword_size;
 
     for (int i = 0; i < num_dwords; ++i) {
-        ((uint32_t*)(&split_inst))[i] = *reinterpret_cast<uint32_t*>(readPtr);
+        replaceBits(split_inst, 32*(i+1)-1, 32*i,
+            *reinterpret_cast<uint32_t*>(readPtr));
         if (readPtr + dword_size >= bufEnd) {
             readPtr = bufStart;
         }

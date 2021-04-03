@@ -29,8 +29,6 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Sooraj Puthoor
  */
 
 #include "dev/hsa/hw_scheduler.hh"
@@ -118,7 +116,7 @@ HWScheduler::registerNewQueue(uint64_t hostReadIndexPointer,
 
     // Check if this newly created queue can be directly mapped
     // to registered queue list
-    bool M5_VAR_USED register_q = mapQIfSlotAvlbl(queue_id, aql_buf, q_desc);
+    M5_VAR_USED bool register_q = mapQIfSlotAvlbl(queue_id, aql_buf, q_desc);
     schedWakeup();
     DPRINTF(HSAPacketProcessor,
              "%s: offset = %p, qID = %d, is_regd = %s, AL size %d\n",
@@ -300,7 +298,6 @@ HWScheduler::isRLQIdle(uint32_t rl_idx)
     DPRINTF(HSAPacketProcessor,
             "@ %s, analyzing hw queue %d\n", __FUNCTION__, rl_idx);
     HSAQueueDescriptor* qDesc = hsaPP->getRegdListEntry(rl_idx)->qCntxt.qDesc;
-    AQLRingBuffer* aql_buf = hsaPP->getRegdListEntry(rl_idx)->qCntxt.aqlBuf;
 
     // If there a pending DMA to this registered queue
     // then the queue is not idle
@@ -311,7 +308,7 @@ HWScheduler::isRLQIdle(uint32_t rl_idx)
     // Since packet completion stage happens only after kernel completion
     // we need to keep the queue mapped till all the outstanding kernels
     // from that queue are finished
-    if (aql_buf->rdIdx() != aql_buf->dispIdx()) {
+    if (hsaPP->inFlightPkts(rl_idx)) {
         return false;
     }
 

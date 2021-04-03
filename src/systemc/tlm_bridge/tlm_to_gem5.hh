@@ -58,6 +58,8 @@
 #ifndef __SYSTEMC_TLM_BRIDGE_TLM_TO_GEM5_HH__
 #define __SYSTEMC_TLM_BRIDGE_TLM_TO_GEM5_HH__
 
+#include <functional>
+
 #include "mem/port.hh"
 #include "params/TlmToGem5BridgeBase.hh"
 #include "systemc/ext/core/sc_module.hh"
@@ -71,13 +73,18 @@
 namespace sc_gem5
 {
 
+using PayloadToPacketConversionStep =
+    std::function<void(PacketPtr pkt, tlm::tlm_generic_payload &trans)>;
+
+void addPayloadToPacketConversionStep(PayloadToPacketConversionStep step);
+
+PacketPtr payload2packet(RequestorID _id, tlm::tlm_generic_payload &trans);
+
 class TlmToGem5BridgeBase : public sc_core::sc_module
 {
   protected:
     using sc_core::sc_module::sc_module;
 };
-
-PacketPtr payload2packet(tlm::tlm_generic_payload &trans);
 
 template <unsigned int BITWIDTH>
 class TlmToGem5Bridge : public TlmToGem5BridgeBase
@@ -161,7 +168,7 @@ class TlmToGem5Bridge : public TlmToGem5BridgeBase
     ::Port &gem5_getPort(const std::string &if_name, int idx=-1) override;
 
     typedef TlmToGem5BridgeBaseParams Params;
-    TlmToGem5Bridge(Params *p, const sc_core::sc_module_name &mn);
+    TlmToGem5Bridge(const Params &p, const sc_core::sc_module_name &mn);
 
     tlm_utils::simple_target_socket<TlmToGem5Bridge<BITWIDTH>, BITWIDTH> &
     getSocket()

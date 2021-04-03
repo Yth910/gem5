@@ -49,7 +49,7 @@
 namespace RiscvISA
 {
 
-const std::array<const char *, NumMiscRegs> M5_VAR_USED MiscRegNames = {{
+M5_VAR_USED const std::array<const char *, NumMiscRegs> MiscRegNames = {{
     [MISCREG_PRV]           = "PRV",
     [MISCREG_ISA]           = "ISA",
     [MISCREG_VENDORID]      = "VENDORID",
@@ -176,16 +176,10 @@ const std::array<const char *, NumMiscRegs> M5_VAR_USED MiscRegNames = {{
     [MISCREG_FRM]           = "FRM",
 }};
 
-ISA::ISA(Params *p) : BaseISA(p)
+ISA::ISA(const Params &p) : BaseISA(p)
 {
     miscRegFile.resize(NumMiscRegs);
     clear();
-}
-
-const RiscvISAParams *
-ISA::params() const
-{
-    return dynamic_cast<const Params *>(_params);
 }
 
 void ISA::clear()
@@ -261,7 +255,7 @@ ISA::readMiscReg(int misc_reg)
         if (hpmCounterEnabled(MISCREG_TIME)) {
             DPRINTF(RiscvMisc, "Wall-clock counter at: %llu.\n",
                     std::time(nullptr));
-            return std::time(nullptr);
+            return readMiscRegNoEffect(MISCREG_TIME);
         } else {
             warn("Wall clock disabled.\n");
             return 0;
@@ -410,10 +404,4 @@ ISA::unserialize(CheckpointIn &cp)
     UNSERIALIZE_CONTAINER(miscRegFile);
 }
 
-}
-
-RiscvISA::ISA *
-RiscvISAParams::create()
-{
-    return new RiscvISA::ISA(this);
 }

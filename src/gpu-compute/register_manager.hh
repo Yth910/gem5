@@ -29,8 +29,6 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Mark Wyse
  */
 
 #ifndef __REGISTER_MANAGER_HH__
@@ -58,13 +56,10 @@ struct RegisterManagerParams;
 class RegisterManager : public SimObject
 {
   public:
-    RegisterManager(const RegisterManagerParams* params);
+    RegisterManager(const RegisterManagerParams &params);
     ~RegisterManager();
     void setParent(ComputeUnit *cu);
     void exec();
-
-    // Stats related variables and methods
-    void regStats();
 
     // lookup virtual to physical register translation
     int mapVgpr(Wavefront* w, int vgprIndex);

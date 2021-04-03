@@ -48,12 +48,16 @@
 #ifndef __MEM_REQUEST_HH__
 #define __MEM_REQUEST_HH__
 
+#include <algorithm>
 #include <cassert>
-#include <climits>
+#include <cstdint>
+#include <functional>
+#include <limits>
+#include <memory>
+#include <vector>
 
 #include "base/amo.hh"
 #include "base/flags.hh"
-#include "base/logging.hh"
 #include "base/types.hh"
 #include "cpu/inst_seq.hh"
 #include "mem/htm.hh"
@@ -260,30 +264,36 @@ class Request
     typedef ::Flags<CacheCoherenceFlagsType> CacheCoherenceFlags;
 
     /**
-     * These bits are used to set the coherence policy
-     * for the GPU and are encoded in the GCN3 instructions.
-     * See the AMD GCN3 ISA Architecture Manual for more
-     * details.
+     * These bits are used to set the coherence policy for the GPU and are
+     * encoded in the GCN3 instructions. The GCN3 ISA defines two cache levels
+     * See the AMD GCN3 ISA Architecture Manual for more details.
      *
      * INV_L1: L1 cache invalidation
-     * WB_L2: L2 cache writeback
+     * FLUSH_L2: L2 cache flush
      *
-     * SLC: System Level Coherent. Accesses are forced to miss in
-     *      the L2 cache and are coherent with system memory.
+     * Invalidation means to simply discard all cache contents. This can be
+     * done in the L1 since it is implemented as a write-through cache and
+     * there are other copies elsewhere in the hierarchy.
      *
-     * GLC: Globally Coherent. Controls how reads and writes are
-     *      handled by the L1 cache. Global here referes to the
-     *      data being visible globally on the GPU (i.e., visible
-     *      to all WGs).
+     * For flush the contents of the cache need to be written back to memory
+     * when dirty and can be discarded otherwise. This operation is more
+     * involved than invalidation and therefore we do not flush caches with
+     * redundant copies of data.
      *
-     * For atomics, the GLC bit is used to distinguish between
-     * between atomic return/no-return operations.
+     * SLC: System Level Coherent. Accesses are forced to miss in the L2 cache
+     *      and are coherent with system memory.
+     *
+     * GLC: Globally Coherent. Controls how reads and writes are handled by
+     *      the L1 cache. Global here referes to the data being visible
+     *      globally on the GPU (i.e., visible to all WGs).
+     *
+     * For atomics, the GLC bit is used to distinguish between between atomic
+     * return/no-return operations. These flags are used by GPUDynInst.
      */
     enum : CacheCoherenceFlagsType {
         /** mem_sync_op flags */
         INV_L1                  = 0x00000001,
-        WB_L2                   = 0x00000020,
-        /** user-policy flags */
+        FLUSH_L2                = 0x00000020,
         /** user-policy flags */
         SLC_BIT                 = 0x00000080,
         GLC_BIT                 = 0x00000100,
@@ -432,6 +442,7 @@ class Request
     {
         _flags.set(flags);
         privateFlags.set(VALID_PADDR|VALID_SIZE);
+        _byteEnable = std::vector<bool>(size, true);
     }
 
     Request(Addr vaddr, unsigned size, Flags flags,
@@ -440,6 +451,7 @@ class Request
     {
         setVirt(vaddr, size, flags, id, pc, std::move(atomic_op));
         setContext(cid);
+        _byteEnable = std::vector<bool>(size, true);
     }
 
     Request(const Request& other)
@@ -481,9 +493,9 @@ class Request
     }
 
     void
-    setSubStreamId(uint32_t ssid)
+    setSubstreamId(uint32_t ssid)
     {
-        assert(privateFlags.isSet(VALID_STREAM_ID));
+        assert(hasStreamId());
         _substreamId = ssid;
         privateFlags.set(VALID_SUBSTREAM_ID);
     }
@@ -533,22 +545,20 @@ class Request
     // mem. accesses
     void splitOnVaddr(Addr split_addr, RequestPtr &req1, RequestPtr &req2)
     {
-        assert(privateFlags.isSet(VALID_VADDR));
-        assert(privateFlags.noneSet(VALID_PADDR));
+        assert(hasVaddr());
+        assert(!hasPaddr());
         assert(split_addr > _vaddr && split_addr < _vaddr + _size);
         req1 = std::make_shared<Request>(*this);
         req2 = std::make_shared<Request>(*this);
         req1->_size = split_addr - _vaddr;
         req2->_vaddr = split_addr;
         req2->_size = _size - req1->_size;
-        if (!_byteEnable.empty()) {
-            req1->_byteEnable = std::vector<bool>(
-                _byteEnable.begin(),
-                _byteEnable.begin() + req1->_size);
-            req2->_byteEnable = std::vector<bool>(
-                _byteEnable.begin() + req1->_size,
-                _byteEnable.end());
-        }
+        req1->_byteEnable = std::vector<bool>(
+            _byteEnable.begin(),
+            _byteEnable.begin() + req1->_size);
+        req2->_byteEnable = std::vector<bool>(
+            _byteEnable.begin() + req1->_size,
+            _byteEnable.end());
     }
 
     /**
@@ -563,16 +573,22 @@ class Request
     Addr
     getPaddr() const
     {
-        assert(privateFlags.isSet(VALID_PADDR));
+        assert(hasPaddr());
         return _paddr;
     }
 
     /**
      * Accessor for instruction count.
      */
+    bool
+    hasInstCount() const
+    {
+      return privateFlags.isSet(VALID_INST_COUNT);
+    }
+
     Counter getInstCount() const
     {
-        assert(privateFlags.isSet(VALID_INST_COUNT));
+        assert(hasInstCount());
         return _instCount;
     }
 
@@ -611,7 +627,7 @@ class Request
     unsigned
     getSize() const
     {
-        assert(privateFlags.isSet(VALID_SIZE));
+        assert(hasSize());
         return _size;
     }
 
@@ -624,7 +640,7 @@ class Request
     void
     setByteEnable(const std::vector<bool>& be)
     {
-        assert(be.empty() || be.size() == _size);
+        assert(be.size() == _size);
         _byteEnable = be;
     }
 
@@ -646,7 +662,7 @@ class Request
     Tick
     time() const
     {
-        assert(privateFlags.isSet(VALID_PADDR|VALID_VADDR));
+        assert(hasPaddr() || hasVaddr());
         return _time;
     }
 
@@ -680,10 +696,16 @@ class Request
     /**
      * Accessor for hardware transactional memory abort cause.
      */
+    bool
+    hasHtmAbortCause() const
+    {
+      return privateFlags.isSet(VALID_HTM_ABORT_CAUSE);
+    }
+
     HtmFailureFaultCause
     getHtmAbortCause() const
     {
-        assert(privateFlags.isSet(VALID_HTM_ABORT_CAUSE));
+        assert(hasHtmAbortCause());
         return _htmAbortCause;
     }
 
@@ -699,7 +721,7 @@ class Request
     Flags
     getFlags()
     {
-        assert(privateFlags.isSet(VALID_PADDR|VALID_VADDR));
+        assert(hasPaddr() || hasVaddr());
         return _flags;
     }
 
@@ -710,7 +732,7 @@ class Request
     void
     setFlags(Flags flags)
     {
-        assert(privateFlags.isSet(VALID_PADDR|VALID_VADDR));
+        assert(hasPaddr() || hasVaddr());
         _flags.set(flags);
     }
 
@@ -718,7 +740,7 @@ class Request
     setCacheCoherenceFlags(CacheCoherenceFlags extraFlags)
     {
         // TODO: do mem_sync_op requests have valid paddr/vaddr?
-        assert(privateFlags.isSet(VALID_PADDR | VALID_VADDR));
+        assert(hasPaddr() || hasVaddr());
         _cacheCoherenceFlags.set(extraFlags);
     }
 
@@ -758,7 +780,7 @@ class Request
     ArchFlagsType
     getArchFlags() const
     {
-        assert(privateFlags.isSet(VALID_PADDR|VALID_VADDR));
+        assert(hasPaddr() || hasVaddr());
         return _flags & ARCH_BITS;
     }
 
@@ -773,7 +795,7 @@ class Request
     uint64_t
     getExtraData() const
     {
-        assert(privateFlags.isSet(VALID_EXTRA_DATA));
+        assert(extraDataValid());
         return _extraData;
     }
 
@@ -795,14 +817,20 @@ class Request
     ContextID
     contextId() const
     {
-        assert(privateFlags.isSet(VALID_CONTEXT_ID));
+        assert(hasContextId());
         return _contextId;
+    }
+
+    bool
+    hasStreamId() const
+    {
+      return privateFlags.isSet(VALID_STREAM_ID);
     }
 
     uint32_t
     streamId() const
     {
-        assert(privateFlags.isSet(VALID_STREAM_ID));
+        assert(hasStreamId());
         return _streamId;
     }
 
@@ -815,7 +843,7 @@ class Request
     uint32_t
     substreamId() const
     {
-        assert(privateFlags.isSet(VALID_SUBSTREAM_ID));
+        assert(hasSubstreamId());
         return _substreamId;
     }
 
@@ -836,7 +864,7 @@ class Request
     Addr
     getPC() const
     {
-        assert(privateFlags.isSet(VALID_PC));
+        assert(hasPC());
         return _pc;
     }
 
@@ -873,7 +901,7 @@ class Request
     InstSeqNum
     getReqInstSeqNum() const
     {
-        assert(privateFlags.isSet(VALID_INST_SEQ_NUM));
+        assert(hasInstSeqNum());
         return _reqInstSeqNum;
     }
 
@@ -938,11 +966,15 @@ class Request
     /**
      * Accessor functions for the memory space configuration flags and used by
      * GPU ISAs such as the Heterogeneous System Architecture (HSA). Note that
-     * these are for testing only; setting extraFlags should be done via
-     * setCacheCoherenceFlags().
+     * setting extraFlags should be done via setCacheCoherenceFlags().
      */
-    bool isSLC() const { return _cacheCoherenceFlags.isSet(SLC_BIT); }
-    bool isGLC() const { return _cacheCoherenceFlags.isSet(GLC_BIT); }
+    bool isInvL1() const { return _cacheCoherenceFlags.isSet(INV_L1); }
+
+    bool
+    isGL2CacheFlush() const
+    {
+        return _cacheCoherenceFlags.isSet(FLUSH_L2);
+    }
 
     /**
      * Accessor functions to determine whether this request is part of

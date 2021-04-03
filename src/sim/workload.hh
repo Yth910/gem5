@@ -44,22 +44,31 @@ class Workload : public SimObject
 
     struct WorkloadStats : public Stats::Group
     {
-        Stats::Scalar arm;
-        Stats::Scalar quiesce;
+        struct InstStats: public Stats::Group
+        {
+            Stats::Scalar arm;
+            Stats::Scalar quiesce;
+
+            InstStats(Stats::Group *parent) : Stats::Group(parent, "inst"),
+                ADD_STAT(arm, UNIT_COUNT,
+                         "number of arm instructions executed"),
+                ADD_STAT(quiesce, UNIT_COUNT,
+                         "number of quiesce instructions executed")
+            {}
+
+        } instStats;
 
         WorkloadStats(Workload *workload) : Stats::Group(workload),
-            arm(this, "inst.arm", "number of arm instructions executed"),
-            quiesce(this, "inst.quiesce",
-                    "number of quiesce instructions executed")
+            instStats(workload)
         {}
     } stats;
 
   public:
-    Workload(const WorkloadParams *_params) : SimObject(_params), stats(this)
+    Workload(const WorkloadParams &params) : SimObject(params), stats(this)
     {}
 
-    void recordQuiesce() { stats.quiesce++; }
-    void recordArm() { stats.arm++; }
+    void recordQuiesce() { stats.instStats.quiesce++; }
+    void recordArm() { stats.instStats.arm++; }
 
     System *system = nullptr;
 
@@ -68,6 +77,18 @@ class Workload : public SimObject
 
     virtual const Loader::SymbolTable &symtab(ThreadContext *tc) = 0;
     virtual bool insertSymbol(const Loader::Symbol &symbol) = 0;
+
+    virtual void
+    syscall(ThreadContext *tc)
+    {
+        panic("syscall() not implemented.");
+    }
+
+    virtual void
+    event(ThreadContext *tc)
+    {
+        warn("Unhandled workload event.");
+    }
 
     /** @{ */
     /**

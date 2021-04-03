@@ -105,10 +105,9 @@ class ExecContext : public ::ExecContext
     Fault
     initiateMemRead(Addr addr, unsigned int size,
                     Request::Flags flags,
-                    const std::vector<bool>& byte_enable =
-                        std::vector<bool>()) override
+                    const std::vector<bool>& byte_enable) override
     {
-        assert(byte_enable.empty() || byte_enable.size() == size);
+        assert(byte_enable.size() == size);
         return execute.getLSQ().pushRequest(inst, true /* load */, nullptr,
             size, addr, flags, nullptr, nullptr, byte_enable);
     }
@@ -123,10 +122,10 @@ class ExecContext : public ::ExecContext
     Fault
     writeMem(uint8_t *data, unsigned int size, Addr addr,
              Request::Flags flags, uint64_t *res,
-             const std::vector<bool>& byte_enable = std::vector<bool>())
+             const std::vector<bool>& byte_enable)
         override
     {
-        assert(byte_enable.empty() || byte_enable.size() == size);
+        assert(byte_enable.size() == size);
         return execute.getLSQ().pushRequest(inst, false /* store */, data,
             size, addr, flags, res, nullptr, byte_enable);
     }
@@ -137,7 +136,8 @@ class ExecContext : public ::ExecContext
     {
         // AMO requests are pushed through the store path
         return execute.getLSQ().pushRequest(inst, false /* amo */, nullptr,
-            size, addr, flags, nullptr, std::move(amo_op));
+            size, addr, flags, nullptr, std::move(amo_op),
+            std::vector<bool>(size, true));
     }
 
     RegVal
@@ -419,8 +419,6 @@ class ExecContext : public ::ExecContext
         return thread.setMiscReg(reg.index(), val);
     }
 
-    void syscall() override { thread.syscall(); }
-
     ThreadContext *tcBase() const override { return thread.getTC(); }
 
     /* @todo, should make stCondFailures persistent somewhere */
@@ -434,8 +432,7 @@ class ExecContext : public ::ExecContext
     void
     demapPage(Addr vaddr, uint64_t asn) override
     {
-        thread.getITBPtr()->demapPage(vaddr, asn);
-        thread.getDTBPtr()->demapPage(vaddr, asn);
+        thread.getMMUPtr()->demapPage(vaddr, asn);
     }
 
     RegVal
@@ -454,33 +451,33 @@ class ExecContext : public ::ExecContext
         thread.setCCReg(reg.index(), val);
     }
 
-    void
-    demapInstPage(Addr vaddr, uint64_t asn)
-    {
-        thread.getITBPtr()->demapPage(vaddr, asn);
-    }
-
-    void
-    demapDataPage(Addr vaddr, uint64_t asn)
-    {
-        thread.getDTBPtr()->demapPage(vaddr, asn);
-    }
-
     BaseCPU *getCpuPtr() { return &cpu; }
 
   public:
     // monitor/mwait funtions
-    void armMonitor(Addr address) override
-    { getCpuPtr()->armMonitor(inst->id.threadId, address); }
+    void
+    armMonitor(Addr address) override
+    {
+        getCpuPtr()->armMonitor(inst->id.threadId, address);
+    }
 
-    bool mwait(PacketPtr pkt) override
-    { return getCpuPtr()->mwait(inst->id.threadId, pkt); }
+    bool
+    mwait(PacketPtr pkt) override
+    {
+        return getCpuPtr()->mwait(inst->id.threadId, pkt);
+    }
 
-    void mwaitAtomic(ThreadContext *tc) override
-    { return getCpuPtr()->mwaitAtomic(inst->id.threadId, tc, thread.dtb); }
+    void
+    mwaitAtomic(ThreadContext *tc) override
+    {
+        return getCpuPtr()->mwaitAtomic(inst->id.threadId, tc, thread.mmu);
+    }
 
-    AddressMonitor *getAddrMonitor() override
-    { return getCpuPtr()->getCpuAddrMonitor(inst->id.threadId); }
+    AddressMonitor *
+    getAddrMonitor() override
+    {
+        return getCpuPtr()->getCpuAddrMonitor(inst->id.threadId);
+    }
 };
 
 }

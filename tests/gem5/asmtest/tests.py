@@ -41,7 +41,7 @@ def asm_test(test, #The full path of the test
              cpu_type,
              num_cpus=4,
              max_tick=10000000000,
-             ruby=True,
+             ruby=False,
              debug_flags=None, # Debug flags passed to gem5
              full_system = False
              ):
@@ -83,23 +83,20 @@ def asm_test(test, #The full path of the test
         gem5_args = gem5_args,
         config = config_file,
         config_args = config_args,
-        valid_isas = ('RISCV',),
+        valid_isas = (constants.riscv_tag,),
         valid_hosts = constants.supported_hosts
     )
 
 cpu_types = ('AtomicSimpleCPU', 'TimingSimpleCPU', 'MinorCPU', 'DerivO3CPU')
 
 # The following lists the RISCV binaries. Those commented out presently result
-# in a test failure. They are outlined in the following Jira Issues:
-#
-# https://gem5.atlassian.net/browse/GEM5-494
+# in a test failure. This is outlined in the following Jira issue:
 # https://gem5.atlassian.net/browse/GEM5-496
-# https://gem5.atlassian.net/browse/GEM5-497
 binaries = (
-#    'rv64samt-ps-sysclone_d',
-#    'rv64samt-ps-sysfutex1_d',
+    'rv64samt-ps-sysclone_d',
+    'rv64samt-ps-sysfutex1_d',
 #    'rv64samt-ps-sysfutex2_d',
-#    'rv64samt-ps-sysfutex3_d',
+    'rv64samt-ps-sysfutex3_d',
 #    'rv64samt-ps-sysfutex_d',
     'rv64ua-ps-amoadd_d',
     'rv64ua-ps-amoadd_w',
@@ -120,16 +117,16 @@ binaries = (
     'rv64ua-ps-amoxor_d',
     'rv64ua-ps-amoxor_w',
     'rv64ua-ps-lrsc',
-#    'rv64uamt-ps-amoadd_d',
-#    'rv64uamt-ps-amoand_d',
-#    'rv64uamt-ps-amomax_d',
-#    'rv64uamt-ps-amomaxu_d',
-#    'rv64uamt-ps-amomin_d',
-#    'rv64uamt-ps-amominu_d',
-#    'rv64uamt-ps-amoor_d',
-#    'rv64uamt-ps-amoswap_d',
-#    'rv64uamt-ps-amoxor_d',
-#    'rv64uamt-ps-lrsc_d',
+    'rv64uamt-ps-amoadd_d',
+    'rv64uamt-ps-amoand_d',
+    'rv64uamt-ps-amomax_d',
+    'rv64uamt-ps-amomaxu_d',
+    'rv64uamt-ps-amomin_d',
+    'rv64uamt-ps-amominu_d',
+    'rv64uamt-ps-amoor_d',
+    'rv64uamt-ps-amoswap_d',
+    'rv64uamt-ps-amoxor_d',
+    'rv64uamt-ps-lrsc_d',
     'rv64ud-ps-fadd',
     'rv64ud-ps-fclass',
     'rv64ud-ps-fcmp',

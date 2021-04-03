@@ -45,8 +45,6 @@
 #include "sim/stats.hh"
 #include "sim/system.hh"
 
-using namespace std;
-
 int TESTER_NETWORK=0;
 
 bool
@@ -71,26 +69,26 @@ GarnetSyntheticTraffic::sendPkt(PacketPtr pkt)
     numPacketsSent++;
 }
 
-GarnetSyntheticTraffic::GarnetSyntheticTraffic(const Params *p)
+GarnetSyntheticTraffic::GarnetSyntheticTraffic(const Params &p)
     : ClockedObject(p),
       tickEvent([this]{ tick(); }, "GarnetSyntheticTraffic tick",
                 false, Event::CPU_Tick_Pri),
       cachePort("GarnetSyntheticTraffic", this),
       retryPkt(NULL),
-      size(p->memory_size),
-      blockSizeBits(p->block_offset),
-      numDestinations(p->num_dest),
-      simCycles(p->sim_cycles),
-      numPacketsMax(p->num_packets_max),
+      size(p.memory_size),
+      blockSizeBits(p.block_offset),
+      numDestinations(p.num_dest),
+      simCycles(p.sim_cycles),
+      numPacketsMax(p.num_packets_max),
       numPacketsSent(0),
-      singleSender(p->single_sender),
-      singleDest(p->single_dest),
-      trafficType(p->traffic_type),
-      injRate(p->inj_rate),
-      injVnet(p->inj_vnet),
-      precision(p->precision),
-      responseLimit(p->response_limit),
-      requestorId(p->system->getRequestorId(this))
+      singleSender(p.single_sender),
+      singleDest(p.single_dest),
+      trafficType(p.traffic_type),
+      injRate(p.inj_rate),
+      injVnet(p.inj_vnet),
+      precision(p.precision),
+      responseLimit(p.response_limit),
+      requestorId(p.system->getRequestorId(this))
 {
     // set up counters
     noResponseCycles = 0;
@@ -347,11 +345,4 @@ void
 GarnetSyntheticTraffic::printAddr(Addr a)
 {
     cachePort.printAddr(a);
-}
-
-
-GarnetSyntheticTraffic *
-GarnetSyntheticTrafficParams::create()
-{
-    return new GarnetSyntheticTraffic(this);
 }

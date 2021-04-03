@@ -42,6 +42,7 @@
 #include "base/types.hh"
 #include "sim/sim_object.hh"
 
+class BaseCache;
 class CacheBlk;
 struct BaseCacheCompressorParams;
 
@@ -94,6 +95,33 @@ class Base : public SimObject
      * the compressed block is restored to its uncompressed format.
      */
     const std::size_t sizeThreshold;
+
+    /**
+     * Degree of parallelization of the compression process. It is the
+     * number of chunks that can be processed in a cycle.
+     */
+    const Cycles compChunksPerCycle;
+
+    /**
+     * Extra latency added to compression due to packaging, shifting or
+     * other operations.
+     */
+    const Cycles compExtraLatency;
+
+    /**
+     * Degree of parallelization of the decompression process. It is the
+     * number of chunks that can be processed in a cycle.
+     */
+    const Cycles decompChunksPerCycle;
+
+    /**
+     * Extra latency added to decompression due to packaging, shifting or
+     * other operations.
+     */
+    const Cycles decompExtraLatency;
+
+    /** Pointer to the parent cache. */
+    BaseCache* cache;
 
     struct BaseStats : public Stats::Group
     {
@@ -166,8 +194,11 @@ class Base : public SimObject
 
   public:
     typedef BaseCacheCompressorParams Params;
-    Base(const Params *p);
+    Base(const Params &p);
     virtual ~Base() = default;
+
+    /** The cache can only be set once. */
+    virtual void setCache(BaseCache *_cache);
 
     /**
      * Apply the compression process to the cache line. Ignores compression

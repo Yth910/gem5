@@ -399,6 +399,12 @@ GPUDynInst::isWaitcnt() const
 }
 
 bool
+GPUDynInst::isSleep() const
+{
+    return _staticInst->isSleep();
+}
+
+bool
 GPUDynInst::isBarrier() const
 {
     return _staticInst->isBarrier();
@@ -819,7 +825,6 @@ GPUDynInst::resolveFlatSegment(const VectorMask &mask)
     if (executedAs() == Enums::SC_GLOBAL) {
         // no transormation for global segment
         wavefront()->execUnitId =  wavefront()->flatGmUnitId;
-        wavefront()->decLGKMInstsIssued();
         if (isLoad()) {
             wavefront()->rdLmReqsInPipe--;
         } else if (isStore()) {
@@ -931,16 +936,16 @@ GPUDynInst::updateStats()
 {
     if (_staticInst->isLocalMem()) {
         // access to LDS (shared) memory
-        cu->dynamicLMemInstrCnt++;
+        cu->stats.dynamicLMemInstrCnt++;
     } else if (_staticInst->isFlat()) {
-        cu->dynamicFlatMemInstrCnt++;
+        cu->stats.dynamicFlatMemInstrCnt++;
     } else {
         // access to global memory
 
         // update PageDivergence histogram
         int number_pages_touched = cu->pagesTouched.size();
         assert(number_pages_touched);
-        cu->pageDivergenceDist.sample(number_pages_touched);
+        cu->stats.pageDivergenceDist.sample(number_pages_touched);
 
         std::pair<ComputeUnit::pageDataStruct::iterator, bool> ret;
 
@@ -963,7 +968,7 @@ GPUDynInst::updateStats()
         // total number of memory instructions (dynamic)
         // Atomics are counted as a single memory instruction.
         // this is # memory instructions per wavefronts, not per workitem
-        cu->dynamicGMemInstrCnt++;
+        cu->stats.dynamicGMemInstrCnt++;
     }
 }
 

@@ -29,9 +29,6 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import print_function
-from __future__ import absolute_import
-
 # Configure the TLB hierarchy
 # Places which would probably need to be modified if you
 # want a different hierarchy are specified by a <Modify here .. >'
@@ -74,8 +71,7 @@ def create_TLB_Coalescer(options, my_level, my_index, tlb_name,
         coalescer_name.append(eval(Coalescer_constructor(my_level)))
 
 def config_tlb_hierarchy(options, system, shader_idx):
-    n_cu = options.cu_per_sa * options.sa_per_complex * \
-           options.num_gpu_complexes
+    n_cu = options.num_compute_units
 
     if options.TLB_config == "perLane":
         num_TLBs = 64 * n_cu

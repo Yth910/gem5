@@ -41,70 +41,34 @@
 
 namespace Compressor {
 
-Base64Delta8::Base64Delta8(const Params *p)
+Base64Delta8::Base64Delta8(const Params &p)
     : BaseDelta<uint64_t, 8>(p)
 {
 }
 
-Base64Delta16::Base64Delta16(const Params *p)
+Base64Delta16::Base64Delta16(const Params &p)
     : BaseDelta<uint64_t, 16>(p)
 {
 }
 
-Base64Delta32::Base64Delta32(const Params *p)
+Base64Delta32::Base64Delta32(const Params &p)
     : BaseDelta<uint64_t, 32>(p)
 {
 }
 
-Base32Delta8::Base32Delta8(const Params *p)
+Base32Delta8::Base32Delta8(const Params &p)
     : BaseDelta<uint32_t, 8>(p)
 {
 }
 
-Base32Delta16::Base32Delta16(const Params *p)
+Base32Delta16::Base32Delta16(const Params &p)
     : BaseDelta<uint32_t, 16>(p)
 {
 }
 
-Base16Delta8::Base16Delta8(const Params *p)
+Base16Delta8::Base16Delta8(const Params &p)
     : BaseDelta<uint16_t, 8>(p)
 {
 }
 
 } // namespace Compressor
-
-Compressor::Base64Delta8*
-Base64Delta8Params::create()
-{
-    return new Compressor::Base64Delta8(this);
-}
-
-Compressor::Base64Delta16*
-Base64Delta16Params::create()
-{
-    return new Compressor::Base64Delta16(this);
-}
-
-Compressor::Base64Delta32*
-Base64Delta32Params::create()
-{
-    return new Compressor::Base64Delta32(this);
-}
-
-Compressor::Base32Delta8*
-Base32Delta8Params::create()
-{
-    return new Compressor::Base32Delta8(this);
-}
-
-Compressor::Base32Delta16*
-Base32Delta16Params::create()
-{
-    return new Compressor::Base32Delta16(this);
-}
-
-Compressor::Base16Delta8*
-Base16Delta8Params::create()
-{
-    return new Compressor::Base16Delta8(this);
-}

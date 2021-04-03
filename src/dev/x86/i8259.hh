@@ -81,15 +81,9 @@ class I8259 : public BasicPioDevice
     void handleEOI(int line);
 
   public:
-    typedef I8259Params Params;
+    using Params = I8259Params;
 
-    const Params *
-    params() const
-    {
-        return dynamic_cast<const Params *>(_params);
-    }
-
-    I8259(Params * p);
+    I8259(const Params &p);
 
     Port &
     getPort(const std::string &if_name, PortID idx=InvalidPortID) override

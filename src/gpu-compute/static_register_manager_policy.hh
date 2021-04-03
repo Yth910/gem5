@@ -29,8 +29,6 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Mark Wyse
  */
 
 #ifndef __STATIC_REGISTER_MANAGER_POLICY_HH__
@@ -58,8 +56,6 @@ class StaticRegisterManagerPolicy : public RegisterManagerPolicy
         int scalarDemand) override;
 
     void freeRegisters(Wavefront *w) override;
-
-    void regStats() override;
 };
 
 #endif // __STATIC_REGISTER_MANAGER_POLICY_HH__

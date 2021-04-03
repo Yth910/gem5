@@ -29,9 +29,6 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Sooraj Puthoor
- *          Anthony Gutierrez
  */
 
 /**
@@ -53,8 +50,9 @@ class GPUComputeDriver final : public HSADriver
 {
   public:
     typedef GPUComputeDriverParams Params;
-    GPUComputeDriver(Params *p);
+    GPUComputeDriver(const Params &p);
     int ioctl(ThreadContext *tc, unsigned req, Addr ioc_buf) override;
+    void sleepCPU(ThreadContext *tc, uint32_t milliSecTimeout);
 
   private:
     /**

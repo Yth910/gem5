@@ -55,21 +55,21 @@
 using namespace iGbReg;
 using namespace Net;
 
-IGbE::IGbE(const Params *p)
+IGbE::IGbE(const Params &p)
     : EtherDevice(p), etherInt(NULL),
-      rxFifo(p->rx_fifo_size), txFifo(p->tx_fifo_size), inTick(false),
+      rxFifo(p.rx_fifo_size), txFifo(p.tx_fifo_size), inTick(false),
       rxTick(false), txTick(false), txFifoTick(false), rxDmaPacket(false),
-      pktOffset(0), fetchDelay(p->fetch_delay), wbDelay(p->wb_delay),
-      fetchCompDelay(p->fetch_comp_delay), wbCompDelay(p->wb_comp_delay),
-      rxWriteDelay(p->rx_write_delay), txReadDelay(p->tx_read_delay),
+      pktOffset(0), fetchDelay(p.fetch_delay), wbDelay(p.wb_delay),
+      fetchCompDelay(p.fetch_comp_delay), wbCompDelay(p.wb_comp_delay),
+      rxWriteDelay(p.rx_write_delay), txReadDelay(p.tx_read_delay),
       rdtrEvent([this]{ rdtrProcess(); }, name()),
       radvEvent([this]{ radvProcess(); }, name()),
       tadvEvent([this]{ tadvProcess(); }, name()),
       tidvEvent([this]{ tidvProcess(); }, name()),
       tickEvent([this]{ tick(); }, name()),
       interEvent([this]{ delayIntEvent(); }, name()),
-      rxDescCache(this, name()+".RxDesc", p->rx_desc_cache_size),
-      txDescCache(this, name()+".TxDesc", p->tx_desc_cache_size),
+      rxDescCache(this, name()+".RxDesc", p.rx_desc_cache_size),
+      txDescCache(this, name()+".TxDesc", p.tx_desc_cache_size),
       lastInterrupt(0)
 {
     etherInt = new IGbEInt(name() + ".int", this);
@@ -106,7 +106,7 @@ IGbE::IGbE(const Params *p)
     memset(&flash, 0, EEPROM_SIZE*2);
 
     // Set the MAC address
-    memcpy(flash, p->hardware_address.bytes(), ETH_ADDR_LEN);
+    memcpy(flash, p.hardware_address.bytes(), ETH_ADDR_LEN);
     for (int x = 0; x < ETH_ADDR_LEN/2; x++)
         flash[x] = htobe(flash[x]);
 
@@ -119,7 +119,7 @@ IGbE::IGbE(const Params *p)
     flash[EEPROM_SIZE-1] = htobe((uint16_t)(EEPROM_CSUM - csum));
 
     // Store the MAC address as queue ID
-    macAddr = p->hardware_address;
+    macAddr = p.hardware_address;
 
     rxFifo.clear();
     txFifo.clear();
@@ -468,10 +468,10 @@ IGbE::write(PacketPtr pkt)
             regs.mdic.data(0x796D); // link up
             break;
           case PHY_PID:
-            regs.mdic.data(params()->phy_pid);
+            regs.mdic.data(params().phy_pid);
             break;
           case PHY_EPID:
-            regs.mdic.data(params()->phy_epid);
+            regs.mdic.data(params().phy_epid);
             break;
           case PHY_GSTATUS:
             regs.mdic.data(0x7C00);
@@ -732,7 +732,7 @@ void
 IGbE::cpuPostInt()
 {
 
-    postedInterrupts++;
+    etherDeviceStats.postedInterrupts++;
 
     if (!(regs.icr() & regs.imr)) {
         DPRINTF(Ethernet, "Interrupt Masked. Not Posting\n");
@@ -1330,7 +1330,7 @@ IGbE::RxDescCache::pktComplete()
             DPRINTF(EthernetDesc, "Checking IP checksum\n");
             status |= RXDS_IPCS;
             csum = htole(cksum(ip));
-            igbe->rxIpChecksums++;
+            igbe->etherDeviceStats.rxIpChecksums++;
             if (cksum(ip) != 0) {
                 err |= RXDE_IPE;
                 ext_err |= RXDEE_IPE;
@@ -1343,7 +1343,7 @@ IGbE::RxDescCache::pktComplete()
             status |= RXDS_TCPCS;
             ptype |= RXDP_TCP;
             csum = htole(cksum(tcp));
-            igbe->rxTcpChecksums++;
+            igbe->etherDeviceStats.rxTcpChecksums++;
             if (cksum(tcp) != 0) {
                 DPRINTF(EthernetDesc, "Checksum is bad!!\n");
                 err |= RXDE_TCPE;
@@ -1357,7 +1357,7 @@ IGbE::RxDescCache::pktComplete()
             status |= RXDS_UDPCS;
             ptype |= RXDP_UDP;
             csum = htole(cksum(udp));
-            igbe->rxUdpChecksums++;
+            igbe->etherDeviceStats.rxUdpChecksums++;
             if (cksum(udp) != 0) {
                 DPRINTF(EthernetDesc, "Checksum is bad!!\n");
                 ext_err |= RXDEE_TCPE;
@@ -1820,7 +1820,7 @@ IGbE::TxDescCache::pktComplete()
         if (ip && TxdOp::ixsm(desc)) {
             ip->sum(0);
             ip->sum(cksum(ip));
-            igbe->txIpChecksums++;
+            igbe->etherDeviceStats.txIpChecksums++;
             DPRINTF(EthernetDesc, "Calculated IP checksum\n");
         }
         if (TxdOp::txsm(desc)) {
@@ -1829,13 +1829,13 @@ IGbE::TxDescCache::pktComplete()
             if (tcp) {
                 tcp->sum(0);
                 tcp->sum(cksum(tcp));
-                igbe->txTcpChecksums++;
+                igbe->etherDeviceStats.txTcpChecksums++;
                 DPRINTF(EthernetDesc, "Calculated TCP checksum\n");
             } else if (udp) {
                 assert(udp);
                 udp->sum(0);
                 udp->sum(cksum(udp));
-                igbe->txUdpChecksums++;
+                igbe->etherDeviceStats.txUdpChecksums++;
                 DPRINTF(EthernetDesc, "Calculated UDP checksum\n");
             } else {
                 panic("Told to checksum, but don't know how\n");
@@ -2153,8 +2153,8 @@ IGbE::txStateMachine()
 bool
 IGbE::ethRxPkt(EthPacketPtr pkt)
 {
-    rxBytes += pkt->length;
-    rxPackets++;
+    etherDeviceStats.rxBytes += pkt->length;
+    etherDeviceStats.rxPackets++;
 
     DPRINTF(Ethernet, "RxFIFO: Receiving pcakte from wire\n");
 
@@ -2307,8 +2307,8 @@ IGbE::txWire()
                 "TxFIFO: Successful transmit, bytes available in fifo: %d\n",
                 txFifo.avail());
 
-        txBytes += txFifo.front()->length;
-        txPackets++;
+        etherDeviceStats.txBytes += txFifo.front()->length;
+        etherDeviceStats.txPackets++;
 
         txFifo.pop();
     }
@@ -2462,10 +2462,4 @@ IGbE::unserialize(CheckpointIn &cp)
 
     txDescCache.unserializeSection(cp, "TxDescCache");
     rxDescCache.unserializeSection(cp, "RxDescCache");
-}
-
-IGbE *
-IGbEParams::create()
-{
-    return new IGbE(this);
 }

@@ -48,8 +48,6 @@
 #include "sim/stats.hh"
 #include "sim/system.hh"
 
-using namespace std;
-
 unsigned int TESTER_ALLOCATOR = 0;
 
 bool
@@ -79,27 +77,27 @@ MemTest::sendPkt(PacketPtr pkt) {
     return true;
 }
 
-MemTest::MemTest(const Params *p)
+MemTest::MemTest(const Params &p)
     : ClockedObject(p),
       tickEvent([this]{ tick(); }, name()),
       noRequestEvent([this]{ noRequest(); }, name()),
       noResponseEvent([this]{ noResponse(); }, name()),
       port("port", *this),
       retryPkt(nullptr),
-      size(p->size),
-      interval(p->interval),
-      percentReads(p->percent_reads),
-      percentFunctional(p->percent_functional),
-      percentUncacheable(p->percent_uncacheable),
-      requestorId(p->system->getRequestorId(this)),
-      blockSize(p->system->cacheLineSize()),
+      size(p.size),
+      interval(p.interval),
+      percentReads(p.percent_reads),
+      percentFunctional(p.percent_functional),
+      percentUncacheable(p.percent_uncacheable),
+      requestorId(p.system->getRequestorId(this)),
+      blockSize(p.system->cacheLineSize()),
       blockAddrMask(blockSize - 1),
-      progressInterval(p->progress_interval),
-      progressCheck(p->progress_check),
-      nextProgressMessage(p->progress_interval),
-      maxLoads(p->max_loads),
-      atomic(p->system->isAtomicMode()),
-      suppressFuncErrors(p->suppress_func_errors), stats(this)
+      progressInterval(p.progress_interval),
+      progressCheck(p.progress_check),
+      nextProgressMessage(p.progress_interval),
+      maxLoads(p.max_loads),
+      atomic(p.system->isAtomicMode()),
+      suppressFuncErrors(p.suppress_func_errors), stats(this)
 {
     id = TESTER_ALLOCATOR++;
     fatal_if(id >= blockSize, "Too many testers, only %d allowed\n",
@@ -163,8 +161,9 @@ MemTest::completeRequest(PacketPtr pkt, bool functional)
             stats.numReads++;
 
             if (numReads == (uint64_t)nextProgressMessage) {
-                ccprintf(cerr, "%s: completed %d read, %d write accesses @%d\n",
-                         name(), numReads, numWrites, curTick());
+                ccprintf(std::cerr,
+                        "%s: completed %d read, %d write accesses @%d\n",
+                        name(), numReads, numWrites, curTick());
                 nextProgressMessage += progressInterval;
             }
 
@@ -192,8 +191,8 @@ MemTest::completeRequest(PacketPtr pkt, bool functional)
 }
 MemTest::MemTestStats::MemTestStats(Stats::Group *parent)
       : Stats::Group(parent),
-      ADD_STAT(numReads, "number of read accesses completed"),
-      ADD_STAT(numWrites, "number of write accesses completed")
+      ADD_STAT(numReads, UNIT_COUNT, "number of read accesses completed"),
+      ADD_STAT(numWrites, UNIT_COUNT, "number of write accesses completed")
 {
 
 }
@@ -245,7 +244,7 @@ MemTest::tick()
     if (cmd < percentReads) {
         // start by ensuring there is a reference value if we have not
         // seen this address before
-        uint8_t M5_VAR_USED ref_data = 0;
+        M5_VAR_USED uint8_t ref_data = 0;
         auto ref = referenceData.find(req->getPaddr());
         if (ref == referenceData.end()) {
             referenceData[req->getPaddr()] = 0;
@@ -320,10 +319,4 @@ MemTest::recvRetry()
         schedule(tickEvent, clockEdge(interval));
         reschedule(noRequestEvent, clockEdge(progressCheck), true);
     }
-}
-
-MemTest *
-MemTestParams::create()
-{
-    return new MemTest(this);
 }

@@ -36,10 +36,10 @@ namespace FastModel
 {
 
 CortexA76TC::CortexA76TC(::BaseCPU *cpu, int id, System *system,
-        ::BaseTLB *dtb, ::BaseTLB *itb, ::BaseISA *isa,
+        ::BaseMMU *mmu, ::BaseISA *isa,
         iris::IrisConnectionInterface *iris_if,
         const std::string &iris_path) :
-    ThreadContext(cpu, id, system, dtb, itb, isa, iris_if, iris_path)
+    ThreadContext(cpu, id, system, mmu, isa, iris_if, iris_path)
 {}
 
 bool
@@ -300,12 +300,14 @@ Iris::ThreadContext::IdxNameMap CortexA76TC::miscRegIdxNameMap({
         { ArmISA::MISCREG_ID_MMFR1, "ID_MMFR1" },
         { ArmISA::MISCREG_ID_MMFR2, "ID_MMFR2" },
         { ArmISA::MISCREG_ID_MMFR3, "ID_MMFR3" },
+        { ArmISA::MISCREG_ID_MMFR4, "ID_MMFR4" },
         { ArmISA::MISCREG_ID_ISAR0, "ID_ISAR0" },
         { ArmISA::MISCREG_ID_ISAR1, "ID_ISAR1" },
         { ArmISA::MISCREG_ID_ISAR2, "ID_ISAR2" },
         { ArmISA::MISCREG_ID_ISAR3, "ID_ISAR3" },
         { ArmISA::MISCREG_ID_ISAR4, "ID_ISAR4" },
         { ArmISA::MISCREG_ID_ISAR5, "ID_ISAR5" },
+        { ArmISA::MISCREG_ID_ISAR6, "ID_ISAR6" },
         { ArmISA::MISCREG_CCSIDR, "CCSIDR" },
         { ArmISA::MISCREG_CLIDR, "CLIDR" },
         { ArmISA::MISCREG_AIDR, "AIDR" },
@@ -581,12 +583,14 @@ Iris::ThreadContext::IdxNameMap CortexA76TC::miscRegIdxNameMap({
         { ArmISA::MISCREG_ID_MMFR1_EL1, "ID_MMFR1_EL1" },
         { ArmISA::MISCREG_ID_MMFR2_EL1, "ID_MMFR2_EL1" },
         { ArmISA::MISCREG_ID_MMFR3_EL1, "ID_MMFR3_EL1" },
+        { ArmISA::MISCREG_ID_MMFR4_EL1, "ID_MMFR4_EL1" },
         { ArmISA::MISCREG_ID_ISAR0_EL1, "ID_ISAR0_EL1" },
         { ArmISA::MISCREG_ID_ISAR1_EL1, "ID_ISAR1_EL1" },
         { ArmISA::MISCREG_ID_ISAR2_EL1, "ID_ISAR2_EL1" },
         { ArmISA::MISCREG_ID_ISAR3_EL1, "ID_ISAR3_EL1" },
         { ArmISA::MISCREG_ID_ISAR4_EL1, "ID_ISAR4_EL1" },
         { ArmISA::MISCREG_ID_ISAR5_EL1, "ID_ISAR5_EL1" },
+        { ArmISA::MISCREG_ID_ISAR6_EL1, "ID_ISAR6_EL1" },
         { ArmISA::MISCREG_MVFR0_EL1, "MVFR0_EL1" },
         { ArmISA::MISCREG_MVFR1_EL1, "MVFR1_EL1" },
         { ArmISA::MISCREG_MVFR2_EL1, "MVFR2_EL1" },

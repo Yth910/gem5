@@ -44,11 +44,11 @@
 #include "params/ArmSPI.hh"
 #include "params/BaseGic.hh"
 
-BaseGic::BaseGic(const Params *p)
+BaseGic::BaseGic(const Params &p)
         : PioDevice(p),
-          platform(p->platform)
+          platform(p.platform)
 {
-    RealView *const rv(dynamic_cast<RealView*>(p->platform));
+    RealView *const rv = dynamic_cast<RealView*>(p.platform);
     // The platform keeps track of the GIC that is hooked up to the
     // system. Due to quirks in gem5's configuration system, the
     // platform can't take a GIC as parameter. Instead, we need to
@@ -69,19 +69,19 @@ BaseGic::init()
     getSystem()->setGIC(this);
 }
 
-const BaseGic::Params *
+const BaseGic::Params &
 BaseGic::params() const
 {
-    return dynamic_cast<const Params *>(_params);
+    return dynamic_cast<const Params &>(_params);
 }
 
-ArmInterruptPinGen::ArmInterruptPinGen(const ArmInterruptPinParams *p)
+ArmInterruptPinGen::ArmInterruptPinGen(const ArmInterruptPinParams &p)
   : SimObject(p)
 {
 }
 
-ArmSPIGen::ArmSPIGen(const ArmSPIParams *p)
-    : ArmInterruptPinGen(p), pin(new ArmSPI(p->platform, p->num))
+ArmSPIGen::ArmSPIGen(const ArmSPIParams &p)
+    : ArmInterruptPinGen(p), pin(new ArmSPI(p))
 {
 }
 
@@ -91,7 +91,7 @@ ArmSPIGen::get(ThreadContext* tc)
     return pin;
 }
 
-ArmPPIGen::ArmPPIGen(const ArmPPIParams *p)
+ArmPPIGen::ArmPPIGen(const ArmPPIParams &p)
     : ArmInterruptPinGen(p)
 {
 }
@@ -109,8 +109,7 @@ ArmPPIGen::get(ThreadContext* tc)
         return pin_it->second;
     } else {
         // Generate PPI Pin
-        auto p = static_cast<const ArmPPIParams *>(_params);
-        ArmPPI *pin = new ArmPPI(p->platform, tc, p->num);
+        ArmPPI *pin = new ArmPPI(ArmPPIGen::params(), tc);
 
         pins.insert({cid, pin});
 
@@ -119,9 +118,9 @@ ArmPPIGen::get(ThreadContext* tc)
 }
 
 ArmInterruptPin::ArmInterruptPin(
-    Platform  *_platform, ThreadContext *tc, uint32_t int_num)
-      : threadContext(tc), platform(dynamic_cast<RealView*>(_platform)),
-        intNum(int_num), _active(false)
+    const ArmInterruptPinParams &p, ThreadContext *tc)
+      : threadContext(tc), platform(dynamic_cast<RealView*>(p.platform)),
+        intNum(p.num), triggerType(p.int_type), _active(false)
 {
     fatal_if(!platform, "Interrupt not connected to a RealView platform");
 }
@@ -156,8 +155,8 @@ ArmInterruptPin::unserialize(CheckpointIn &cp)
 }
 
 ArmSPI::ArmSPI(
-    Platform  *_platform, uint32_t int_num)
-      : ArmInterruptPin(_platform, nullptr, int_num)
+    const ArmSPIParams &p)
+      : ArmInterruptPin(p, nullptr)
 {
 }
 
@@ -176,8 +175,8 @@ ArmSPI::clear()
 }
 
 ArmPPI::ArmPPI(
-    Platform  *_platform, ThreadContext *tc, uint32_t int_num)
-      : ArmInterruptPin(_platform, tc, int_num)
+    const ArmPPIParams &p, ThreadContext *tc)
+      : ArmInterruptPin(p, tc)
 {
 }
 
@@ -193,16 +192,4 @@ ArmPPI::clear()
 {
     _active = false;
     platform->gic->clearPPInt(intNum, targetContext());
-}
-
-ArmSPIGen *
-ArmSPIParams::create()
-{
-    return new ArmSPIGen(this);
-}
-
-ArmPPIGen *
-ArmPPIParams::create()
-{
-    return new ArmPPIGen(this);
 }

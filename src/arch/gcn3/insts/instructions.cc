@@ -29,8 +29,6 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- *
- * Authors: Anthony Gutierrez
  */
 
 #include "arch/gcn3/insts/instructions.hh"
@@ -1369,7 +1367,7 @@ namespace Gcn3ISA
     void
     Inst_SOPK__S_MOVK_I32::execute(GPUDynInstPtr gpuDynInst)
     {
-        ScalarRegI32 simm16 = (ScalarRegI32)instData.SIMM16;
+        ScalarRegI32 simm16 = (ScalarRegI32)sext<16>(instData.SIMM16);
         ScalarOperandI32 sdst(gpuDynInst, instData.SDST);
 
         sdst = simm16;
@@ -1393,7 +1391,7 @@ namespace Gcn3ISA
     void
     Inst_SOPK__S_CMOVK_I32::execute(GPUDynInstPtr gpuDynInst)
     {
-        ScalarRegI32 simm16 = (ScalarRegI32)instData.SIMM16;
+        ScalarRegI32 simm16 = (ScalarRegI32)sext<16>(instData.SIMM16);
         ScalarOperandI32 sdst(gpuDynInst, instData.SDST);
         ConstScalarOperandU32 scc(gpuDynInst, REG_SCC);
 
@@ -1419,7 +1417,7 @@ namespace Gcn3ISA
     void
     Inst_SOPK__S_CMPK_EQ_I32::execute(GPUDynInstPtr gpuDynInst)
     {
-        ScalarRegI32 simm16 = (ScalarRegI32)instData.SIMM16;
+        ScalarRegI32 simm16 = (ScalarRegI32)sext<16>(instData.SIMM16);
         ConstScalarOperandI32 src(gpuDynInst, instData.SDST);
         ScalarOperandU32 scc(gpuDynInst, REG_SCC);
 
@@ -1444,7 +1442,7 @@ namespace Gcn3ISA
     void
     Inst_SOPK__S_CMPK_LG_I32::execute(GPUDynInstPtr gpuDynInst)
     {
-        ScalarRegI32 simm16 = (ScalarRegI32)instData.SIMM16;
+        ScalarRegI32 simm16 = (ScalarRegI32)sext<16>(instData.SIMM16);
         ConstScalarOperandI32 src(gpuDynInst, instData.SDST);
         ScalarOperandU32 scc(gpuDynInst, REG_SCC);
 
@@ -1469,7 +1467,7 @@ namespace Gcn3ISA
     void
     Inst_SOPK__S_CMPK_GT_I32::execute(GPUDynInstPtr gpuDynInst)
     {
-        ScalarRegI32 simm16 = (ScalarRegI32)instData.SIMM16;
+        ScalarRegI32 simm16 = (ScalarRegI32)sext<16>(instData.SIMM16);
         ConstScalarOperandI32 src(gpuDynInst, instData.SDST);
         ScalarOperandU32 scc(gpuDynInst, REG_SCC);
 
@@ -1494,7 +1492,7 @@ namespace Gcn3ISA
     void
     Inst_SOPK__S_CMPK_GE_I32::execute(GPUDynInstPtr gpuDynInst)
     {
-        ScalarRegI32 simm16 = (ScalarRegI32)instData.SIMM16;
+        ScalarRegI32 simm16 = (ScalarRegI32)sext<16>(instData.SIMM16);
         ConstScalarOperandI32 src(gpuDynInst, instData.SDST);
         ScalarOperandU32 scc(gpuDynInst, REG_SCC);
 
@@ -1519,7 +1517,7 @@ namespace Gcn3ISA
     void
     Inst_SOPK__S_CMPK_LT_I32::execute(GPUDynInstPtr gpuDynInst)
     {
-        ScalarRegI32 simm16 = (ScalarRegI32)instData.SIMM16;
+        ScalarRegI32 simm16 = (ScalarRegI32)sext<16>(instData.SIMM16);
         ConstScalarOperandI32 src(gpuDynInst, instData.SDST);
         ScalarOperandU32 scc(gpuDynInst, REG_SCC);
 
@@ -1544,7 +1542,7 @@ namespace Gcn3ISA
     void
     Inst_SOPK__S_CMPK_LE_I32::execute(GPUDynInstPtr gpuDynInst)
     {
-        ScalarRegI32 simm16 = (ScalarRegI32)instData.SIMM16;
+        ScalarRegI32 simm16 = (ScalarRegI32)sext<16>(instData.SIMM16);
         ConstScalarOperandI32 src(gpuDynInst, instData.SDST);
         ScalarOperandU32 scc(gpuDynInst, REG_SCC);
 
@@ -1727,7 +1725,7 @@ namespace Gcn3ISA
 
         src.read();
 
-        sdst = src.rawData() + (ScalarRegI32)simm16;
+        sdst = src.rawData() + (ScalarRegI32)sext<16>(simm16);
         scc = (bits(src.rawData(), 31) == bits(simm16, 15)
             && bits(src.rawData(), 31) != bits(sdst.rawData(), 31)) ? 1 : 0;
 
@@ -1754,7 +1752,7 @@ namespace Gcn3ISA
 
         sdst.read();
 
-        sdst = sdst.rawData() * (ScalarRegI32)simm16;
+        sdst = sdst.rawData() * (ScalarRegI32)sext<16>(simm16);
 
         sdst.write();
     }
@@ -1847,6 +1845,7 @@ namespace Gcn3ISA
           InFmt_SOPK *iFmt)
         : Inst_SOPK(iFmt, "s_setreg_imm32_b32")
     {
+        setFlag(ALU);
     } // Inst_SOPK__S_SETREG_IMM32_B32
 
     Inst_SOPK__S_SETREG_IMM32_B32::~Inst_SOPK__S_SETREG_IMM32_B32()
@@ -1860,6 +1859,28 @@ namespace Gcn3ISA
     void
     Inst_SOPK__S_SETREG_IMM32_B32::execute(GPUDynInstPtr gpuDynInst)
     {
+        ScalarRegI16 simm16 = instData.SIMM16;
+        ScalarRegU32 hwregId = simm16 & 0x3f;
+        ScalarRegU32 offset = (simm16 >> 6) & 31;
+        ScalarRegU32 size = ((simm16 >> 11) & 31) + 1;
+
+        ScalarOperandU32 hwreg(gpuDynInst, hwregId);
+        ScalarRegU32 simm32 = extData.imm_u32;
+        hwreg.read();
+
+        ScalarRegU32 mask = (((1U << size) - 1U) << offset);
+        hwreg = ((hwreg.rawData() & ~mask)
+                    | ((simm32 << offset) & mask));
+        hwreg.write();
+
+        if (hwregId==1 && size==2
+                        && (offset==4 || offset==0)) {
+            warn_once("Be cautious that s_setreg_imm32_b32 has no real effect "
+                            "on FP modes: %s\n", gpuDynInst->disassemble());
+            return;
+        }
+
+        // panic if not changing MODE of floating-point numbers
         panicUnimplemented();
     }
 
@@ -3777,7 +3798,7 @@ namespace Gcn3ISA
             wf->computeUnit->cu_id, wf->wgId, refCount);
 
         wf->computeUnit->registerManager->freeRegisters(wf);
-        wf->computeUnit->completedWfs++;
+        wf->computeUnit->stats.completedWfs++;
         wf->computeUnit->activeWaves--;
 
         panic_if(wf->computeUnit->activeWaves < 0, "CU[%d] Active waves less "
@@ -3788,7 +3809,7 @@ namespace Gcn3ISA
 
         for (int i = 0; i < wf->vecReads.size(); i++) {
             if (wf->rawDist.find(i) != wf->rawDist.end()) {
-                wf->readsPerWrite.sample(wf->vecReads.at(i));
+                wf->stats.readsPerWrite.sample(wf->vecReads.at(i));
             }
         }
         wf->vecReads.clear();
@@ -3830,7 +3851,7 @@ namespace Gcn3ISA
             if (!kernelEnd || !relNeeded) {
                 wf->computeUnit->shader->dispatcher().notifyWgCompl(wf);
                 wf->setStatus(Wavefront::S_STOPPED);
-                wf->computeUnit->completedWGs++;
+                wf->computeUnit->stats.completedWGs++;
 
                 return;
             }
@@ -3854,7 +3875,7 @@ namespace Gcn3ISA
             // call shader to prepare the flush operations
             wf->computeUnit->shader->prepareFlush(gpuDynInst);
 
-            wf->computeUnit->completedWGs++;
+            wf->computeUnit->stats.completedWGs++;
         } else {
             wf->computeUnit->shader->dispatcher().scheduleDispatch();
         }
@@ -3879,7 +3900,7 @@ namespace Gcn3ISA
         Addr pc = wf->pc();
         ScalarRegI16 simm16 = instData.SIMM16;
 
-        pc = pc + ((ScalarRegI64)simm16 * 4LL) + 4LL;
+        pc = pc + ((ScalarRegI64)sext<18>(simm16 * 4LL)) + 4LL;
 
         wf->pc(pc);
     }
@@ -3925,7 +3946,7 @@ namespace Gcn3ISA
         scc.read();
 
         if (!scc.rawData()) {
-            pc = pc + ((ScalarRegI64)simm16 * 4LL) + 4LL;
+            pc = pc + ((ScalarRegI64)sext<18>(simm16 * 4LL)) + 4LL;
         }
 
         wf->pc(pc);
@@ -3954,7 +3975,7 @@ namespace Gcn3ISA
         scc.read();
 
         if (scc.rawData()) {
-            pc = pc + ((ScalarRegI64)simm16 * 4LL) + 4LL;
+            pc = pc + ((ScalarRegI64)sext<18>(simm16 * 4LL)) + 4LL;
         }
 
         wf->pc(pc);
@@ -3984,7 +4005,7 @@ namespace Gcn3ISA
         vcc.read();
 
         if (!vcc.rawData()) {
-            pc = pc + ((ScalarRegI64)simm16 * 4LL) + 4LL;
+            pc = pc + ((ScalarRegI64)sext<18>(simm16 * 4LL)) + 4LL;
         }
 
         wf->pc(pc);
@@ -4014,7 +4035,7 @@ namespace Gcn3ISA
         if (vcc.rawData()) {
             Addr pc = wf->pc();
             ScalarRegI16 simm16 = instData.SIMM16;
-            pc = pc + ((ScalarRegI64)simm16 * 4LL) + 4LL;
+            pc = pc + ((ScalarRegI64)sext<18>(simm16 * 4LL)) + 4LL;
             wf->pc(pc);
         }
     }
@@ -4039,7 +4060,7 @@ namespace Gcn3ISA
         if (wf->execMask().none()) {
             Addr pc = wf->pc();
             ScalarRegI16 simm16 = instData.SIMM16;
-            pc = pc + ((ScalarRegI64)simm16 * 4LL) + 4LL;
+            pc = pc + ((ScalarRegI64)sext<18>(simm16 * 4LL)) + 4LL;
             wf->pc(pc);
         }
     }
@@ -4064,7 +4085,7 @@ namespace Gcn3ISA
         if (wf->execMask().any()) {
             Addr pc = wf->pc();
             ScalarRegI16 simm16 = instData.SIMM16;
-            pc = pc + ((ScalarRegI64)simm16 * 4LL) + 4LL;
+            pc = pc + ((ScalarRegI64)sext<18>(simm16 * 4LL)) + 4LL;
             wf->pc(pc);
         }
     }
@@ -4093,8 +4114,6 @@ namespace Gcn3ISA
 
         if (wf->hasBarrier()) {
             int bar_id = wf->barrierId();
-            assert(wf->getStatus() != Wavefront::S_BARRIER);
-            wf->setStatus(Wavefront::S_BARRIER);
             cu->incNumAtBarrier(bar_id);
             DPRINTF(GPUSync, "CU[%d] WF[%d][%d] Wave[%d] - Stalling at "
                     "barrier Id%d. %d waves now at barrier, %d waves "
@@ -4166,6 +4185,8 @@ namespace Gcn3ISA
     Inst_SOPP__S_SLEEP::Inst_SOPP__S_SLEEP(InFmt_SOPP *iFmt)
         : Inst_SOPP(iFmt, "s_sleep")
     {
+        setFlag(ALU);
+        setFlag(Sleep);
     } // Inst_SOPP__S_SLEEP
 
     Inst_SOPP__S_SLEEP::~Inst_SOPP__S_SLEEP()
@@ -4176,8 +4197,12 @@ namespace Gcn3ISA
     void
     Inst_SOPP__S_SLEEP::execute(GPUDynInstPtr gpuDynInst)
     {
-        panicUnimplemented();
-    }
+        ScalarRegI32 simm16 = (ScalarRegI32)instData.SIMM16;
+        gpuDynInst->wavefront()->setStatus(Wavefront::S_STALLED_SLEEP);
+        // sleep duration is specified in multiples of 64 cycles
+        gpuDynInst->wavefront()->setSleepTime(64 * simm16);
+    } // execute
+    // --- Inst_SOPP__S_SETPRIO class methods ---
 
     Inst_SOPP__S_SETPRIO::Inst_SOPP__S_SETPRIO(InFmt_SOPP *iFmt)
         : Inst_SOPP(iFmt, "s_setprio")
@@ -32522,6 +32547,7 @@ namespace Gcn3ISA
     {
         Wavefront *wf = gpuDynInst->wavefront();
         gpuDynInst->execUnitId = wf->execUnitId;
+        gpuDynInst->exec_mask = wf->execMask();
         gpuDynInst->latency.init(gpuDynInst->computeUnit());
         gpuDynInst->latency.set(gpuDynInst->computeUnit()
                                 ->cyclesToTicks(Cycles(24)));
@@ -32593,6 +32619,7 @@ namespace Gcn3ISA
     {
         Wavefront *wf = gpuDynInst->wavefront();
         gpuDynInst->execUnitId = wf->execUnitId;
+        gpuDynInst->exec_mask = wf->execMask();
         gpuDynInst->latency.init(gpuDynInst->computeUnit());
         gpuDynInst->latency.set(gpuDynInst->computeUnit()
                                 ->cyclesToTicks(Cycles(24)));
@@ -39472,17 +39499,61 @@ namespace Gcn3ISA
     void
     Inst_FLAT__FLAT_LOAD_SBYTE::execute(GPUDynInstPtr gpuDynInst)
     {
-        panicUnimplemented();
+        Wavefront *wf = gpuDynInst->wavefront();
+
+        if (wf->execMask().none()) {
+            wf->decVMemInstsIssued();
+            wf->decLGKMInstsIssued();
+            wf->rdGmReqsInPipe--;
+            wf->rdLmReqsInPipe--;
+            gpuDynInst->exec_mask = wf->execMask();
+            wf->computeUnit->vrf[wf->simdId]->
+                scheduleWriteOperandsFromLoad(wf, gpuDynInst);
+            return;
+        }
+
+        gpuDynInst->execUnitId = wf->execUnitId;
+        gpuDynInst->exec_mask = gpuDynInst->wavefront()->execMask();
+        gpuDynInst->latency.init(gpuDynInst->computeUnit());
+        gpuDynInst->latency.set(gpuDynInst->computeUnit()->clockPeriod());
+
+        ConstVecOperandU64 addr(gpuDynInst, extData.ADDR);
+
+        addr.read();
+
+        calcAddr(gpuDynInst, addr);
+
+        if (gpuDynInst->executedAs() == Enums::SC_GLOBAL) {
+            gpuDynInst->computeUnit()->globalMemoryPipe
+                .issueRequest(gpuDynInst);
+            wf->rdGmReqsInPipe--;
+            wf->outstandingReqsRdGm++;
+        } else {
+            fatal("Non global flat instructions not implemented yet.\n");
+        }
+
+        gpuDynInst->wavefront()->outstandingReqs++;
+        gpuDynInst->wavefront()->validateRequestCounters();
     }
 
     void
     Inst_FLAT__FLAT_LOAD_SBYTE::initiateAcc(GPUDynInstPtr gpuDynInst)
     {
+        initMemRead<VecElemI8>(gpuDynInst);
     } // initiateAcc
 
     void
     Inst_FLAT__FLAT_LOAD_SBYTE::completeAcc(GPUDynInstPtr gpuDynInst)
     {
+        VecOperandI32 vdst(gpuDynInst, extData.VDST);
+
+        for (int lane = 0; lane < NumVecElemPerVecReg; ++lane) {
+            if (gpuDynInst->exec_mask[lane]) {
+                vdst[lane] = (VecElemI32)((reinterpret_cast<VecElemI8*>(
+                    gpuDynInst->d_data))[lane]);
+            }
+        }
+        vdst.write();
     }
 
     Inst_FLAT__FLAT_LOAD_USHORT::Inst_FLAT__FLAT_LOAD_USHORT(InFmt_FLAT *iFmt)

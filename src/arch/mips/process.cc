@@ -42,15 +42,15 @@
 #include "sim/syscall_return.hh"
 #include "sim/system.hh"
 
-using namespace std;
 using namespace MipsISA;
 
-MipsProcess::MipsProcess(ProcessParams *params, ::Loader::ObjectFile *objFile)
+MipsProcess::MipsProcess(const ProcessParams &params,
+                         ::Loader::ObjectFile *objFile)
     : Process(params,
-              new EmulationPageTable(params->name, params->pid, PageBytes),
+              new EmulationPageTable(params.name, params.pid, PageBytes),
               objFile)
 {
-    fatal_if(params->useArchPT, "Arch page tables not implemented.");
+    fatal_if(params.useArchPT, "Arch page tables not implemented.");
     // Set up stack. On MIPS, stack starts at the top of kuseg
     // user address space. MIPS stack grows down from here
     Addr stack_base = 0x7FFFFFFF;
@@ -67,9 +67,9 @@ MipsProcess::MipsProcess(ProcessParams *params, ::Loader::ObjectFile *objFile)
     // Set up region for mmaps.  Start it 1GB above the top of the heap.
     Addr mmap_end = brk_point + 0x40000000L;
 
-    memState = make_shared<MemState>(this, brk_point, stack_base,
-                                     max_stack_size, next_thread_stack_base,
-                                     mmap_end);
+    memState = std::make_shared<MemState>(
+            this, brk_point, stack_base, max_stack_size,
+            next_thread_stack_base, mmap_end);
 }
 
 void
@@ -125,7 +125,7 @@ MipsProcess::argsInit(int pageSize)
     int auxv_array_size = intSize * 2 * (auxv.size() + 1);
 
     int arg_data_size = 0;
-    for (vector<string>::size_type i = 0; i < argv.size(); ++i) {
+    for (std::vector<std::string>::size_type i = 0; i < argv.size(); ++i) {
         arg_data_size += argv[i].size() + 1;
     }
 
@@ -133,7 +133,7 @@ MipsProcess::argsInit(int pageSize)
     int aux_data_size = numRandomBytes;
 
     int env_data_size = 0;
-    for (vector<string>::size_type i = 0; i < envp.size(); ++i) {
+    for (std::vector<std::string>::size_type i = 0; i < envp.size(); ++i) {
         env_data_size += envp[i].size() + 1;
     }
 
@@ -201,7 +201,3 @@ MipsProcess::argsInit(int pageSize)
 
     tc->pcState(getStartPC());
 }
-
-const std::vector<int> MipsProcess::SyscallABI::ArgumentRegs = {
-    4, 5, 6, 7, 8, 9
-};

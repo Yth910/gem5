@@ -37,14 +37,12 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import print_function
-from __future__ import absolute_import
-
 import m5
 
 import _m5.stats
 from m5.objects import Root
 from m5.params import isNullPointer
+from .gem5stats import JsonOutputVistor
 from m5.util import attrdict, fatal
 
 # Stat exports
@@ -184,6 +182,17 @@ def _hdf5Factory(fn, chunking=10, desc=True, formulas=True):
     """
 
     return _m5.stats.initHDF5(fn, chunking, desc, formulas)
+
+@_url_factory(["json"])
+def _jsonFactory(fn):
+    """Output stats in JSON format.
+
+    Example:
+      json://stats.json
+
+    """
+
+    return JsonOutputVistor(fn)
 
 def addStatVisitor(url):
     """Add a stat visitor specified using a URL string
@@ -345,12 +354,12 @@ def _dump_to_visitor(visitor, roots=None):
             for p in reversed(root.path_list()):
                 visitor.endGroup()
     else:
+        # New stats starting from root.
+        dump_group(Root.getInstance())
+
         # Legacy stats
         for stat in stats_list:
             stat.visit(visitor)
-
-        # New stats starting from root.
-        dump_group(Root.getInstance())
 
 lastDump = 0
 # List[SimObject].
@@ -386,10 +395,16 @@ def dump(roots=None):
         prepare()
 
     for output in outputList:
-        if output.valid():
-            output.begin()
-            _dump_to_visitor(output, roots=all_roots)
-            output.end()
+        if isinstance(output, JsonOutputVistor):
+            if not all_roots:
+                output.dump(Root.getInstance())
+            else:
+                output.dump(all_roots)
+        else:
+            if output.valid():
+                output.begin()
+                _dump_to_visitor(output, roots=all_roots)
+                output.end()
 
 def reset():
     '''Reset all statistics to the base state'''

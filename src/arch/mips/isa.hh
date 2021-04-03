@@ -54,7 +54,7 @@ namespace MipsISA
         // The MIPS name for this file is CP0 or Coprocessor 0
         typedef ISA CP0;
 
-        typedef MipsISAParams Params;
+        using Params = MipsISAParams;
 
       protected:
         // Number of threads and vpes an individual ISA state can handle
@@ -128,9 +128,7 @@ namespace MipsISA
         static std::string miscRegNames[NumMiscRegs];
 
       public:
-        const Params *params() const;
-
-        ISA(Params *p);
+        ISA(const Params &p);
 
         RegId flattenRegId(const RegId& regId) const { return regId; }
 
@@ -142,6 +140,26 @@ namespace MipsISA
         // dummy
         int flattenCCIndex(int reg) const { return reg; }
         int flattenMiscIndex(int reg) const { return reg; }
+
+        bool
+        inUserMode() const override
+        {
+            RegVal Stat = readMiscRegNoEffect(MISCREG_STATUS);
+            RegVal Dbg = readMiscRegNoEffect(MISCREG_DEBUG);
+
+            if (// EXL, ERL or CU0 set, CP0 accessible
+                (Stat & 0x10000006) == 0 &&
+                // DM bit set, CP0 accessible
+                (Dbg & 0x40000000) == 0 &&
+                // KSU = 0, kernel mode is base mode
+                (Stat & 0x00000018) != 0) {
+                // Unable to use Status_CU0, etc directly,
+                // using bitfields & masks.
+                return true;
+            } else {
+                return false;
+            }
+        }
     };
 }
 

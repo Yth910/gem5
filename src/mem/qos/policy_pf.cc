@@ -43,8 +43,8 @@
 
 namespace QoS {
 
-PropFairPolicy::PropFairPolicy(const Params* p)
-  : Policy(p), weight(p->weight)
+PropFairPolicy::PropFairPolicy(const Params &p)
+  : Policy(p), weight(p.weight)
 {
     fatal_if(weight < 0 || weight > 1,
         "weight must be a value between 0 and 1");
@@ -122,9 +122,3 @@ PropFairPolicy::schedule(const RequestorID pkt_id, const uint64_t pkt_size)
 }
 
 } // namespace QoS
-
-QoS::PropFairPolicy *
-QoSPropFairPolicyParams::create()
-{
-    return new QoS::PropFairPolicy(this);
-}

@@ -49,34 +49,32 @@
 #include "mem/mem_interface.hh"
 #include "sim/system.hh"
 
-using namespace std;
-
-MemCtrl::MemCtrl(const MemCtrlParams* p) :
+MemCtrl::MemCtrl(const MemCtrlParams &p) :
     QoS::MemCtrl(p),
     port(name() + ".port", *this), isTimingMode(false),
     retryRdReq(false), retryWrReq(false),
     nextReqEvent([this]{ processNextReqEvent(); }, name()),
     respondEvent([this]{ processRespondEvent(); }, name()),
-    dram(p->dram), nvm(p->nvm),
+    dram(p.dram), nvm(p.nvm),
     readBufferSize((dram ? dram->readBufferSize : 0) +
                    (nvm ? nvm->readBufferSize : 0)),
     writeBufferSize((dram ? dram->writeBufferSize : 0) +
                     (nvm ? nvm->writeBufferSize : 0)),
-    writeHighThreshold(writeBufferSize * p->write_high_thresh_perc / 100.0),
-    writeLowThreshold(writeBufferSize * p->write_low_thresh_perc / 100.0),
-    minWritesPerSwitch(p->min_writes_per_switch),
+    writeHighThreshold(writeBufferSize * p.write_high_thresh_perc / 100.0),
+    writeLowThreshold(writeBufferSize * p.write_low_thresh_perc / 100.0),
+    minWritesPerSwitch(p.min_writes_per_switch),
     writesThisTime(0), readsThisTime(0),
-    memSchedPolicy(p->mem_sched_policy),
-    frontendLatency(p->static_frontend_latency),
-    backendLatency(p->static_backend_latency),
-    commandWindow(p->command_window),
+    memSchedPolicy(p.mem_sched_policy),
+    frontendLatency(p.static_frontend_latency),
+    backendLatency(p.static_backend_latency),
+    commandWindow(p.command_window),
     nextBurstAt(0), prevArrival(0),
     nextReqTime(0),
     stats(*this)
 {
     DPRINTF(MemCtrl, "Setting up controller\n");
-    readQueue.resize(p->qos_priorities);
-    writeQueue.resize(p->qos_priorities);
+    readQueue.resize(p.qos_priorities);
+    writeQueue.resize(p.qos_priorities);
 
     // Hook up interfaces to the controller
     if (dram)
@@ -87,10 +85,10 @@ MemCtrl::MemCtrl(const MemCtrlParams* p) :
     fatal_if(!dram && !nvm, "Memory controller must have an interface");
 
     // perform a basic check of the write thresholds
-    if (p->write_low_thresh_perc >= p->write_high_thresh_perc)
+    if (p.write_low_thresh_perc >= p.write_high_thresh_perc)
         fatal("Write buffer low threshold %d must be smaller than the "
-              "high threshold %d\n", p->write_low_thresh_perc,
-              p->write_high_thresh_perc);
+              "high threshold %d\n", p.write_low_thresh_perc,
+              p.write_high_thresh_perc);
 }
 
 void
@@ -151,6 +149,18 @@ MemCtrl::recvAtomic(PacketPtr pkt)
               pkt->print());
     }
 
+    return latency;
+}
+
+Tick
+MemCtrl::recvAtomicBackdoor(PacketPtr pkt, MemBackdoorPtr &backdoor)
+{
+    Tick latency = recvAtomic(pkt);
+    if (dram) {
+        dram->getBackdoor(backdoor);
+    } else if (nvm) {
+        nvm->getBackdoor(backdoor);
+    }
     return latency;
 }
 
@@ -1175,68 +1185,87 @@ MemCtrl::CtrlStats::CtrlStats(MemCtrl &_ctrl)
     : Stats::Group(&_ctrl),
     ctrl(_ctrl),
 
-    ADD_STAT(readReqs, "Number of read requests accepted"),
-    ADD_STAT(writeReqs, "Number of write requests accepted"),
+    ADD_STAT(readReqs, UNIT_COUNT, "Number of read requests accepted"),
+    ADD_STAT(writeReqs, UNIT_COUNT, "Number of write requests accepted"),
 
-    ADD_STAT(readBursts,
-             "Number of controller read bursts, "
-             "including those serviced by the write queue"),
-    ADD_STAT(writeBursts,
-             "Number of controller write bursts, "
-             "including those merged in the write queue"),
-    ADD_STAT(servicedByWrQ,
+    ADD_STAT(readBursts, UNIT_COUNT,
+             "Number of controller read bursts, including those serviced by "
+             "the write queue"),
+    ADD_STAT(writeBursts, UNIT_COUNT,
+             "Number of controller write bursts, including those merged in "
+             "the write queue"),
+    ADD_STAT(servicedByWrQ, UNIT_COUNT,
              "Number of controller read bursts serviced by the write queue"),
-    ADD_STAT(mergedWrBursts,
+    ADD_STAT(mergedWrBursts, UNIT_COUNT,
              "Number of controller write bursts merged with an existing one"),
 
-    ADD_STAT(neitherReadNorWriteReqs,
+    ADD_STAT(neitherReadNorWriteReqs, UNIT_COUNT,
              "Number of requests that are neither read nor write"),
 
-    ADD_STAT(avgRdQLen, "Average read queue length when enqueuing"),
-    ADD_STAT(avgWrQLen, "Average write queue length when enqueuing"),
+    ADD_STAT(avgRdQLen,
+             UNIT_RATE(Stats::Units::Count, Stats::Units::Tick),
+             "Average read queue length when enqueuing"),
+    ADD_STAT(avgWrQLen,
+             UNIT_RATE(Stats::Units::Count, Stats::Units::Tick),
+             "Average write queue length when enqueuing"),
 
-    ADD_STAT(numRdRetry, "Number of times read queue was full causing retry"),
-    ADD_STAT(numWrRetry, "Number of times write queue was full causing retry"),
+    ADD_STAT(numRdRetry, UNIT_COUNT,
+             "Number of times read queue was full causing retry"),
+    ADD_STAT(numWrRetry, UNIT_COUNT,
+             "Number of times write queue was full causing retry"),
 
-    ADD_STAT(readPktSize, "Read request sizes (log2)"),
-    ADD_STAT(writePktSize, "Write request sizes (log2)"),
+    ADD_STAT(readPktSize, UNIT_COUNT, "Read request sizes (log2)"),
+    ADD_STAT(writePktSize, UNIT_COUNT, "Write request sizes (log2)"),
 
-    ADD_STAT(rdQLenPdf, "What read queue length does an incoming req see"),
-    ADD_STAT(wrQLenPdf, "What write queue length does an incoming req see"),
+    ADD_STAT(rdQLenPdf, UNIT_COUNT,
+             "What read queue length does an incoming req see"),
+    ADD_STAT(wrQLenPdf, UNIT_COUNT,
+             "What write queue length does an incoming req see"),
 
-    ADD_STAT(rdPerTurnAround,
+    ADD_STAT(rdPerTurnAround, UNIT_COUNT,
              "Reads before turning the bus around for writes"),
-    ADD_STAT(wrPerTurnAround,
+    ADD_STAT(wrPerTurnAround, UNIT_COUNT,
              "Writes before turning the bus around for reads"),
 
-    ADD_STAT(bytesReadWrQ, "Total number of bytes read from write queue"),
-    ADD_STAT(bytesReadSys, "Total read bytes from the system interface side"),
-    ADD_STAT(bytesWrittenSys,
+    ADD_STAT(bytesReadWrQ, UNIT_BYTE,
+             "Total number of bytes read from write queue"),
+    ADD_STAT(bytesReadSys, UNIT_BYTE,
+             "Total read bytes from the system interface side"),
+    ADD_STAT(bytesWrittenSys, UNIT_BYTE,
              "Total written bytes from the system interface side"),
 
-    ADD_STAT(avgRdBWSys, "Average system read bandwidth in MiByte/s"),
-    ADD_STAT(avgWrBWSys, "Average system write bandwidth in MiByte/s"),
+    ADD_STAT(avgRdBWSys, UNIT_RATE(Stats::Units::Byte, Stats::Units::Second),
+             "Average system read bandwidth in Byte/s"),
+    ADD_STAT(avgWrBWSys, UNIT_RATE(Stats::Units::Byte, Stats::Units::Second),
+             "Average system write bandwidth in Byte/s"),
 
-    ADD_STAT(totGap, "Total gap between requests"),
-    ADD_STAT(avgGap, "Average gap between requests"),
+    ADD_STAT(totGap, UNIT_TICK, "Total gap between requests"),
+    ADD_STAT(avgGap, UNIT_RATE(Stats::Units::Tick, Stats::Units::Count),
+             "Average gap between requests"),
 
-    ADD_STAT(requestorReadBytes, "Per-requestor bytes read from memory"),
-    ADD_STAT(requestorWriteBytes, "Per-requestor bytes write to memory"),
+    ADD_STAT(requestorReadBytes, UNIT_BYTE,
+             "Per-requestor bytes read from memory"),
+    ADD_STAT(requestorWriteBytes, UNIT_BYTE,
+             "Per-requestor bytes write to memory"),
     ADD_STAT(requestorReadRate,
-             "Per-requestor bytes read from memory rate (Bytes/sec)"),
+             UNIT_RATE(Stats::Units::Byte, Stats::Units::Second),
+             "Per-requestor bytes read from memory rate"),
     ADD_STAT(requestorWriteRate,
-             "Per-requestor bytes write to memory rate (Bytes/sec)"),
-    ADD_STAT(requestorReadAccesses,
+             UNIT_RATE(Stats::Units::Byte, Stats::Units::Second),
+             "Per-requestor bytes write to memory rate"),
+    ADD_STAT(requestorReadAccesses, UNIT_COUNT,
              "Per-requestor read serviced memory accesses"),
-    ADD_STAT(requestorWriteAccesses,
+    ADD_STAT(requestorWriteAccesses, UNIT_COUNT,
              "Per-requestor write serviced memory accesses"),
-    ADD_STAT(requestorReadTotalLat,
+    ADD_STAT(requestorReadTotalLat, UNIT_TICK,
              "Per-requestor read total memory access latency"),
-    ADD_STAT(requestorWriteTotalLat,
+    ADD_STAT(requestorWriteTotalLat, UNIT_TICK,
              "Per-requestor write total memory access latency"),
     ADD_STAT(requestorReadAvgLat,
+             UNIT_RATE(Stats::Units::Tick, Stats::Units::Count),
              "Per-requestor read average memory access latency"),
     ADD_STAT(requestorWriteAvgLat,
+             UNIT_RATE(Stats::Units::Tick, Stats::Units::Count),
              "Per-requestor write average memory access latency")
 
 {
@@ -1266,8 +1295,8 @@ MemCtrl::CtrlStats::regStats()
         .init(ctrl.writeBufferSize)
         .flags(nozero);
 
-    avgRdBWSys.precision(2);
-    avgWrBWSys.precision(2);
+    avgRdBWSys.precision(8);
+    avgWrBWSys.precision(8);
     avgGap.precision(2);
 
     // per-requestor bytes read and written to memory
@@ -1327,8 +1356,8 @@ MemCtrl::CtrlStats::regStats()
     }
 
     // Formula stats
-    avgRdBWSys = (bytesReadSys / 1000000) / simSeconds;
-    avgWrBWSys = (bytesWrittenSys / 1000000) / simSeconds;
+    avgRdBWSys = (bytesReadSys) / simSeconds;
+    avgWrBWSys = (bytesWrittenSys) / simSeconds;
 
     avgGap = totGap / (readReqs + writeReqs);
 
@@ -1354,7 +1383,7 @@ MemCtrl::recvFunctional(PacketPtr pkt)
 }
 
 Port &
-MemCtrl::getPort(const string &if_name, PortID idx)
+MemCtrl::getPort(const std::string &if_name, PortID idx)
 {
     if (if_name != "port") {
         return QoS::MemCtrl::getPort(if_name, idx);
@@ -1461,15 +1490,16 @@ MemCtrl::MemoryPort::recvAtomic(PacketPtr pkt)
     return ctrl.recvAtomic(pkt);
 }
 
+Tick
+MemCtrl::MemoryPort::recvAtomicBackdoor(
+        PacketPtr pkt, MemBackdoorPtr &backdoor)
+{
+    return ctrl.recvAtomicBackdoor(pkt, backdoor);
+}
+
 bool
 MemCtrl::MemoryPort::recvTimingReq(PacketPtr pkt)
 {
     // pass it to the memory controller
     return ctrl.recvTimingReq(pkt);
-}
-
-MemCtrl*
-MemCtrlParams::create()
-{
-    return new MemCtrl(this);
 }

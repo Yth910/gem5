@@ -41,9 +41,9 @@
 #include "gpu-compute/vector_register_file.hh"
 #include "gpu-compute/wavefront.hh"
 
-LocalMemPipeline::LocalMemPipeline(const ComputeUnitParams* p, ComputeUnit &cu)
+LocalMemPipeline::LocalMemPipeline(const ComputeUnitParams &p, ComputeUnit &cu)
     : computeUnit(cu), _name(cu.name() + ".LocalMemPipeline"),
-      lmQueueSize(p->local_mem_queue_size)
+      lmQueueSize(p.local_mem_queue_size), stats(&cu)
 {
 }
 
@@ -124,12 +124,11 @@ LocalMemPipeline::issueRequest(GPUDynInstPtr gpuDynInst)
     lmIssuedRequests.push(gpuDynInst);
 }
 
-void
-LocalMemPipeline::regStats()
+
+LocalMemPipeline::
+LocalMemPipelineStats::LocalMemPipelineStats(Stats::Group *parent)
+    : Stats::Group(parent, "LocalMemPipeline"),
+      ADD_STAT(loadVrfBankConflictCycles, "total number of cycles LDS data "
+               "are delayed before updating the VRF")
 {
-    loadVrfBankConflictCycles
-        .name(name() + ".load_vrf_bank_conflict_cycles")
-        .desc("total number of cycles LDS data are delayed before updating "
-              "the VRF")
-        ;
 }

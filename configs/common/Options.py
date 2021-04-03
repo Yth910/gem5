@@ -36,9 +36,6 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import print_function
-from __future__ import absolute_import
-
 import m5
 from m5.defines import buildEnv
 from m5.objects import *
@@ -66,6 +63,10 @@ def _listBPTypes(option, opt, value, parser):
 
 def _listHWPTypes(option, opt, value, parser):
     ObjectList.hwp_list.print()
+    sys.exit(0)
+
+def _listRPTypes(option, opt, value, parser):
+    ObjectList.rp_list.print()
     sys.exit(0)
 
 def _listIndirectBPTypes(option, opt, value, parser):
@@ -186,6 +187,11 @@ def addCommonOptions(parser):
     parser.add_option("--indirect-bp-type", type="choice", default=None,
                       choices=ObjectList.indirect_bp_list.get_names(),
                       help = "type of indirect branch predictor to run with")
+
+    parser.add_option("--list-rp-types",
+                      action="callback", callback=_listRPTypes,
+                      help="List available replacement policy types")
+
     parser.add_option("--list-hwp-types",
                       action="callback", callback=_listHWPTypes,
                       help="List available hardware prefetcher types")
@@ -364,8 +370,8 @@ def addCommonOptions(parser):
     parser.add_option("--stats-root", action="append", default=[], help=
         "If given, dump only stats of objects under the given SimObject. "
         "SimObjects are identified with Python notation as in: "
-        "system.cpu[0].dtb. All elements of an array can be selected at "
-        "once with: system.cpu[:].dtb. If given multiple times, dump stats "
+        "system.cpu[0].mmu. All elements of an array can be selected at "
+        "once with: system.cpu[:].mmu. If given multiple times, dump stats "
         "that are present under any of the roots. If not given, dump all "
         "stats. "
     )

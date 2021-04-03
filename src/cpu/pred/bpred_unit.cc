@@ -50,41 +50,45 @@
 #include "config/the_isa.hh"
 #include "debug/Branch.hh"
 
-BPredUnit::BPredUnit(const Params *params)
+BPredUnit::BPredUnit(const Params &params)
     : SimObject(params),
-      numThreads(params->numThreads),
+      numThreads(params.numThreads),
       predHist(numThreads),
-      BTB(params->BTBEntries,
-          params->BTBTagSize,
-          params->instShiftAmt,
-          params->numThreads),
+      BTB(params.BTBEntries,
+          params.BTBTagSize,
+          params.instShiftAmt,
+          params.numThreads),
       RAS(numThreads),
-      iPred(params->indirectBranchPred),
+      iPred(params.indirectBranchPred),
       stats(this),
-      instShiftAmt(params->instShiftAmt)
+      instShiftAmt(params.instShiftAmt)
 {
     for (auto& r : RAS)
-        r.init(params->RASSize);
+        r.init(params.RASSize);
 }
 
 BPredUnit::BPredUnitStats::BPredUnitStats(Stats::Group *parent)
     : Stats::Group(parent),
-      ADD_STAT(lookups, "Number of BP lookups"),
-      ADD_STAT(condPredicted, "Number of conditional branches predicted"),
-      ADD_STAT(condIncorrect, "Number of conditional branches incorrect"),
-      ADD_STAT(BTBLookups, "Number of BTB lookups"),
-      ADD_STAT(BTBHits, "Number of BTB hits"),
-      ADD_STAT(BTBHitPct, "BTB Hit Percentage",
-           (BTBHits / BTBLookups) * 100),
-      ADD_STAT(RASUsed, "Number of times the RAS was used to get a target."),
-      ADD_STAT(RASIncorrect, "Number of incorrect RAS predictions."),
-      ADD_STAT(indirectLookups, "Number of indirect predictor lookups."),
-      ADD_STAT(indirectHits, "Number of indirect target hits."),
-      ADD_STAT(indirectMisses, "Number of indirect misses."),
-      ADD_STAT(indirectMispredicted, "Number of mispredicted indirect"
-          " branches.")
+      ADD_STAT(lookups, UNIT_COUNT, "Number of BP lookups"),
+      ADD_STAT(condPredicted, UNIT_COUNT,
+               "Number of conditional branches predicted"),
+      ADD_STAT(condIncorrect, UNIT_COUNT,
+               "Number of conditional branches incorrect"),
+      ADD_STAT(BTBLookups, UNIT_COUNT, "Number of BTB lookups"),
+      ADD_STAT(BTBHits, UNIT_COUNT, "Number of BTB hits"),
+      ADD_STAT(BTBHitRatio, UNIT_RATIO, "BTB Hit Ratio", BTBHits / BTBLookups),
+      ADD_STAT(RASUsed, UNIT_COUNT,
+               "Number of times the RAS was used to get a target."),
+      ADD_STAT(RASIncorrect, UNIT_COUNT,
+               "Number of incorrect RAS predictions."),
+      ADD_STAT(indirectLookups, UNIT_COUNT,
+               "Number of indirect predictor lookups."),
+      ADD_STAT(indirectHits, UNIT_COUNT, "Number of indirect target hits."),
+      ADD_STAT(indirectMisses, UNIT_COUNT, "Number of indirect misses."),
+      ADD_STAT(indirectMispredicted, UNIT_COUNT,
+               "Number of mispredicted indirect branches.")
 {
-    BTBHitPct.precision(6);
+    BTBHitRatio.precision(6);
 }
 
 ProbePoints::PMUUPtr
@@ -108,7 +112,7 @@ BPredUnit::drainSanityCheck() const
 {
     // We shouldn't have any outstanding requests when we resume from
     // a drained system.
-    for (const auto& ph M5_VAR_USED : predHist)
+    for (M5_VAR_USED const auto& ph : predHist)
         assert(ph.empty());
 }
 

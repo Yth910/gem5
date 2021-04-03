@@ -40,7 +40,7 @@
 
 namespace Compressor {
 
-Zero::Zero(const Params *p)
+Zero::Zero(const Params &p)
     : DictionaryCompressor<uint64_t>(p)
 {
 }
@@ -76,9 +76,3 @@ Zero::compress(const std::vector<Chunk>& chunks, Cycles& comp_lat,
 }
 
 } // namespace Compressor
-
-Compressor::Zero*
-ZeroCompressorParams::create()
-{
-    return new Compressor::Zero(this);
-}

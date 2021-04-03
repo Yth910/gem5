@@ -45,22 +45,19 @@
 #include "arch/locked_mem.hh"
 #include "base/loader/memory_image.hh"
 #include "base/loader/object_file.hh"
-#include "cpu/base.hh"
 #include "cpu/thread_context.hh"
 #include "debug/LLSC.hh"
 #include "debug/MemoryAccess.hh"
 #include "mem/packet_access.hh"
 #include "sim/system.hh"
 
-using namespace std;
-
-AbstractMemory::AbstractMemory(const Params *p) :
-    ClockedObject(p), range(params()->range), pmemAddr(NULL),
-    backdoor(params()->range, nullptr,
+AbstractMemory::AbstractMemory(const Params &p) :
+    ClockedObject(p), range(p.range), pmemAddr(NULL),
+    backdoor(params().range, nullptr,
              (MemBackdoor::Flags)(MemBackdoor::Readable |
                                   MemBackdoor::Writeable)),
-    confTableReported(p->conf_table_reported), inAddrMap(p->in_addr_map),
-    kvmMap(p->kvm_map), _system(NULL),
+    confTableReported(p.conf_table_reported), inAddrMap(p.in_addr_map),
+    kvmMap(p.kvm_map), _system(NULL),
     stats(*this)
 {
     panic_if(!range.valid() || !range.size(),
@@ -73,7 +70,7 @@ AbstractMemory::initState()
 {
     ClockedObject::initState();
 
-    const auto &file = params()->image_file;
+    const auto &file = params().image_file;
     if (file == "")
         return;
 
@@ -114,26 +111,25 @@ AbstractMemory::setBackingStore(uint8_t* pmem_addr)
 
 AbstractMemory::MemStats::MemStats(AbstractMemory &_mem)
     : Stats::Group(&_mem), mem(_mem),
-    bytesRead(this, "bytes_read",
-              "Number of bytes read from this memory"),
-    bytesInstRead(this, "bytes_inst_read",
-                  "Number of instructions bytes read from this memory"),
-    bytesWritten(this, "bytes_written",
-                 "Number of bytes written to this memory"),
-    numReads(this, "num_reads",
+    ADD_STAT(bytesRead, UNIT_BYTE, "Number of bytes read from this memory"),
+    ADD_STAT(bytesInstRead, UNIT_BYTE,
+             "Number of instructions bytes read from this memory"),
+    ADD_STAT(bytesWritten, UNIT_BYTE,
+             "Number of bytes written to this memory"),
+    ADD_STAT(numReads, UNIT_COUNT,
              "Number of read requests responded to by this memory"),
-    numWrites(this, "num_writes",
-              "Number of write requests responded to by this memory"),
-    numOther(this, "num_other",
+    ADD_STAT(numWrites, UNIT_COUNT,
+             "Number of write requests responded to by this memory"),
+    ADD_STAT(numOther, UNIT_COUNT,
              "Number of other requests responded to by this memory"),
-    bwRead(this, "bw_read",
-           "Total read bandwidth from this memory (bytes/s)"),
-    bwInstRead(this, "bw_inst_read",
-               "Instruction read bandwidth from this memory (bytes/s)"),
-    bwWrite(this, "bw_write",
-            "Write bandwidth from this memory (bytes/s)"),
-    bwTotal(this, "bw_total",
-            "Total bandwidth to/from this memory (bytes/s)")
+    ADD_STAT(bwRead, UNIT_RATE(Stats::Units::Byte, Stats::Units::Second),
+             "Total read bandwidth from this memory"),
+    ADD_STAT(bwInstRead, UNIT_RATE(Stats::Units::Byte, Stats::Units::Second),
+             "Instruction read bandwidth from this memory"),
+    ADD_STAT(bwWrite, UNIT_RATE(Stats::Units::Byte, Stats::Units::Second),
+             "Write bandwidth from this memory"),
+    ADD_STAT(bwTotal, UNIT_RATE(Stats::Units::Byte, Stats::Units::Second),
+             "Total bandwidth to/from this memory")
 {
 }
 
@@ -255,7 +251,7 @@ AbstractMemory::trackLoadLocked(PacketPtr pkt)
     // first we check if we already have a locked addr for this
     // xc.  Since each xc only gets one, we just update the
     // existing record with the new address.
-    list<LockedAddr>::iterator i;
+    std::list<LockedAddr>::iterator i;
 
     for (i = lockedAddrList.begin(); i != lockedAddrList.end(); ++i) {
         if (i->matchesContext(req)) {
@@ -270,6 +266,7 @@ AbstractMemory::trackLoadLocked(PacketPtr pkt)
     DPRINTF(LLSC, "Adding lock record: context %d addr %#x\n",
             req->contextId(), paddr);
     lockedAddrList.push_front(LockedAddr(req));
+    backdoor.invalidate();
 }
 
 
@@ -294,7 +291,7 @@ AbstractMemory::checkLockedAddrList(PacketPtr pkt)
     // Only remove records when we succeed in finding a record for (xc, addr);
     // then, remove all records with this address.  Failed store-conditionals do
     // not blow unrelated reservations.
-    list<LockedAddr>::iterator i = lockedAddrList.begin();
+    std::list<LockedAddr>::iterator i = lockedAddrList.begin();
 
     if (isLLSC) {
         while (i != lockedAddrList.end()) {
@@ -347,17 +344,15 @@ static inline void
 tracePacket(System *sys, const char *label, PacketPtr pkt)
 {
     int size = pkt->getSize();
-#if THE_ISA != NULL_ISA
     if (size == 1 || size == 2 || size == 4 || size == 8) {
         ByteOrder byte_order = sys->getGuestByteOrder();
-        DPRINTF(MemoryAccess,"%s from %s of size %i on address %#x data "
+        DPRINTF(MemoryAccess, "%s from %s of size %i on address %#x data "
                 "%#x %c\n", label, sys->getRequestorName(pkt->req->
                 requestorId()), size, pkt->getAddr(),
                 size, pkt->getAddr(), pkt->getUintX(byte_order),
                 pkt->req->isUncacheable() ? 'U' : 'C');
         return;
     }
-#endif
     DPRINTF(MemoryAccess, "%s from %s of size %i on address %#x %c\n",
             label, sys->getRequestorName(pkt->req->requestorId()),
             size, pkt->getAddr(), pkt->req->isUncacheable() ? 'U' : 'C');

@@ -333,8 +333,6 @@ decodeCP14Reg(unsigned crn, unsigned opc1, unsigned crm, unsigned opc2)
     return MISCREG_CP14_UNIMPL;
 }
 
-using namespace std;
-
 MiscRegIndex
 decodeCP15Reg(unsigned crn, unsigned opc1, unsigned crm, unsigned opc2)
 {
@@ -394,8 +392,9 @@ decodeCP15Reg(unsigned crn, unsigned opc1, unsigned crm, unsigned opc2)
                   case 5:
                     return MISCREG_ID_ISAR5;
                   case 6:
+                    return MISCREG_ID_MMFR4;
                   case 7:
-                    return MISCREG_RAZ; // read as zero
+                    return MISCREG_ID_ISAR6;
                 }
                 break;
               default:
@@ -1229,7 +1228,7 @@ canReadCoprocReg(MiscRegIndex reg, SCR scr, CPSR cpsr, ThreadContext *tc)
                            miscRegInfo[reg][MISCREG_MON_NS1_RD];
         break;
       case MODE_HYP:
-        canRead = miscRegInfo[reg][MISCREG_HYP_RD];
+        canRead = miscRegInfo[reg][MISCREG_HYP_NS_RD];
         break;
       default:
         undefined = true;
@@ -1275,7 +1274,7 @@ canWriteCoprocReg(MiscRegIndex reg, SCR scr, CPSR cpsr, ThreadContext *tc)
                             miscRegInfo[reg][MISCREG_MON_NS1_WR];
         break;
       case MODE_HYP:
-        canWrite =  miscRegInfo[reg][MISCREG_HYP_WR];
+        canWrite =  miscRegInfo[reg][MISCREG_HYP_NS_WR];
         break;
       default:
         undefined = true;
@@ -1396,8 +1395,13 @@ canReadAArch64SysReg(MiscRegIndex reg, HCR hcr, SCR scr, CPSR cpsr,
         return secure ? miscRegInfo[reg][MISCREG_PRI_S_RD] :
             miscRegInfo[reg][MISCREG_PRI_NS_RD];
       case EL2:
-        return el2_host ? miscRegInfo[reg][MISCREG_HYP_E2H_RD] :
-            miscRegInfo[reg][MISCREG_HYP_RD];
+        if (el2_host) {
+            return secure ? miscRegInfo[reg][MISCREG_HYP_E2H_S_RD] :
+                miscRegInfo[reg][MISCREG_HYP_E2H_NS_RD];
+        } else {
+            return secure ? miscRegInfo[reg][MISCREG_HYP_S_RD] :
+                miscRegInfo[reg][MISCREG_HYP_NS_RD];
+        }
       case EL3:
         return el2_host ? miscRegInfo[reg][MISCREG_MON_E2H_RD] :
             secure ? miscRegInfo[reg][MISCREG_MON_NS0_RD] :
@@ -1427,8 +1431,13 @@ canWriteAArch64SysReg(MiscRegIndex reg, HCR hcr, SCR scr, CPSR cpsr,
         return secure ? miscRegInfo[reg][MISCREG_PRI_S_WR] :
             miscRegInfo[reg][MISCREG_PRI_NS_WR];
       case EL2:
-        return el2_host ? miscRegInfo[reg][MISCREG_HYP_E2H_WR] :
-            miscRegInfo[reg][MISCREG_HYP_WR];
+        if (el2_host) {
+            return secure ? miscRegInfo[reg][MISCREG_HYP_E2H_S_WR] :
+                miscRegInfo[reg][MISCREG_HYP_E2H_NS_WR];
+        } else {
+            return secure ? miscRegInfo[reg][MISCREG_HYP_S_WR] :
+                miscRegInfo[reg][MISCREG_HYP_NS_WR];
+        }
       case EL3:
         return el2_host ? miscRegInfo[reg][MISCREG_MON_E2H_WR] :
             secure ? miscRegInfo[reg][MISCREG_MON_NS0_WR] :
@@ -2059,6 +2068,10 @@ decodeAArch64SysReg(unsigned op0, unsigned op1,
                         return MISCREG_ID_ISAR4_EL1;
                       case 5:
                         return MISCREG_ID_ISAR5_EL1;
+                      case 6:
+                        return MISCREG_ID_MMFR4_EL1;
+                      case 7:
+                        return MISCREG_ID_ISAR6_EL1;
                     }
                     break;
                   case 3:
@@ -3378,7 +3391,7 @@ decodeAArch64SysReg(unsigned op0, unsigned op1,
     return MISCREG_UNKNOWN;
 }
 
-bitset<NUM_MISCREG_INFOS> miscRegInfo[NUM_MISCREGS]; // initialized below
+std::bitset<NUM_MISCREG_INFOS> miscRegInfo[NUM_MISCREGS]; // initialized below
 
 void
 ISA::initializeMiscRegMetadata()
@@ -3767,6 +3780,8 @@ ISA::initializeMiscRegMetadata()
       .allPrivileges().exceptUserMode().writes(0);
     InitReg(MISCREG_ID_MMFR3)
       .allPrivileges().exceptUserMode().writes(0);
+    InitReg(MISCREG_ID_MMFR4)
+      .allPrivileges().exceptUserMode().writes(0);
     InitReg(MISCREG_ID_ISAR0)
       .allPrivileges().exceptUserMode().writes(0);
     InitReg(MISCREG_ID_ISAR1)
@@ -3778,6 +3793,8 @@ ISA::initializeMiscRegMetadata()
     InitReg(MISCREG_ID_ISAR4)
       .allPrivileges().exceptUserMode().writes(0);
     InitReg(MISCREG_ID_ISAR5)
+      .allPrivileges().exceptUserMode().writes(0);
+    InitReg(MISCREG_ID_ISAR6)
       .allPrivileges().exceptUserMode().writes(0);
     InitReg(MISCREG_CCSIDR)
       .allPrivileges().exceptUserMode().writes(0);
@@ -4690,6 +4707,9 @@ ISA::initializeMiscRegMetadata()
     InitReg(MISCREG_ID_MMFR3_EL1)
       .allPrivileges().exceptUserMode().writes(0)
       .mapsTo(MISCREG_ID_MMFR3);
+    InitReg(MISCREG_ID_MMFR4_EL1)
+      .allPrivileges().exceptUserMode().writes(0)
+      .mapsTo(MISCREG_ID_MMFR4);
     InitReg(MISCREG_ID_ISAR0_EL1)
       .allPrivileges().exceptUserMode().writes(0)
       .mapsTo(MISCREG_ID_ISAR0);
@@ -4708,6 +4728,9 @@ ISA::initializeMiscRegMetadata()
     InitReg(MISCREG_ID_ISAR5_EL1)
       .allPrivileges().exceptUserMode().writes(0)
       .mapsTo(MISCREG_ID_ISAR5);
+    InitReg(MISCREG_ID_ISAR6_EL1)
+      .allPrivileges().exceptUserMode().writes(0)
+      .mapsTo(MISCREG_ID_ISAR6);
     InitReg(MISCREG_MVFR0_EL1)
       .allPrivileges().exceptUserMode().writes(0);
     InitReg(MISCREG_MVFR1_EL1)
@@ -4889,9 +4912,9 @@ ISA::initializeMiscRegMetadata()
       .hyp().mon()
       .mapsTo(MISCREG_VTCR);
     InitReg(MISCREG_VSTTBR_EL2)
-      .hyp().mon();
+      .hypSecure().mon();
     InitReg(MISCREG_VSTCR_EL2)
-      .hyp().mon();
+      .hypSecure().mon();
     InitReg(MISCREG_TTBR0_EL3)
       .mon();
     InitReg(MISCREG_TCR_EL3)

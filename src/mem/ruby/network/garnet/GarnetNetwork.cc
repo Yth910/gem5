@@ -45,27 +45,25 @@
 #include "mem/ruby/network/garnet/Router.hh"
 #include "mem/ruby/system/RubySystem.hh"
 
-using namespace std;
-
 /*
  * GarnetNetwork sets up the routers and links and collects stats.
  * Default parameters (GarnetNetwork.py) can be overwritten from command line
  * (see configs/network/Network.py)
  */
 
-GarnetNetwork::GarnetNetwork(const Params *p)
+GarnetNetwork::GarnetNetwork(const Params &p)
     : Network(p)
 {
-    m_num_rows = p->num_rows;
-    m_ni_flit_size = p->ni_flit_size;
+    m_num_rows = p.num_rows;
+    m_ni_flit_size = p.ni_flit_size;
     m_max_vcs_per_vnet = 0;
-    m_buffers_per_data_vc = p->buffers_per_data_vc;
-    m_buffers_per_ctrl_vc = p->buffers_per_ctrl_vc;
-    m_routing_algorithm = p->routing_algorithm;
+    m_buffers_per_data_vc = p.buffers_per_data_vc;
+    m_buffers_per_ctrl_vc = p.buffers_per_ctrl_vc;
+    m_routing_algorithm = p.routing_algorithm;
 
-    m_enable_fault_model = p->enable_fault_model;
+    m_enable_fault_model = p.enable_fault_model;
     if (m_enable_fault_model)
-        fault_model = p->fault_model;
+        fault_model = p.fault_model;
 
     m_vnet_type.resize(m_virtual_networks);
 
@@ -77,8 +75,8 @@ GarnetNetwork::GarnetNetwork(const Params *p)
     }
 
     // record the routers
-    for (vector<BasicRouter*>::const_iterator i =  p->routers.begin();
-         i != p->routers.end(); ++i) {
+    for (std::vector<BasicRouter*>::const_iterator i =  p.routers.begin();
+         i != p.routers.end(); ++i) {
         Router* router = safe_cast<Router*>(*i);
         m_routers.push_back(router);
 
@@ -87,8 +85,8 @@ GarnetNetwork::GarnetNetwork(const Params *p)
     }
 
     // record the network interfaces
-    for (vector<ClockedObject*>::const_iterator i = p->netifs.begin();
-         i != p->netifs.end(); ++i) {
+    for (std::vector<ClockedObject*>::const_iterator i = p.netifs.begin();
+         i != p.netifs.end(); ++i) {
         NetworkInterface *ni = safe_cast<NetworkInterface *>(*i);
         m_nis.push_back(ni);
         ni->init_net_ptr(this);
@@ -127,18 +125,18 @@ GarnetNetwork::init()
 
     // FaultModel: declare each router to the fault model
     if (isFaultModelEnabled()) {
-        for (vector<Router*>::const_iterator i= m_routers.begin();
+        for (std::vector<Router*>::const_iterator i= m_routers.begin();
              i != m_routers.end(); ++i) {
             Router* router = safe_cast<Router*>(*i);
-            int router_id M5_VAR_USED =
+            M5_VAR_USED int router_id =
                 fault_model->declare_router(router->get_num_inports(),
                                             router->get_num_outports(),
                                             router->get_vc_per_vnet(),
                                             getBuffersPerDataVC(),
                                             getBuffersPerCtrlVC());
             assert(router_id == router->get_id());
-            router->printAggregateFaultProbability(cout);
-            router->printFaultVector(cout);
+            router->printAggregateFaultProbability(std::cout);
+            router->printFaultVector(std::cout);
         }
     }
 }
@@ -507,7 +505,7 @@ GarnetNetwork::regStats()
 void
 GarnetNetwork::collateStats()
 {
-    RubySystem *rs = params()->ruby_system;
+    RubySystem *rs = params().ruby_system;
     double time_delta = double(curCycle() - rs->getStartCycle());
 
     for (int i = 0; i < m_networklinks.size(); i++) {
@@ -524,7 +522,7 @@ GarnetNetwork::collateStats()
         m_average_link_utilization +=
             (double(activity) / time_delta);
 
-        vector<unsigned int> vc_load = m_networklinks[i]->getVcLoad();
+        std::vector<unsigned int> vc_load = m_networklinks[i]->getVcLoad();
         for (int j = 0; j < vc_load.size(); j++) {
             m_average_vc_load[j] += ((double)vc_load[j] / time_delta);
         }
@@ -551,15 +549,9 @@ GarnetNetwork::resetStats()
 }
 
 void
-GarnetNetwork::print(ostream& out) const
+GarnetNetwork::print(std::ostream& out) const
 {
     out << "[GarnetNetwork]";
-}
-
-GarnetNetwork *
-GarnetNetworkParams::create()
-{
-    return new GarnetNetwork(this);
 }
 
 uint32_t

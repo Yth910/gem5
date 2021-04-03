@@ -91,6 +91,11 @@ class SMMUv3(ClockedObject):
     reg_map = Param.AddrRange('Address range for control registers')
     system = Param.System(Parent.any, "System this device is part of")
 
+    irq_interface_enable = Param.Bool(False,
+            "This flag enables software to program SMMU_IRQ_CTRL and "
+            "SMMU_IRQ_CTRLACK as if the model implemented architectural "
+            "interrupt sources")
+
     device_interfaces = VectorParam.SMMUv3DeviceInterface([],
                                         "Responder interfaces")
 
@@ -162,9 +167,9 @@ class SMMUv3(ClockedObject):
     # [0] S2P = 0b1, Stage 2 translation supported.
     smmu_idr0 = Param.UInt32(0x094C100F, "SMMU_IDR0 register");
 
-    # [25:21] CMDQS = 0b00101, Maximum number of Command queue entries
-    # as log 2 (entries) (0b00101 = 32 entries).
-    smmu_idr1 = Param.UInt32(0x00A00000, "SMMU_IDR1 register");
+    # [25:21] CMDQS = 0b00111, Maximum number of Command queue entries
+    # as log 2 (entries) (0b00111 = 128 entries).
+    smmu_idr1 = Param.UInt32(0x00E00000, "SMMU_IDR1 register");
 
     smmu_idr2 = Param.UInt32(0, "SMMU_IDR2 register");
     smmu_idr3 = Param.UInt32(0, "SMMU_IDR3 register");
@@ -182,7 +187,7 @@ class SMMUv3(ClockedObject):
     def generateDeviceTree(self, state):
         reg_addr = self.reg_map.start
         reg_size = self.reg_map.size()
-        node = FdtNode("smmuv3@%x" % long(reg_addr))
+        node = FdtNode("smmuv3@%x" % int(reg_addr))
         node.appendCompatible("arm,smmu-v3")
         node.append(FdtPropertyWords("reg",
             state.addrCells(reg_addr) +

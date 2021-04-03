@@ -24,8 +24,6 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import print_function
-
 from collections import Mapping
 
 import _m5.debug
@@ -37,15 +35,24 @@ def help():
     sorted_flags = sorted(flags.items(), key=lambda kv: kv[0])
 
     print("Base Flags:")
-    for name, flag in filter(lambda kv: not isinstance(kv[1], CompoundFlag),
-                             sorted_flags):
+    for name, flag in filter(lambda kv: isinstance(kv[1], SimpleFlag)
+                             and not kv[1].isFormat, sorted_flags):
         print("    %s: %s" % (name, flag.desc))
     print()
     print("Compound Flags:")
     for name, flag in filter(lambda kv: isinstance(kv[1], CompoundFlag),
                              sorted_flags):
         print("    %s: %s" % (name, flag.desc))
-        printList([ c.name for c in flag.kids() ], indent=8)
+        # The list of kids for flag "All" is too long, so it is not printed
+        if name != "All":
+            printList([ c.name for c in flag.kids() ], indent=8)
+        else:
+            print("        All Base Flags")
+    print()
+    print("Formatting Flags:")
+    for name, flag in filter(lambda kv: isinstance(kv[1], SimpleFlag)
+                             and kv[1].isFormat, sorted_flags):
+        print("    %s: %s" % (name, flag.desc))
     print()
 
 class AllFlags(Mapping):

@@ -40,7 +40,7 @@
 
 #include "dev/arm/amba_device.hh"
 
-class Sp805Params;
+struct Sp805Params;
 
 /**
  * @file
@@ -52,7 +52,7 @@ class Sp805Params;
 class Sp805 : public AmbaIntDevice
 {
   public:
-    Sp805(Sp805Params const* params);
+    Sp805(const Sp805Params &params);
 
     void serialize(CheckpointOut &cp) const override;
     void unserialize(CheckpointIn &cp) override;

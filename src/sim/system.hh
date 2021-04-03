@@ -42,6 +42,7 @@
 #ifndef __SYSTEM_HH__
 #define __SYSTEM_HH__
 
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -52,7 +53,6 @@
 #include "base/loader/symtab.hh"
 #include "base/statistics.hh"
 #include "config/the_isa.hh"
-#include "cpu/base.hh"
 #include "cpu/pc_event.hh"
 #include "enums/MemoryMode.hh"
 #include "mem/mem_requestor.hh"
@@ -222,11 +222,6 @@ class System : public SimObject, public PCEventScope
         const_iterator end() const { return const_iterator(*this, size()); }
     };
 
-    /**
-     * After all objects have been created and all ports are
-     * connected, check that the system port is connected.
-     */
-    void init() override;
     void startup() override;
 
     /**
@@ -387,7 +382,7 @@ class System : public SimObject, public PCEventScope
     ByteOrder
     getGuestByteOrder() const
     {
-        return _params->byte_order;
+        return params().byte_order;
     }
 
      /**
@@ -560,12 +555,7 @@ class System : public SimObject, public PCEventScope
   public:
     bool breakpoint();
 
-  public:
-    typedef SystemParams Params;
-
   protected:
-    Params *_params;
-
     /**
      * Range for memory-mapped m5 pseudo ops. The range will be
      * invalid/empty if disabled.
@@ -573,10 +563,10 @@ class System : public SimObject, public PCEventScope
     const AddrRange _m5opRange;
 
   public:
-    System(Params *p);
-    ~System();
+    PARAMS(System);
 
-    const Params *params() const { return (const Params *)_params; }
+    System(const Params &p);
+    ~System();
 
     /**
      * Range used by memory-mapped m5 pseudo-ops if enabled. Returns
@@ -597,10 +587,7 @@ class System : public SimObject, public PCEventScope
     void serialize(CheckpointOut &cp) const override;
     void unserialize(CheckpointIn &cp) override;
 
-    void drainResume() override;
-
   public:
-    Counter totalNumInsts;
     std::map<std::pair<uint32_t,uint32_t>, Tick>  lastWorkItemStarted;
     std::map<uint32_t, Stats::Histogram*> workItemStats;
 

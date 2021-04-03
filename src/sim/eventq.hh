@@ -40,14 +40,16 @@
 #include <climits>
 #include <functional>
 #include <iosfwd>
+#include <list>
 #include <memory>
-#include <mutex>
 #include <string>
 
 #include "base/debug.hh"
 #include "base/flags.hh"
 #include "base/types.hh"
+#include "base/uncontended_mutex.hh"
 #include "debug/Event.hh"
+#include "sim/core.hh"
 #include "sim/serialize.hh"
 
 class EventQueue;       // forward declaration
@@ -81,7 +83,7 @@ extern bool inParallelMode;
 EventQueue *getEventQueue(uint32_t index);
 
 inline EventQueue *curEventQueue() { return _curEventQueue; }
-inline void curEventQueue(EventQueue *q) { _curEventQueue = q; }
+inline void curEventQueue(EventQueue *q);
 
 /**
  * Common base class for Event and GlobalEvent, so they can share flag
@@ -617,12 +619,14 @@ operator!=(const Event &l, const Event &r)
 class EventQueue
 {
   private:
+    friend void curEventQueue(EventQueue *);
+
     std::string objName;
     Event *head;
     Tick _curTick;
 
     //! Mutex to protect async queue.
-    std::mutex async_queue_mutex;
+    UncontendedMutex async_queue_mutex;
 
     //! List of events added by other threads to this event queue.
     std::list<Event*> async_queue;
@@ -647,7 +651,7 @@ class EventQueue
      * @see EventQueue::lock()
      * @see EventQueue::unlock()
      */
-    std::mutex service_mutex;
+    UncontendedMutex service_mutex;
 
     //! Insert / remove event from the queue. Should only be called
     //! by thread operating this queue.
@@ -967,6 +971,13 @@ class EventQueue
             deschedule(getHead());
     }
 };
+
+inline void
+curEventQueue(EventQueue *q)
+{
+    _curEventQueue = q;
+    Gem5Internal::_curTickPtr = (q == nullptr) ? nullptr : &q->_curTick;
+}
 
 void dumpMainQueue();
 

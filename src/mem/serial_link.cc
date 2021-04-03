@@ -78,15 +78,14 @@ SerialLink::SerialLinkRequestPort::SerialLinkRequestPort(const std::string&
 {
 }
 
-SerialLink::SerialLink(SerialLinkParams *p)
+SerialLink::SerialLink(const SerialLinkParams &p)
     : ClockedObject(p),
-      cpu_side_port(p->name + ".cpu_side_port", *this, mem_side_port,
-                ticksToCycles(p->delay), p->resp_size, p->ranges),
-      mem_side_port(p->name + ".mem_side_port", *this, cpu_side_port,
-                 ticksToCycles(p->delay), p->req_size),
-      num_lanes(p->num_lanes),
-      link_speed(p->link_speed)
-
+      cpu_side_port(p.name + ".cpu_side_port", *this, mem_side_port,
+                ticksToCycles(p.delay), p.resp_size, p.ranges),
+      mem_side_port(p.name + ".mem_side_port", *this, cpu_side_port,
+                 ticksToCycles(p.delay), p.req_size),
+      num_lanes(p.num_lanes),
+      link_speed(p.link_speed)
 {
 }
 
@@ -420,10 +419,4 @@ AddrRangeList
 SerialLink::SerialLinkResponsePort::getAddrRanges() const
 {
     return ranges;
-}
-
-SerialLink *
-SerialLinkParams::create()
-{
-    return new SerialLink(this);
 }

@@ -37,6 +37,7 @@
 #include "base/statistics.hh"
 #include "base/types.hh"
 #include "sim/core.hh"
+#include "sim/eventq.hh"
 #include "sim/init.hh"
 #include "sim/stat_control.hh"
 
@@ -49,7 +50,6 @@ const char *m5MainCommands[] = {
     0 // sentinel is required
 };
 
-using namespace std;
 using namespace Stats;
 
 double testfunc();
@@ -678,9 +678,9 @@ StatTest::run()
 }
 
 static void
-stattest_init_pybind(py::module &m_internal)
+stattest_init_pybind(py::module_ &m_internal)
 {
-    py::module m = m_internal.def_submodule("stattest");
+    py::module_ m = m_internal.def_submodule("stattest");
 
     m
         .def("stattest_init", []() { __stattest().init(); })

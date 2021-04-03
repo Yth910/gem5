@@ -215,11 +215,23 @@ class ISA : public BaseISA
     int flattenCCIndex(int reg) const { return reg; }
     int flattenMiscIndex(int reg) const { return reg; }
 
+    uint64_t
+    getExecutingAsid() const override
+    {
+        return readMiscRegNoEffect(MISCREG_MMU_P_CONTEXT);
+    }
 
-    typedef SparcISAParams Params;
-    const Params *params() const;
+    using Params = SparcISAParams;
 
-    ISA(Params *p);
+    bool
+    inUserMode() const override
+    {
+        PSTATE pstate = readMiscRegNoEffect(MISCREG_PSTATE);
+        HPSTATE hpstate = readMiscRegNoEffect(MISCREG_HPSTATE);
+        return !(pstate.priv || hpstate.hpriv);
+    }
+
+    ISA(const Params &p);
 };
 }
 

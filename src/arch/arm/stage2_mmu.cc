@@ -46,10 +46,10 @@
 
 using namespace ArmISA;
 
-Stage2MMU::Stage2MMU(const Params *p)
-    : SimObject(p), _stage1Tlb(p->tlb), _stage2Tlb(p->stage2_tlb),
-      port(_stage1Tlb->getTableWalker(), p->sys),
-      requestorId(p->sys->getRequestorId(_stage1Tlb->getTableWalker()))
+Stage2MMU::Stage2MMU(const Params &p)
+    : SimObject(p), _stage1Tlb(p.tlb), _stage2Tlb(p.stage2_tlb),
+      port(_stage1Tlb->getTableWalker(), p.sys),
+      requestorId(p.sys->getRequestorId(_stage1Tlb->getTableWalker()))
 {
     // we use the stage-one table walker as the parent of the port,
     // and to get our requestor id, this is done to keep things
@@ -139,10 +139,4 @@ Stage2MMU::Stage2Translation::finish(const Fault &_fault,
         // event we're done
         event->process();
     }
-}
-
-ArmISA::Stage2MMU *
-ArmStage2MMUParams::create()
-{
-    return new ArmISA::Stage2MMU(this);
 }

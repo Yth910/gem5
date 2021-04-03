@@ -37,10 +37,8 @@
 #include "debug/IntrControl.hh"
 #include "sim/sim_object.hh"
 
-using namespace std;
-
-IntrControl::IntrControl(const Params *p)
-    : SimObject(p), sys(p->sys)
+IntrControl::IntrControl(const Params &p)
+    : SimObject(p), sys(p.sys)
 {}
 
 void
@@ -73,10 +71,4 @@ IntrControl::havePosted(int cpu_id) const
     DPRINTF(IntrControl, "Check pending interrupts for CPU %d\n", cpu_id);
     auto *tc = sys->threads[cpu_id];
     return tc->getCpuPtr()->checkInterrupts(tc->threadId());
-}
-
-IntrControl *
-IntrControlParams::create()
-{
-    return new IntrControl(this);
 }

@@ -141,7 +141,7 @@ ElfObject::ElfObject(ImageFileDataPtr ifd) : ObjectFile(ifd)
             "No loadable segments in '%s'. ELF file corrupted?\n",
             imageData->filename());
 
-    for (auto M5_VAR_USED &seg: image.segments())
+    for (M5_VAR_USED auto &seg: image.segments())
         DPRINTFR(Loader, "%s\n", seg);
 
     // We will actually read the sections when we need to load them
@@ -330,6 +330,11 @@ void
 ElfObject::handleLoadableSegment(GElf_Phdr phdr, int seg_num)
 {
     auto name = std::to_string(seg_num);
+
+    if (phdr.p_memsz == 0) {
+        warn("Ignoring empty loadable segment %s", name);
+        return;
+    }
 
     image.addSegment({ name, phdr.p_paddr, imageData,
                        phdr.p_offset, phdr.p_filesz });

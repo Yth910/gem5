@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2020 ARM Limited
+ * Copyright (c) 2010-2021 ARM Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -40,10 +40,10 @@
 #include "arch/arm/faults.hh"
 #include "arch/arm/htm.hh"
 #include "arch/arm/interrupts.hh"
+#include "arch/arm/mmu.hh"
 #include "arch/arm/pmu.hh"
 #include "arch/arm/self_debug.hh"
 #include "arch/arm/system.hh"
-#include "arch/arm/tlb.hh"
 #include "arch/arm/tlbi_op.hh"
 #include "cpu/base.hh"
 #include "cpu/checker/cpu.hh"
@@ -60,9 +60,9 @@
 namespace ArmISA
 {
 
-ISA::ISA(Params *p) : BaseISA(p), system(NULL),
-    _decoderFlavor(p->decoderFlavor), _vecRegRenameMode(Enums::Full),
-    pmu(p->pmu), impdefAsNop(p->impdef_nop),
+ISA::ISA(const Params &p) : BaseISA(p), system(NULL),
+    _decoderFlavor(p.decoderFlavor), _vecRegRenameMode(Enums::Full),
+    pmu(p.pmu), impdefAsNop(p.impdef_nop),
     afterStartup(false)
 {
     miscRegs[MISCREG_SCTLR_RST] = 0;
@@ -76,7 +76,7 @@ ISA::ISA(Params *p) : BaseISA(p), system(NULL),
     // Give all ISA devices a pointer to this ISA
     pmu->setISA(this);
 
-    system = dynamic_cast<ArmSystem *>(p->system);
+    system = dynamic_cast<ArmSystem *>(p.system);
 
     // Cache system-level properties
     if (FullSystem && system) {
@@ -88,6 +88,7 @@ ISA::ISA(Params *p) : BaseISA(p), system(NULL),
         haveLargeAsid64 = system->haveLargeAsid64();
         physAddrRange = system->physAddrRange();
         haveSVE = system->haveSVE();
+        haveVHE = system->haveVHE();
         havePAN = system->havePAN();
         haveSecEL2 = system->haveSecEL2();
         sveVL = system->sveVL();
@@ -100,9 +101,10 @@ ISA::ISA(Params *p) : BaseISA(p), system(NULL),
         haveLargeAsid64 = false;
         physAddrRange = 32;  // dummy value
         haveSVE = true;
+        haveVHE = false;
         havePAN = false;
         haveSecEL2 = true;
-        sveVL = p->sve_vl_se;
+        sveVL = p.sve_vl_se;
         haveLSE = true;
         haveTME = true;
     }
@@ -120,21 +122,14 @@ ISA::ISA(Params *p) : BaseISA(p), system(NULL),
 
 std::vector<struct ISA::MiscRegLUTEntry> ISA::lookUpMiscReg(NUM_MISCREGS);
 
-const ArmISAParams *
-ISA::params() const
-{
-    return dynamic_cast<const Params *>(_params);
-}
-
 void
 ISA::clear()
 {
-    const Params *p(params());
+    const Params &p(params());
 
     // Invalidate cached copies of miscregs in the TLBs
     if (tc) {
-        getITBPtr(tc)->invalidateMiscReg();
-        getDTBPtr(tc)->invalidateMiscReg();
+        getMMUPtr(tc)->invalidateMiscReg();
     }
 
     SCTLR sctlr_rst = miscRegs[MISCREG_SCTLR_RST];
@@ -220,7 +215,7 @@ ISA::clear()
 }
 
 void
-ISA::clear32(const ArmISAParams *p, const SCTLR &sctlr_rst)
+ISA::clear32(const ArmISAParams &p, const SCTLR &sctlr_rst)
 {
     CPSR cpsr = 0;
     cpsr.mode = MODE_USER;
@@ -249,7 +244,7 @@ ISA::clear32(const ArmISAParams *p, const SCTLR &sctlr_rst)
 
     miscRegs[MISCREG_CPACR] = 0;
 
-    miscRegs[MISCREG_FPSID] = p->fpsid;
+    miscRegs[MISCREG_FPSID] = p.fpsid;
 
     if (haveLPAE) {
         TTBCR ttbcr = miscRegs[MISCREG_TTBCR_NS];
@@ -272,7 +267,7 @@ ISA::clear32(const ArmISAParams *p, const SCTLR &sctlr_rst)
 }
 
 void
-ISA::clear64(const ArmISAParams *p)
+ISA::clear64(const ArmISAParams &p)
 {
     CPSR cpsr = 0;
     Addr rvbar = system->resetAddr();
@@ -321,13 +316,13 @@ ISA::clear64(const ArmISAParams *p)
 }
 
 void
-ISA::initID32(const ArmISAParams *p)
+ISA::initID32(const ArmISAParams &p)
 {
     // Initialize configurable default values
 
     uint32_t midr;
-    if (p->midr != 0x0)
-        midr = p->midr;
+    if (p.midr != 0x0)
+        midr = p.midr;
     else if (highestELIs64)
         // Cortex-A57 TRM r0p0 MIDR
         midr = 0x410fd070;
@@ -339,17 +334,19 @@ ISA::initID32(const ArmISAParams *p)
     miscRegs[MISCREG_MIDR_EL1] = midr;
     miscRegs[MISCREG_VPIDR] = midr;
 
-    miscRegs[MISCREG_ID_ISAR0] = p->id_isar0;
-    miscRegs[MISCREG_ID_ISAR1] = p->id_isar1;
-    miscRegs[MISCREG_ID_ISAR2] = p->id_isar2;
-    miscRegs[MISCREG_ID_ISAR3] = p->id_isar3;
-    miscRegs[MISCREG_ID_ISAR4] = p->id_isar4;
-    miscRegs[MISCREG_ID_ISAR5] = p->id_isar5;
+    miscRegs[MISCREG_ID_ISAR0] = p.id_isar0;
+    miscRegs[MISCREG_ID_ISAR1] = p.id_isar1;
+    miscRegs[MISCREG_ID_ISAR2] = p.id_isar2;
+    miscRegs[MISCREG_ID_ISAR3] = p.id_isar3;
+    miscRegs[MISCREG_ID_ISAR4] = p.id_isar4;
+    miscRegs[MISCREG_ID_ISAR5] = p.id_isar5;
+    miscRegs[MISCREG_ID_ISAR6] = p.id_isar6;
 
-    miscRegs[MISCREG_ID_MMFR0] = p->id_mmfr0;
-    miscRegs[MISCREG_ID_MMFR1] = p->id_mmfr1;
-    miscRegs[MISCREG_ID_MMFR2] = p->id_mmfr2;
-    miscRegs[MISCREG_ID_MMFR3] = p->id_mmfr3;
+    miscRegs[MISCREG_ID_MMFR0] = p.id_mmfr0;
+    miscRegs[MISCREG_ID_MMFR1] = p.id_mmfr1;
+    miscRegs[MISCREG_ID_MMFR2] = p.id_mmfr2;
+    miscRegs[MISCREG_ID_MMFR3] = p.id_mmfr3;
+    miscRegs[MISCREG_ID_MMFR4] = p.id_mmfr4;
 
     miscRegs[MISCREG_ID_ISAR5] = insertBits(
         miscRegs[MISCREG_ID_ISAR5], 19, 4,
@@ -357,24 +354,24 @@ ISA::initID32(const ArmISAParams *p)
 }
 
 void
-ISA::initID64(const ArmISAParams *p)
+ISA::initID64(const ArmISAParams &p)
 {
     // Initialize configurable id registers
-    miscRegs[MISCREG_ID_AA64AFR0_EL1] = p->id_aa64afr0_el1;
-    miscRegs[MISCREG_ID_AA64AFR1_EL1] = p->id_aa64afr1_el1;
+    miscRegs[MISCREG_ID_AA64AFR0_EL1] = p.id_aa64afr0_el1;
+    miscRegs[MISCREG_ID_AA64AFR1_EL1] = p.id_aa64afr1_el1;
     miscRegs[MISCREG_ID_AA64DFR0_EL1] =
-        (p->id_aa64dfr0_el1 & 0xfffffffffffff0ffULL) |
-        (p->pmu ?             0x0000000000000100ULL : 0); // Enable PMUv3
+        (p.id_aa64dfr0_el1 & 0xfffffffffffff0ffULL) |
+        (p.pmu ?             0x0000000000000100ULL : 0); // Enable PMUv3
 
-    miscRegs[MISCREG_ID_AA64DFR1_EL1] = p->id_aa64dfr1_el1;
-    miscRegs[MISCREG_ID_AA64ISAR0_EL1] = p->id_aa64isar0_el1;
-    miscRegs[MISCREG_ID_AA64ISAR1_EL1] = p->id_aa64isar1_el1;
-    miscRegs[MISCREG_ID_AA64MMFR0_EL1] = p->id_aa64mmfr0_el1;
-    miscRegs[MISCREG_ID_AA64MMFR1_EL1] = p->id_aa64mmfr1_el1;
-    miscRegs[MISCREG_ID_AA64MMFR2_EL1] = p->id_aa64mmfr2_el1;
+    miscRegs[MISCREG_ID_AA64DFR1_EL1] = p.id_aa64dfr1_el1;
+    miscRegs[MISCREG_ID_AA64ISAR0_EL1] = p.id_aa64isar0_el1;
+    miscRegs[MISCREG_ID_AA64ISAR1_EL1] = p.id_aa64isar1_el1;
+    miscRegs[MISCREG_ID_AA64MMFR0_EL1] = p.id_aa64mmfr0_el1;
+    miscRegs[MISCREG_ID_AA64MMFR1_EL1] = p.id_aa64mmfr1_el1;
+    miscRegs[MISCREG_ID_AA64MMFR2_EL1] = p.id_aa64mmfr2_el1;
 
     miscRegs[MISCREG_ID_DFR0_EL1] =
-        (p->pmu ? 0x03000000ULL : 0); // Enable PMUv3
+        (p.pmu ? 0x03000000ULL : 0); // Enable PMUv3
 
     miscRegs[MISCREG_ID_DFR0] = miscRegs[MISCREG_ID_DFR0_EL1];
 
@@ -425,6 +422,10 @@ ISA::initID64(const ArmISAParams *p)
     miscRegs[MISCREG_ID_AA64ISAR0_EL1] = insertBits(
         miscRegs[MISCREG_ID_AA64ISAR0_EL1], 23, 20,
         haveLSE ? 0x2 : 0x0);
+    // VHE
+    miscRegs[MISCREG_ID_AA64MMFR1_EL1] = insertBits(
+        miscRegs[MISCREG_ID_AA64MMFR1_EL1], 11, 8,
+        haveVHE ? 0x1 : 0x0);
     // PAN
     miscRegs[MISCREG_ID_AA64MMFR1_EL1] = insertBits(
         miscRegs[MISCREG_ID_AA64MMFR1_EL1], 23, 20,
@@ -844,12 +845,11 @@ ISA::setMiscReg(int misc_reg, RegVal val)
         int old_mode = old_cpsr.mode;
         CPSR cpsr = val;
         if (old_mode != cpsr.mode || cpsr.il != old_cpsr.il) {
-            getITBPtr(tc)->invalidateMiscReg();
-            getDTBPtr(tc)->invalidateMiscReg();
+            getMMUPtr(tc)->invalidateMiscReg();
         }
 
         if (cpsr.pan != old_cpsr.pan) {
-            getDTBPtr(tc)->invalidateMiscReg();
+            getMMUPtr(tc)->invalidateMiscReg(MMU::D_TLBS);
         }
 
         DPRINTF(Arm, "Updating CPSR from %#x to %#x f:%d i:%d a:%d mode:%#x\n",
@@ -930,6 +930,7 @@ ISA::setMiscReg(int misc_reg, RegVal val)
             break;
           case MISCREG_CPTR_EL2:
             {
+                const HCR hcr = readMiscRegNoEffect(MISCREG_HCR_EL2);
                 const uint32_t ones = (uint32_t)(-1);
                 CPTR cptrMask = 0;
                 cptrMask.tcpac = ones;
@@ -937,7 +938,9 @@ ISA::setMiscReg(int misc_reg, RegVal val)
                 cptrMask.tfp = ones;
                 if (haveSVE) {
                     cptrMask.tz = ones;
+                    cptrMask.zen = hcr.e2h ? ones : 0;
                 }
+                cptrMask.fpen = hcr.e2h ? ones : 0;
                 newVal &= cptrMask;
                 cptrMask = 0;
                 cptrMask.res1_13_12_el2 = ones;
@@ -1364,8 +1367,7 @@ ISA::setMiscReg(int misc_reg, RegVal val)
             }
             break;
           case MISCREG_SCR:
-            getITBPtr(tc)->invalidateMiscReg();
-            getDTBPtr(tc)->invalidateMiscReg();
+            getMMUPtr(tc)->invalidateMiscReg();
             break;
           case MISCREG_SCTLR:
             {
@@ -1383,8 +1385,7 @@ ISA::setMiscReg(int misc_reg, RegVal val)
                 SCTLR new_sctlr = newVal;
                 new_sctlr.nmfi =  ((bool)sctlr.nmfi) && !haveVirtualization;
                 miscRegs[sctlr_idx] = (RegVal)new_sctlr;
-                getITBPtr(tc)->invalidateMiscReg();
-                getDTBPtr(tc)->invalidateMiscReg();
+                getMMUPtr(tc)->invalidateMiscReg();
             }
           case MISCREG_MIDR:
           case MISCREG_ID_PFR0:
@@ -1394,6 +1395,7 @@ ISA::setMiscReg(int misc_reg, RegVal val)
           case MISCREG_ID_MMFR1:
           case MISCREG_ID_MMFR2:
           case MISCREG_ID_MMFR3:
+          case MISCREG_ID_MMFR4:
           case MISCREG_ID_ISAR0:
           case MISCREG_ID_ISAR1:
           case MISCREG_ID_ISAR2:
@@ -1705,7 +1707,7 @@ ISA::setMiscReg(int misc_reg, RegVal val)
             {
                 assert64();
 
-                TLBIALL tlbiOp(EL3, true);
+                TLBIALLEL tlbiOp(EL3, true);
                 tlbiOp(tc);
                 return;
             }
@@ -1714,60 +1716,60 @@ ISA::setMiscReg(int misc_reg, RegVal val)
             {
                 assert64();
 
-                TLBIALL tlbiOp(EL3, true);
+                TLBIALLEL tlbiOp(EL3, true);
                 tlbiOp.broadcast(tc);
                 return;
             }
-          // AArch64 TLB Invalidate All, EL2, Inner Shareable
+          // AArch64 TLB Invalidate All, EL2
           case MISCREG_TLBI_ALLE2:
+            {
+                assert64();
+                scr = readMiscReg(MISCREG_SCR);
+
+                TLBIALLEL tlbiOp(EL2, haveSecurity && !scr.ns);
+                tlbiOp(tc);
+                return;
+            }
+          // AArch64 TLB Invalidate All, EL2, Inner Shareable
           case MISCREG_TLBI_ALLE2IS:
             {
                 assert64();
                 scr = readMiscReg(MISCREG_SCR);
 
-                TLBIALL tlbiOp(EL2, haveSecurity && !scr.ns);
-                tlbiOp(tc);
+                TLBIALLEL tlbiOp(EL2, haveSecurity && !scr.ns);
+                tlbiOp.broadcast(tc);
                 return;
             }
           // AArch64 TLB Invalidate All, EL1
           case MISCREG_TLBI_ALLE1:
-          case MISCREG_TLBI_VMALLS12E1:
-            // @todo: handle VMID and stage 2 to enable Virtualization
             {
                 assert64();
                 scr = readMiscReg(MISCREG_SCR);
 
-                TLBIALL tlbiOp(EL1, haveSecurity && !scr.ns);
-                tlbiOp(tc);
-                return;
-            }
-          case MISCREG_TLBI_VMALLE1:
-            // @todo: handle VMID and stage 2 to enable Virtualization
-            {
-                assert64();
-                scr = readMiscReg(MISCREG_SCR);
-
-                HCR hcr = readMiscReg(MISCREG_HCR_EL2);
-                bool is_host = (hcr.tge && hcr.e2h);
-                ExceptionLevel target_el = is_host ?  EL2 : EL1;
-                TLBIALL tlbiOp(target_el, haveSecurity && !scr.ns);
+                TLBIALLEL tlbiOp(EL1, haveSecurity && !scr.ns);
                 tlbiOp(tc);
                 return;
             }
           // AArch64 TLB Invalidate All, EL1, Inner Shareable
           case MISCREG_TLBI_ALLE1IS:
-          case MISCREG_TLBI_VMALLS12E1IS:
-            // @todo: handle VMID and stage 2 to enable Virtualization
             {
                 assert64();
                 scr = readMiscReg(MISCREG_SCR);
 
-                TLBIALL tlbiOp(EL1, haveSecurity && !scr.ns);
+                TLBIALLEL tlbiOp(EL1, haveSecurity && !scr.ns);
                 tlbiOp.broadcast(tc);
                 return;
             }
-          case MISCREG_TLBI_VMALLE1IS:
-            // @todo: handle VMID and stage 2 to enable Virtualization
+          case MISCREG_TLBI_VMALLS12E1:
+            {
+                assert64();
+                scr = readMiscReg(MISCREG_SCR);
+
+                TLBIVMALL tlbiOp(EL1, haveSecurity && !scr.ns, true);
+                tlbiOp(tc);
+                return;
+            }
+          case MISCREG_TLBI_VMALLE1:
             {
                 assert64();
                 scr = readMiscReg(MISCREG_SCR);
@@ -1775,14 +1777,34 @@ ISA::setMiscReg(int misc_reg, RegVal val)
                 HCR hcr = readMiscReg(MISCREG_HCR_EL2);
                 bool is_host = (hcr.tge && hcr.e2h);
                 ExceptionLevel target_el = is_host ?  EL2 : EL1;
-                TLBIALL tlbiOp(target_el, haveSecurity && !scr.ns);
+                TLBIVMALL tlbiOp(target_el, haveSecurity && !scr.ns, false);
+                tlbiOp(tc);
+                return;
+            }
+          case MISCREG_TLBI_VMALLS12E1IS:
+            {
+                assert64();
+                scr = readMiscReg(MISCREG_SCR);
+
+                TLBIVMALL tlbiOp(EL1, haveSecurity && !scr.ns, true);
+                tlbiOp.broadcast(tc);
+                return;
+            }
+          case MISCREG_TLBI_VMALLE1IS:
+            {
+                assert64();
+                scr = readMiscReg(MISCREG_SCR);
+
+                HCR hcr = readMiscReg(MISCREG_HCR_EL2);
+                bool is_host = (hcr.tge && hcr.e2h);
+                ExceptionLevel target_el = is_host ?  EL2 : EL1;
+                TLBIVMALL tlbiOp(target_el, haveSecurity && !scr.ns, false);
                 tlbiOp.broadcast(tc);
                 return;
             }
           // VAEx(IS) and VALEx(IS) are the same because TLBs
           // only store entries
           // from the last level of translation table walks
-          // @todo: handle VMID to enable Virtualization
           // AArch64 TLB Invalidate by VA, EL3
           case MISCREG_TLBI_VAE3_Xt:
           case MISCREG_TLBI_VALE3_Xt:
@@ -1874,7 +1896,6 @@ ISA::setMiscReg(int misc_reg, RegVal val)
                 return;
             }
           // AArch64 TLB Invalidate by ASID, EL1
-          // @todo: handle VMID to enable Virtualization
           case MISCREG_TLBI_ASIDE1_Xt:
             {
                 assert64();
@@ -2078,8 +2099,7 @@ ISA::setMiscReg(int misc_reg, RegVal val)
                     newVal = (newVal & ttbcrMask) | (ttbcr & (~ttbcrMask));
                 }
                 // Invalidate TLB MiscReg
-                getITBPtr(tc)->invalidateMiscReg();
-                getDTBPtr(tc)->invalidateMiscReg();
+                getMMUPtr(tc)->invalidateMiscReg();
                 break;
             }
           case MISCREG_TTBR0:
@@ -2095,8 +2115,7 @@ ISA::setMiscReg(int misc_reg, RegVal val)
                     }
                 }
                 // Invalidate TLB MiscReg
-                getITBPtr(tc)->invalidateMiscReg();
-                getDTBPtr(tc)->invalidateMiscReg();
+                getMMUPtr(tc)->invalidateMiscReg();
                 break;
             }
           case MISCREG_SCTLR_EL1:
@@ -2119,15 +2138,13 @@ ISA::setMiscReg(int misc_reg, RegVal val)
           case MISCREG_TTBR0_EL2:
           case MISCREG_TTBR1_EL2:
           case MISCREG_TTBR0_EL3:
-            getITBPtr(tc)->invalidateMiscReg();
-            getDTBPtr(tc)->invalidateMiscReg();
+            getMMUPtr(tc)->invalidateMiscReg();
             break;
           case MISCREG_HCR_EL2:
             {
                 const HDCR mdcr  = tc->readMiscRegNoEffect(MISCREG_MDCR_EL2);
                 selfDebug->setenableTDETGE((HCR)val, mdcr);
-                getITBPtr(tc)->invalidateMiscReg();
-                getDTBPtr(tc)->invalidateMiscReg();
+                getMMUPtr(tc)->invalidateMiscReg();
             }
             break;
           case MISCREG_NZCV:
@@ -2175,7 +2192,7 @@ ISA::setMiscReg(int misc_reg, RegVal val)
           case MISCREG_PAN:
             {
                 // PAN is affecting data accesses
-                getDTBPtr(tc)->invalidateMiscReg();
+                getMMUPtr(tc)->invalidateMiscReg(MMU::D_TLBS);
 
                 CPSR cpsr = miscRegs[MISCREG_CPSR];
                 cpsr.pan = (uint8_t) ((CPSR) newVal).pan;
@@ -2340,6 +2357,22 @@ ISA::zeroSveVecRegUpperPart(VecRegContainer &vc, unsigned eCount)
 }
 
 void
+ISA::serialize(CheckpointOut &cp) const
+{
+    DPRINTF(Checkpoint, "Serializing Arm Misc Registers\n");
+    SERIALIZE_MAPPING(miscRegs, miscRegName, NUM_PHYS_MISCREGS);
+}
+
+void
+ISA::unserialize(CheckpointIn &cp)
+{
+    DPRINTF(Checkpoint, "Unserializing Arm Misc Registers\n");
+    UNSERIALIZE_MAPPING(miscRegs, miscRegName, NUM_PHYS_MISCREGS);
+    CPSR tmp_cpsr = miscRegs[MISCREG_CPSR];
+    updateRegMap(tmp_cpsr);
+}
+
+void
 ISA::addressTranslation64(TLB::ArmTranslationType tran_type,
     BaseTLB::Mode mode, Request::Flags flags, RegVal val)
 {
@@ -2355,13 +2388,13 @@ ISA::addressTranslation64(TLB::ArmTranslationType tran_type,
         val, 0, flags,  Request::funcRequestorId,
         tc->pcState().pc(), tc->contextId());
 
-    Fault fault = getDTBPtr(tc)->translateFunctional(
+    Fault fault = getMMUPtr(tc)->translateFunctional(
         req, tc, mode, tran_type);
 
     PAR par = 0;
     if (fault == NoFault) {
         Addr paddr = req->getPaddr();
-        uint64_t attr = getDTBPtr(tc)->getAttr();
+        uint64_t attr = getMMUPtr(tc)->getAttr();
         uint64_t attr1 = attr >> 56;
         if (!attr1 || attr1 ==0x44) {
             attr |= 0x100;
@@ -2406,7 +2439,7 @@ ISA::addressTranslation(TLB::ArmTranslationType tran_type,
         val, 0, flags,  Request::funcRequestorId,
         tc->pcState().pc(), tc->contextId());
 
-    Fault fault = getDTBPtr(tc)->translateFunctional(
+    Fault fault = getMMUPtr(tc)->translateFunctional(
         req, tc, mode, tran_type);
 
     PAR par = 0;
@@ -2425,7 +2458,7 @@ ISA::addressTranslation(TLB::ArmTranslationType tran_type,
         }
 
         par = (paddr & mask(max_paddr_bit, 12)) |
-            (getDTBPtr(tc)->getAttr());
+            (getMMUPtr(tc)->getAttr());
 
         DPRINTF(MiscRegs,
                "MISCREG: Translated addr 0x%08x: PAR: 0x%08x\n",
@@ -2470,9 +2503,3 @@ ISA::MiscRegLUTEntryInitializer::highest(ArmSystem *const sys) const
 }
 
 }  // namespace ArmISA
-
-ArmISA::ISA *
-ArmISAParams::create()
-{
-    return new ArmISA::ISA(this);
-}

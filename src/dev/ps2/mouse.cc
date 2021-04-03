@@ -45,8 +45,9 @@
 #include "debug/PS2.hh"
 #include "dev/ps2/types.hh"
 #include "params/PS2Mouse.hh"
+#include "sim/serialize.hh"
 
-PS2Mouse::PS2Mouse(const PS2MouseParams *p)
+PS2Mouse::PS2Mouse(const PS2MouseParams &p)
     : PS2Device(p),
       status(0), resolution(4), sampleRate(100)
 {
@@ -165,10 +166,4 @@ PS2Mouse::unserialize(CheckpointIn &cp)
     UNSERIALIZE_SCALAR(status);
     UNSERIALIZE_SCALAR(resolution);
     UNSERIALIZE_SCALAR(sampleRate);
-}
-
-PS2Mouse *
-PS2MouseParams::create()
-{
-    return new PS2Mouse(this);
 }

@@ -44,10 +44,10 @@
 #include "base/trace.hh"
 #include "debug/Drain.hh"
 
-SimpleMemory::SimpleMemory(const SimpleMemoryParams* p) :
+SimpleMemory::SimpleMemory(const SimpleMemoryParams &p) :
     AbstractMemory(p),
-    port(name() + ".port", *this), latency(p->latency),
-    latency_var(p->latency_var), bandwidth(p->bandwidth), isBusy(false),
+    port(name() + ".port", *this), latency(p.latency),
+    latency_var(p.latency_var), bandwidth(p.bandwidth), isBusy(false),
     retryReq(false), retryResp(false),
     releaseEvent([this]{ release(); }, name()),
     dequeueEvent([this]{ dequeue(); }, name())
@@ -80,9 +80,7 @@ Tick
 SimpleMemory::recvAtomicBackdoor(PacketPtr pkt, MemBackdoorPtr &_backdoor)
 {
     Tick latency = recvAtomic(pkt);
-
-    if (backdoor.ptr())
-        _backdoor = &backdoor;
+    getBackdoor(_backdoor);
     return latency;
 }
 
@@ -300,10 +298,4 @@ void
 SimpleMemory::MemoryPort::recvRespRetry()
 {
     memory.recvRespRetry();
-}
-
-SimpleMemory*
-SimpleMemoryParams::create()
-{
-    return new SimpleMemory(this);
 }

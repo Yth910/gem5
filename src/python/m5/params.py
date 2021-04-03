@@ -1,4 +1,4 @@
-# Copyright (c) 2012-2014, 2017-2019 ARM Limited
+# Copyright (c) 2012-2014, 2017-2019, 2021 Arm Limited
 # All rights reserved.
 #
 # The license below extends only to copyright in the software and shall
@@ -54,12 +54,6 @@
 #
 #####################################################################
 
-from __future__ import print_function
-from six import with_metaclass
-import six
-if six.PY3:
-    long = int
-
 import copy
 import datetime
 import re
@@ -97,7 +91,7 @@ class MetaParamValue(type):
 
 # Dummy base class to identify types that are legitimate for SimObject
 # parameters.
-class ParamValue(with_metaclass(MetaParamValue, object)):
+class ParamValue(object, metaclass=MetaParamValue):
     cmd_line_settable = False
 
     # Generate the code needed as a prerequisite for declaring a C++
@@ -235,7 +229,7 @@ class ParamDesc(object):
 # that the value is a vector (list) of the specified type instead of a
 # single value.
 
-class VectorParamValue(with_metaclass(MetaParamValue, list)):
+class VectorParamValue(list, metaclass=MetaParamValue):
     def __setattr__(self, attr, value):
         raise AttributeError("Not allowed to set %s on '%s'" % \
                              (attr, type(self).__name__))
@@ -467,9 +461,6 @@ class NumericParamValue(ParamValue):
     def __float__(self):
         return float(self.value)
 
-    def __long__(self):
-        return long(self.value)
-
     def __int__(self):
         return int(self.value)
 
@@ -538,11 +529,6 @@ class NumericParamValue(ParamValue):
     def __lt__(self, other):
         return self.value < NumericParamValue.unwrap(other)
 
-    # Python 2.7 pre __future__.division operators
-    # TODO: Remove these when after "import division from __future__"
-    __div__ =  __truediv__
-    __idiv__ = __itruediv__
-
     def config_value(self):
         return self.value
 
@@ -586,7 +572,7 @@ class CheckedIntType(MetaParamValue):
 # class is subclassed to generate parameter classes with specific
 # bounds.  Initialization of the min and max bounds is done in the
 # metaclass CheckedIntType.__init__.
-class CheckedInt(with_metaclass(CheckedIntType, NumericParamValue)):
+class CheckedInt(NumericParamValue, metaclass=CheckedIntType):
     cmd_line_settable = True
 
     def _check(self):
@@ -597,8 +583,8 @@ class CheckedInt(with_metaclass(CheckedIntType, NumericParamValue)):
     def __init__(self, value):
         if isinstance(value, str):
             self.value = convert.toInteger(value)
-        elif isinstance(value, (int, long, float, NumericParamValue)):
-            self.value = long(value)
+        elif isinstance(value, (int, float, NumericParamValue)):
+            self.value = int(value)
         else:
             raise TypeError("Can't convert object of type %s to CheckedInt" \
                   % type(value).__name__)
@@ -617,7 +603,7 @@ class CheckedInt(with_metaclass(CheckedIntType, NumericParamValue)):
         code('#include "base/types.hh"')
 
     def getValue(self):
-        return long(self.value)
+        return int(self.value)
 
 class Int(CheckedInt):      cxx_type = 'int';      size = 32; unsigned = False
 class Unsigned(CheckedInt): cxx_type = 'unsigned'; size = 32; unsigned = True
@@ -666,7 +652,7 @@ class Float(ParamValue, float):
     cmd_line_settable = True
 
     def __init__(self, value):
-        if isinstance(value, (int, long, float, NumericParamValue, Float, str)):
+        if isinstance(value, (int, float, NumericParamValue, Float, str)):
             self.value = float(value)
         else:
             raise TypeError("Can't convert object of type %s to Float" \
@@ -692,7 +678,7 @@ class Float(ParamValue, float):
 
 class MemorySize(CheckedInt):
     cxx_type = 'uint64_t'
-    ex_str = '512MB'
+    ex_str = '512MiB'
     size = 64
     unsigned = True
     def __init__(self, value):
@@ -704,7 +690,7 @@ class MemorySize(CheckedInt):
 
 class MemorySize32(CheckedInt):
     cxx_type = 'uint32_t'
-    ex_str = '512MB'
+    ex_str = '512MiB'
     size = 32
     unsigned = True
     def __init__(self, value):
@@ -724,7 +710,7 @@ class Addr(CheckedInt):
         else:
             try:
                 # Often addresses are referred to with sizes. Ex: A device
-                # base address is at "512MB".  Use toMemorySize() to convert
+                # base address is at "512MiB".  Use toMemorySize() to convert
                 # these into addresses. If the address is not specified with a
                 # "size", an exception will occur and numeric translation will
                 # proceed below.
@@ -732,7 +718,7 @@ class Addr(CheckedInt):
             except (TypeError, ValueError):
                 # Convert number to string and use long() to do automatic
                 # base conversion (requires base=0 for auto-conversion)
-                self.value = long(str(value), base=0)
+                self.value = int(str(value), base=0)
 
         self._check()
     def __add__(self, other):
@@ -744,8 +730,8 @@ class Addr(CheckedInt):
         try:
             val = convert.toMemorySize(value)
         except TypeError:
-            val = long(value)
-        return "0x%x" % long(val)
+            val = int(value)
+        return "0x%x" % int(val)
 
 class AddrRange(ParamValue):
     cxx_type = 'AddrRange'
@@ -772,7 +758,7 @@ class AddrRange(ParamValue):
                 self.intlvMatch = int(kwargs.pop('intlvMatch'))
 
             if 'masks' in kwargs:
-                self.masks = [ long(x) for x in list(kwargs.pop('masks')) ]
+                self.masks = [ int(x) for x in list(kwargs.pop('masks')) ]
                 self.intlvBits = len(self.masks)
             else:
                 if 'intlvBits' in kwargs:
@@ -825,7 +811,7 @@ class AddrRange(ParamValue):
 
     def size(self):
         # Divide the size by the size of the interleaving slice
-        return (long(self.end) - long(self.start)) >> self.intlvBits
+        return (int(self.end) - int(self.start)) >> self.intlvBits
 
     @classmethod
     def cxx_predecls(cls, code):
@@ -875,7 +861,7 @@ class AddrRange(ParamValue):
         # Go from the Python class to the wrapped C++ class
         from _m5.range import AddrRange
 
-        return AddrRange(long(self.start), long(self.end),
+        return AddrRange(int(self.start), int(self.end),
                          self.masks, int(self.intlvMatch))
 
 # Boolean parameter type.  Python doesn't let you subclass bool, since
@@ -1016,7 +1002,7 @@ class IpAddress(ParamValue):
             try:
                 self.ip = convert.toIpAddress(value)
             except TypeError:
-                self.ip = long(value)
+                self.ip = int(value)
         self.verifyIp()
 
     def __call__(self, value):
@@ -1218,7 +1204,7 @@ def parse_time(value):
     if isinstance(value, struct_time):
         return value
 
-    if isinstance(value, (int, long)):
+    if isinstance(value, int):
         return gmtime(value)
 
     if isinstance(value, (datetime, date)):
@@ -1417,9 +1403,9 @@ const char *${name}Strings[static_cast<int>(${name}::Num_${name})] =
 namespace py = pybind11;
 
 static void
-module_init(py::module &m_internal)
+module_init(py::module_ &m_internal)
 {
-    py::module m = m_internal.def_submodule("enum_${name}");
+    py::module_ m = m_internal.def_submodule("enum_${name}");
 
 ''')
         if cls.is_class:
@@ -1444,7 +1430,7 @@ module_init(py::module &m_internal)
 
 
 # Base class for enum types.
-class Enum(with_metaclass(MetaEnum, ParamValue)):
+class Enum(ParamValue, metaclass=MetaEnum):
     vals = []
     cmd_line_settable = True
 
@@ -1538,7 +1524,7 @@ class TickParamValue(NumericParamValue):
         return value
 
     def getValue(self):
-        return long(self.value)
+        return int(self.value)
 
     @classmethod
     def cxx_ini_predecls(cls, code):
@@ -1583,7 +1569,7 @@ class Latency(TickParamValue):
             value = self.value
         else:
             value = ticks.fromSeconds(self.value)
-        return long(value)
+        return int(value)
 
     def config_value(self):
         return self.getValue()
@@ -1626,7 +1612,7 @@ class Frequency(TickParamValue):
             value = self.value
         else:
             value = ticks.fromSeconds(1.0 / self.value)
-        return long(value)
+        return int(value)
 
     def config_value(self):
         return self.getValue()
@@ -1707,6 +1693,43 @@ class Energy(Float):
         value = convert.toEnergy(value)
         super(Energy, self).__init__(value)
 
+class Temperature(ParamValue):
+    cxx_type = 'Temperature'
+    cmd_line_settable = True
+    ex_str = "1C"
+
+    def __init__(self, value):
+        self.value = convert.toTemperature(value)
+
+    def __call__(self, value):
+        self.__init__(value)
+        return value
+
+    def getValue(self):
+        from _m5.core import Temperature
+        return Temperature.fromKelvin(self.value)
+
+    def config_value(self):
+        return self
+
+    @classmethod
+    def cxx_predecls(cls, code):
+        code('#include "base/temperature.hh"')
+
+    @classmethod
+    def cxx_ini_predecls(cls, code):
+        # Assume that base/str.hh will be included anyway
+        # code('#include "base/str.hh"')
+        pass
+
+    @classmethod
+    def cxx_ini_parse(self, code, src, dest, ret):
+        code('double _temp;')
+        code('bool _ret = to_number(%s, _temp);' % src)
+        code('if (_ret)')
+        code('    %s = Temperature(_temp);' % dest)
+        code('%s _ret;' % ret)
+
 class NetworkBandwidth(float,ParamValue):
     cxx_type = 'float'
     ex_str = "1Gbps"
@@ -1748,7 +1771,7 @@ class NetworkBandwidth(float,ParamValue):
 
 class MemoryBandwidth(float,ParamValue):
     cxx_type = 'float'
-    ex_str = "1GB/s"
+    ex_str = "1GiB/s"
     cmd_line_settable = True
 
     def __new__(cls, value):
@@ -1792,7 +1815,7 @@ class MemoryBandwidth(float,ParamValue):
 # make_param_value() above that lets these be assigned where a
 # SimObject is required.
 # only one copy of a particular node
-class NullSimObject(with_metaclass(Singleton, object)):
+class NullSimObject(object, metaclass=Singleton):
     _name = 'Null'
 
     def __call__(cls):
@@ -2159,7 +2182,7 @@ VectorSlavePort = VectorResponsePort
 # 'Fake' ParamDesc for Port references to assign to the _pdesc slot of
 # proxy objects (via set_param_desc()) so that proxy error messages
 # make sense.
-class PortParamDesc(with_metaclass(Singleton, object)):
+class PortParamDesc(object, metaclass=Singleton):
     ptype_str = 'Port'
     ptype = Port
 
@@ -2245,6 +2268,7 @@ __all__ = ['Param', 'VectorParam',
            'IpAddress', 'IpNetmask', 'IpWithPort',
            'MemorySize', 'MemorySize32',
            'Latency', 'Frequency', 'Clock', 'Voltage', 'Current', 'Energy',
+           'Temperature',
            'NetworkBandwidth', 'MemoryBandwidth',
            'AddrRange',
            'MaxAddr', 'MaxTick', 'AllMemory',

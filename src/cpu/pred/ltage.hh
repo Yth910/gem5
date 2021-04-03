@@ -60,7 +60,7 @@
 class LTAGE : public TAGE
 {
   public:
-    LTAGE(const LTAGEParams *params);
+    LTAGE(const LTAGEParams &params);
 
     // Base class methods.
     void squash(ThreadID tid, void *bp_history) override;
@@ -69,7 +69,6 @@ class LTAGE : public TAGE
                 Addr corrTarget) override;
 
     void init() override;
-    virtual void regStats() override;
 
   protected:
     /** The loop predictor object */

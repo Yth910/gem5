@@ -77,13 +77,10 @@
 #include "sim/stats.hh"
 #include "sim/system.hh"
 
-using namespace std;
-using namespace TheISA;
-
-BaseSimpleCPU::BaseSimpleCPU(BaseSimpleCPUParams *p)
+BaseSimpleCPU::BaseSimpleCPU(const BaseSimpleCPUParams &p)
     : BaseCPU(p),
       curThread(0),
-      branchPred(p->branchPred),
+      branchPred(p.branchPred),
       traceData(NULL),
       inst(),
       _status(Idle)
@@ -92,24 +89,24 @@ BaseSimpleCPU::BaseSimpleCPU(BaseSimpleCPUParams *p)
 
     for (unsigned i = 0; i < numThreads; i++) {
         if (FullSystem) {
-            thread = new SimpleThread(this, i, p->system,
-                                      p->itb, p->dtb, p->isa[i]);
+            thread = new SimpleThread(
+                this, i, p.system, p.mmu, p.isa[i]);
         } else {
-            thread = new SimpleThread(this, i, p->system, p->workload[i],
-                                      p->itb, p->dtb, p->isa[i]);
+            thread = new SimpleThread(
+                this, i, p.system, p.workload[i], p.mmu, p.isa[i]);
         }
         threadInfo.push_back(new SimpleExecContext(this, thread));
         ThreadContext *tc = thread->getTC();
         threadContexts.push_back(tc);
     }
 
-    if (p->checker) {
+    if (p.checker) {
         if (numThreads != 1)
             fatal("Checker currently does not support SMT");
 
-        BaseCPU *temp_checker = p->checker;
+        BaseCPU *temp_checker = p.checker;
         checker = dynamic_cast<CheckerCPU *>(temp_checker);
-        checker->setSystem(p->system);
+        checker->setSystem(p.system);
         // Manipulate thread context
         ThreadContext *cpu_tc = threadContexts[0];
         threadContexts[0] = new CheckerThreadContext<ThreadContext>(cpu_tc, this->checker);
@@ -164,13 +161,12 @@ BaseSimpleCPU::countInst()
 
     if (!curStaticInst->isMicroop() || curStaticInst->isLastMicroop()) {
         t_info.numInst++;
-        t_info.numInsts++;
+        t_info.execContextStats.numInsts++;
 
-        system->totalNumInsts++;
         t_info.thread->funcExeInst++;
     }
     t_info.numOp++;
-    t_info.numOps++;
+    t_info.execContextStats.numOps++;
 }
 
 Counter
@@ -207,198 +203,12 @@ BaseSimpleCPU::haltContext(ThreadID thread_num)
     updateCycleCounters(BaseCPU::CPU_STATE_SLEEP);
 }
 
-
-void
-BaseSimpleCPU::regStats()
-{
-    using namespace Stats;
-
-    BaseCPU::regStats();
-
-    for (ThreadID tid = 0; tid < numThreads; tid++) {
-        SimpleExecContext& t_info = *threadInfo[tid];
-
-        std::string thread_str = name();
-        if (numThreads > 1)
-            thread_str += ".thread" + std::to_string(tid);
-
-        t_info.numInsts
-            .name(thread_str + ".committedInsts")
-            .desc("Number of instructions committed")
-            ;
-
-        t_info.numOps
-            .name(thread_str + ".committedOps")
-            .desc("Number of ops (including micro ops) committed")
-            ;
-
-        t_info.numIntAluAccesses
-            .name(thread_str + ".num_int_alu_accesses")
-            .desc("Number of integer alu accesses")
-            ;
-
-        t_info.numFpAluAccesses
-            .name(thread_str + ".num_fp_alu_accesses")
-            .desc("Number of float alu accesses")
-            ;
-
-        t_info.numVecAluAccesses
-            .name(thread_str + ".num_vec_alu_accesses")
-            .desc("Number of vector alu accesses")
-            ;
-
-        t_info.numCallsReturns
-            .name(thread_str + ".num_func_calls")
-            .desc("number of times a function call or return occured")
-            ;
-
-        t_info.numCondCtrlInsts
-            .name(thread_str + ".num_conditional_control_insts")
-            .desc("number of instructions that are conditional controls")
-            ;
-
-        t_info.numIntInsts
-            .name(thread_str + ".num_int_insts")
-            .desc("number of integer instructions")
-            ;
-
-        t_info.numFpInsts
-            .name(thread_str + ".num_fp_insts")
-            .desc("number of float instructions")
-            ;
-
-        t_info.numVecInsts
-            .name(thread_str + ".num_vec_insts")
-            .desc("number of vector instructions")
-            ;
-
-        t_info.numIntRegReads
-            .name(thread_str + ".num_int_register_reads")
-            .desc("number of times the integer registers were read")
-            ;
-
-        t_info.numIntRegWrites
-            .name(thread_str + ".num_int_register_writes")
-            .desc("number of times the integer registers were written")
-            ;
-
-        t_info.numFpRegReads
-            .name(thread_str + ".num_fp_register_reads")
-            .desc("number of times the floating registers were read")
-            ;
-
-        t_info.numFpRegWrites
-            .name(thread_str + ".num_fp_register_writes")
-            .desc("number of times the floating registers were written")
-            ;
-
-        t_info.numVecRegReads
-            .name(thread_str + ".num_vec_register_reads")
-            .desc("number of times the vector registers were read")
-            ;
-
-        t_info.numVecRegWrites
-            .name(thread_str + ".num_vec_register_writes")
-            .desc("number of times the vector registers were written")
-            ;
-
-        t_info.numCCRegReads
-            .name(thread_str + ".num_cc_register_reads")
-            .desc("number of times the CC registers were read")
-            .flags(nozero)
-            ;
-
-        t_info.numCCRegWrites
-            .name(thread_str + ".num_cc_register_writes")
-            .desc("number of times the CC registers were written")
-            .flags(nozero)
-            ;
-
-        t_info.numMemRefs
-            .name(thread_str + ".num_mem_refs")
-            .desc("number of memory refs")
-            ;
-
-        t_info.numStoreInsts
-            .name(thread_str + ".num_store_insts")
-            .desc("Number of store instructions")
-            ;
-
-        t_info.numLoadInsts
-            .name(thread_str + ".num_load_insts")
-            .desc("Number of load instructions")
-            ;
-
-        t_info.notIdleFraction
-            .name(thread_str + ".not_idle_fraction")
-            .desc("Percentage of non-idle cycles")
-            ;
-
-        t_info.idleFraction
-            .name(thread_str + ".idle_fraction")
-            .desc("Percentage of idle cycles")
-            ;
-
-        t_info.numBusyCycles
-            .name(thread_str + ".num_busy_cycles")
-            .desc("Number of busy cycles")
-            ;
-
-        t_info.numIdleCycles
-            .name(thread_str + ".num_idle_cycles")
-            .desc("Number of idle cycles")
-            ;
-
-        t_info.icacheStallCycles
-            .name(thread_str + ".icache_stall_cycles")
-            .desc("ICache total stall cycles")
-            .prereq(t_info.icacheStallCycles)
-            ;
-
-        t_info.dcacheStallCycles
-            .name(thread_str + ".dcache_stall_cycles")
-            .desc("DCache total stall cycles")
-            .prereq(t_info.dcacheStallCycles)
-            ;
-
-        t_info.statExecutedInstType
-            .init(Enums::Num_OpClass)
-            .name(thread_str + ".op_class")
-            .desc("Class of executed instruction")
-            .flags(total | pdf | dist)
-            ;
-
-        for (unsigned i = 0; i < Num_OpClasses; ++i) {
-            t_info.statExecutedInstType.subname(i, Enums::OpClassStrings[i]);
-        }
-
-        t_info.idleFraction = constant(1.0) - t_info.notIdleFraction;
-        t_info.numIdleCycles = t_info.idleFraction * numCycles;
-        t_info.numBusyCycles = t_info.notIdleFraction * numCycles;
-
-        t_info.numBranches
-            .name(thread_str + ".Branches")
-            .desc("Number of branches fetched")
-            .prereq(t_info.numBranches);
-
-        t_info.numPredictedBranches
-            .name(thread_str + ".predictedBranches")
-            .desc("Number of branches predicted as taken")
-            .prereq(t_info.numPredictedBranches);
-
-        t_info.numBranchMispred
-            .name(thread_str + ".BranchMispred")
-            .desc("Number of branch mispredictions")
-            .prereq(t_info.numBranchMispred);
-    }
-}
-
 void
 BaseSimpleCPU::resetStats()
 {
     BaseCPU::resetStats();
     for (auto &thread_info : threadInfo) {
-        thread_info->notIdleFraction = (_status != Idle);
+        thread_info->execContextStats.notIdleFraction = (_status != Idle);
     }
 }
 
@@ -486,7 +296,7 @@ BaseSimpleCPU::setupFetchRequest(const RequestPtr &req)
     // set up memory request for instruction fetch
     DPRINTF(Fetch, "Fetch: Inst PC:%08p, Fetch PC:%08p\n", instAddr, fetchPC);
 
-    req->setVirt(fetchPC, sizeof(MachInst), Request::INST_FETCH,
+    req->setVirt(fetchPC, sizeof(TheISA::MachInst), Request::INST_FETCH,
                  instRequestorId(), instAddr);
 }
 
@@ -498,7 +308,7 @@ BaseSimpleCPU::preExecute()
     SimpleThread* thread = t_info.thread;
 
     // maintain $r0 semantics
-    thread->setIntReg(ZeroReg, 0);
+    thread->setIntReg(TheISA::ZeroReg, 0);
 
     // resets predicates
     t_info.setPredicate(true);
@@ -536,7 +346,7 @@ BaseSimpleCPU::preExecute()
             thread->pcState(pcState);
         } else {
             t_info.stayAtPC = true;
-            t_info.fetchOffset += sizeof(MachInst);
+            t_info.fetchOffset += sizeof(TheISA::MachInst);
         }
 
         //If we decoded an instruction and it's microcoded, start pulling
@@ -558,9 +368,6 @@ BaseSimpleCPU::preExecute()
 #if TRACING_ON
         traceData = tracer->getInstRecord(curTick(), thread->getTC(),
                 curStaticInst, thread->pcState(), curMacroStaticInst);
-
-        DPRINTF(Decode,"Decode: Decoded %s instruction: %#x\n",
-                curStaticInst->getName(), curStaticInst->machInst);
 #endif // TRACING_ON
     }
 
@@ -575,7 +382,7 @@ BaseSimpleCPU::preExecute()
                                 curThread));
 
         if (predict_taken)
-            ++t_info.numPredictedBranches;
+            ++t_info.execContextStats.numPredictedBranches;
     }
 }
 
@@ -590,7 +397,7 @@ BaseSimpleCPU::postExecute()
     Addr instAddr = pc.instAddr();
 
     if (curStaticInst->isMemRef()) {
-        t_info.numMemRefs++;
+        t_info.execContextStats.numMemRefs++;
     }
 
     if (curStaticInst->isLoad()) {
@@ -598,49 +405,49 @@ BaseSimpleCPU::postExecute()
     }
 
     if (curStaticInst->isControl()) {
-        ++t_info.numBranches;
+        ++t_info.execContextStats.numBranches;
     }
 
     /* Power model statistics */
     //integer alu accesses
     if (curStaticInst->isInteger()){
-        t_info.numIntAluAccesses++;
-        t_info.numIntInsts++;
+        t_info.execContextStats.numIntAluAccesses++;
+        t_info.execContextStats.numIntInsts++;
     }
 
     //float alu accesses
     if (curStaticInst->isFloating()){
-        t_info.numFpAluAccesses++;
-        t_info.numFpInsts++;
+        t_info.execContextStats.numFpAluAccesses++;
+        t_info.execContextStats.numFpInsts++;
     }
 
     //vector alu accesses
     if (curStaticInst->isVector()){
-        t_info.numVecAluAccesses++;
-        t_info.numVecInsts++;
+        t_info.execContextStats.numVecAluAccesses++;
+        t_info.execContextStats.numVecInsts++;
     }
 
     //number of function calls/returns to get window accesses
     if (curStaticInst->isCall() || curStaticInst->isReturn()){
-        t_info.numCallsReturns++;
+        t_info.execContextStats.numCallsReturns++;
     }
 
     //the number of branch predictions that will be made
     if (curStaticInst->isCondCtrl()){
-        t_info.numCondCtrlInsts++;
+        t_info.execContextStats.numCondCtrlInsts++;
     }
 
     //result bus acceses
     if (curStaticInst->isLoad()){
-        t_info.numLoadInsts++;
+        t_info.execContextStats.numLoadInsts++;
     }
 
     if (curStaticInst->isStore() || curStaticInst->isAtomic()){
-        t_info.numStoreInsts++;
+        t_info.execContextStats.numStoreInsts++;
     }
     /* End power model statistics */
 
-    t_info.statExecutedInstType[curStaticInst->opClass()]++;
+    t_info.execContextStats.statExecutedInstType[curStaticInst->opClass()]++;
 
     if (FullSystem)
         traceFunctions(instAddr);
@@ -690,7 +497,7 @@ BaseSimpleCPU::advancePC(const Fault &fault)
         } else {
             // Mis-predicted branch
             branchPred->squash(cur_sn, thread->pcState(), branching, curThread);
-            ++t_info.numBranchMispred;
+            ++t_info.execContextStats.numBranchMispred;
         }
     }
 }
