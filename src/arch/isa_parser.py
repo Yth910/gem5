@@ -42,6 +42,7 @@ import os
 import sys
 import re
 import inspect, traceback
+import string
 # get type names
 from types import *
 

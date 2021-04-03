@@ -76,6 +76,10 @@ Uart8250::scheduleIntr(Event *event)
     static const Tick interval = 225 * SimClock::Int::ns;
     DPRINTF(Uart, "Scheduling IER interrupt for %s, at cycle %lld\n",
             event->name(), curTick() + interval);
+    cout << "Scheduling IER interrupt for "
+         <<event->name()<< " at cycle" << curTick() + interval <<"\n";
+    //if (event->name().compare("TX.wrapped_function_event") == 0)
+    //  return;
     if (!event->scheduled())
         schedule(event, curTick() + interval);
     else
@@ -99,7 +103,7 @@ Uart8250::read(PacketPtr pkt)
     Addr daddr = pkt->getAddr() - pioAddr;
 
     DPRINTF(Uart, " read register %#x\n", daddr);
-
+    printf("read address 0x%lx\n", daddr);
     switch (daddr) {
         case 0x0:
             if (!(LCR & 0x80)) { // read byte
@@ -109,6 +113,7 @@ Uart8250::read(PacketPtr pkt)
                     pkt->setRaw((uint8_t)0);
                     // A limited amount of these are ok.
                     DPRINTF(Uart, "empty read of RX register\n");
+                    //printf("empty read of Rx register\n");
                 }
                 status &= ~RX_INT;
                 platform->clearConsoleInt();

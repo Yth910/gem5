@@ -286,6 +286,8 @@ class SimpleThread : public ThreadState, public ThreadContext
     readIntReg(RegIndex reg_idx) const override
     {
         int flatIndex = isa->flattenIntIndex(reg_idx);
+        if (flatIndex>TheISA::NumIntRegs)
+        printf("Flat index..%d NumIntRegs..%d\n",flatIndex,TheISA::NumIntRegs);
         assert(flatIndex < TheISA::NumIntRegs);
         uint64_t regVal(readIntRegFlat(flatIndex));
         DPRINTF(IntRegs, "Reading int reg %d (%d) as %#x.\n",

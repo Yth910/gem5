@@ -90,6 +90,8 @@ struct TlbEntry
     }
 };
 
+class RadixWalk;
+
 class TLB : public BaseTLB
 {
   protected:
@@ -110,7 +112,21 @@ class TLB : public BaseTLB
 
     PowerISA::PTE *lookup(Addr vpn, uint8_t asn) const;
 
+    mutable Stats::Scalar read_hits;
+    mutable Stats::Scalar read_misses;
+    mutable Stats::Scalar read_acv;
+    mutable Stats::Scalar read_accesses;
+    mutable Stats::Scalar write_hits;
+    mutable Stats::Scalar write_misses;
+    mutable Stats::Scalar write_acv;
+    mutable Stats::Scalar write_accesses;
+    Stats::Formula hits;
+    Stats::Formula misses;
+    Stats::Formula accesses;
+
   public:
+    friend class RadixWalk;
+    RadixWalk *rwalk;
     typedef PowerTLBParams Params;
     TLB(const Params *p);
     virtual ~TLB();
@@ -132,6 +148,7 @@ class TLB : public BaseTLB
     void insert(Addr vaddr, PowerISA::PTE &pte);
     void insertAt(PowerISA::PTE &pte, unsigned Index, int _smallPages);
     void flushAll() override;
+    RadixWalk *getWalker();
 
     void
     demapPage(Addr vaddr, uint64_t asn) override
@@ -158,6 +175,17 @@ class TLB : public BaseTLB
     // Checkpointing
     void serialize(CheckpointOut &cp) const override;
     void unserialize(CheckpointIn &cp) override;
+
+    void regStats() override;
+    Port *getTableWalkerPort() override;
+
+  private:
+    uint64_t kernConsoleSnoopAddr;
+    uint64_t opalConsoleSnoopAddr;
+
+    void initConsoleSnoop();
+    void trySnoopKernConsole(uint64_t paddr, ThreadContext *tc);
+    void trySnoopOpalConsole(uint64_t paddr, ThreadContext *tc);
 };
 
 } // namespace PowerISA

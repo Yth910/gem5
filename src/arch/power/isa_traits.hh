@@ -33,14 +33,17 @@
 
 #include "base/types.hh"
 
+//namespace LittleEndianGuest {}
 namespace PowerISA
 {
 
+//using namespace LittleEndianGuest;
 const ByteOrder GuestByteOrder = ByteOrder::big;
 
 const Addr PageShift = 12;
 const Addr PageBytes = ULL(1) << PageShift;
 
+const int MachineBytes = 8;
 } // namespace PowerISA
 
 #endif // __ARCH_POWER_ISA_TRAITS_HH__

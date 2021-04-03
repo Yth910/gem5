@@ -128,7 +128,7 @@ class BaseCPU(ClockedObject):
     system = Param.System(Parent.any, "system object")
     cpu_id = Param.Int(-1, "CPU identifier")
     socket_id = Param.Unsigned(0, "Physical Socket identifier")
-    numThreads = Param.Unsigned(1, "number of HW thread contexts")
+    numThreads = Param.Unsigned(2, "number of HW thread contexts")
     pwr_gating_latency = Param.Cycles(300,
         "Latency to enter power gating state when all contexts are suspended")
 
@@ -180,6 +180,9 @@ class BaseCPU(ClockedObject):
     _cached_ports = ['icache_port', 'dcache_port']
 
     if buildEnv['TARGET_ISA'] in ['x86', 'arm', 'riscv']:
+        _cached_ports += ["itb.walker.port", "dtb.walker.port"]
+
+    if buildEnv['TARGET_ISA'] in ['x86', 'arm', 'power']:
         _cached_ports += ["itb.walker.port", "dtb.walker.port"]
 
     _uncached_interrupt_response_ports = []

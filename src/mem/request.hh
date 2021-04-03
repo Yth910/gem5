@@ -326,8 +326,8 @@ class Request
         STICKY_PRIVATE_FLAGS = VALID_CONTEXT_ID
     };
 
-  private:
-
+  //private:
+  public:
     /**
      * The physical address of the request. Valid only if validPaddr
      * is set.

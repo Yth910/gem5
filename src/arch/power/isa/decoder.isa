@@ -34,340 +34,302 @@
 // I've used the Power ISA Book I v2.06 for instruction formats,
 // opcode numbers, register names, etc.
 //
-decode OPCODE default Unknown::unknown() {
+decode PO default Unknown::unknown() {
 
-    format IntImmOp {
-        10: cmpli({{
-            Xer xer = XER;
-            uint32_t cr = makeCRField(Ra, (uint32_t)uimm, xer.so);
-            CR = insertCRField(CR, BF, cr);
-            }});
-        11: cmpi({{
-            Xer xer = XER;
-            uint32_t cr = makeCRField(Ra_sw, (int32_t)imm, xer.so);
-            CR = insertCRField(CR, BF, cr);
-            }});
+    // Unconditionally branch to a PC-relative or absoulute address.
+    format BranchOp {
+        18: b({{ NIA = CIA + disp; }},
+              {{ NIA = disp; }});
     }
 
-    // Some instructions use bits 21 - 30, others 22 - 30. We have to use
-    // the larger size to account for all opcodes. For those that use the
-    // smaller value, the OE bit is bit 21. Therefore, we have two versions
-    // of each instruction: 1 with OE set, the other without. For an
-    // example see 'add' and 'addo'.
-    31: decode XO_XO {
+    // Conditionally branch to a PC-relative or absoulute address based
+    // on CR and CTR.
+    format BranchDispCondOp {
+        16: bc({{ NIA = CIA + disp; }},
+               {{ NIA = disp; }});
+    }
 
-        // These instructions can all be reduced to the form
-        // Rt = src1 + src2 [+ CA], therefore we just give src1 and src2
-        // (and, if necessary, CA) definitions and let the python script
-        // deal with setting things up correctly. We also give flags to
-        // say which control registers to set.
-        format IntSumOp {
-            266: add({{ Ra }}, {{ Rb }});
-            40: subf({{ ~Ra }}, {{ Rb }}, {{ 1 }});
-            10: addc({{ Ra }}, {{ Rb }},
-                     computeCA = true);
-            8: subfc({{ ~Ra }}, {{ Rb }}, {{ 1 }},
-                     true);
-            104: neg({{ ~Ra }}, {{ 1 }});
-            138: adde({{ Ra }}, {{ Rb }}, {{ xer.ca }},
-                      true);
-            234: addme({{ Ra }}, {{ (uint32_t)-1 }}, {{ xer.ca }},
-                       true);
-            136: subfe({{ ~Ra }}, {{ Rb }}, {{ xer.ca }},
-                       true);
-            232: subfme({{ ~Ra }}, {{ (uint32_t)-1 }}, {{ xer.ca }},
-                        true);
-            202: addze({{ Ra }}, {{ xer.ca }},
-                       computeCA = true);
-            200: subfze({{ ~Ra }}, {{ xer.ca }},
-                        computeCA = true);
+    19: decode XL_XO {
+
+        // Conditionally branch to an address in a register based on
+        // either CR only or both CR and CTR.
+        format BranchRegCondOp {
+            16: bclr({{ NIA = LR & -4ULL; }}, true, [ IsReturn ]);
+            528: bcctr({{ NIA = CTR & -4ULL; }});
+            560: bctar({{ NIA = TAR & -4ULL; }}, true);
         }
 
-        // Arithmetic instructions all use source registers Ra and Rb,
-        // with destination register Rt.
-        format IntArithOp {
-            75: mulhw({{ int64_t prod = Ra_sd * Rb_sd; Rt = prod >> 32; }});
-            11: mulhwu({{ uint64_t prod = Ra_ud * Rb_ud; Rt = prod >> 32; }});
-            235: mullw({{ int64_t prod = Ra_sd * Rb_sd; Rt = prod; }});
-            747: mullwo({{
-                int64_t src1 = Ra_sd;
-                int64_t src2 = Rb;
-                int64_t prod = src1 * src2;
-                Rt = prod;
-            }},
-            true);
-
-            491: divw({{
-                int32_t src1 = Ra_sw;
-                int32_t src2 = Rb_sw;
-                if ((src1 != 0x80000000 || src2 != 0xffffffff)
-                    && src2 != 0) {
-                    Rt = src1 / src2;
-                } else {
-                    Rt = 0;
-                }
+        // Condition register manipulation instructions.
+        format CondLogicOp {
+            257: crand({{
+                uint32_t crBa = bits(CR, 31 - ba);
+                uint32_t crBb = bits(CR, 31 - bb);
+                CR = insertBits(CR, 31 - bt, crBa & crBb);
             }});
 
-            1003: divwo({{
-                int32_t src1 = Ra_sw;
-                int32_t src2 = Rb_sw;
-                if ((src1 != 0x80000000 || src2 != 0xffffffff)
-                    && src2 != 0) {
-                    Rt = src1 / src2;
-                } else {
-                    Rt = 0;
-                    divSetOV = true;
-                }
-            }},
-            true);
-
-            459: divwu({{
-                uint32_t src1 = Ra_sw;
-                uint32_t src2 = Rb_sw;
-                if (src2 != 0) {
-                    Rt = src1 / src2;
-                } else {
-                    Rt = 0;
-                }
+            449: cror({{
+                uint32_t crBa = bits(CR, 31 - ba);
+                uint32_t crBb = bits(CR, 31 - bb);
+                CR = insertBits(CR, 31 - bt, crBa | crBb);
             }});
 
-            971: divwuo({{
-              uint32_t src1 = Ra_sw;
-              uint32_t src2 = Rb_sw;
-              if (src2 != 0) {
-                  Rt = src1 / src2;
-              } else {
-                  Rt = 0;
-                  divSetOV = true;
-              }
-            }},
-            true);
-        }
-
-        // Integer logic instructions use source registers Rs and Rb,
-        // with destination register Ra.
-        format IntLogicOp {
-            28: and({{ Ra = Rs & Rb; }});
-            316: xor({{ Ra = Rs ^ Rb; }});
-            476: nand({{ Ra = ~(Rs & Rb); }});
-            444: or({{ Ra = Rs | Rb; }});
-            124: nor({{ Ra = ~(Rs | Rb); }});
-            60: andc({{ Ra = Rs & ~Rb; }});
-            954: extsb({{ Ra = sext<8>(Rs); }});
-            284: eqv({{ Ra = ~(Rs ^ Rb); }});
-            412: orc({{ Ra = Rs | ~Rb; }});
-            922: extsh({{ Ra = sext<16>(Rs); }});
-            26: cntlzw({{ Ra = Rs == 0 ? 32 : 31 - findMsbSet(Rs); }});
-            508: cmpb({{
-                uint32_t val = 0;
-                for (int n = 0; n < 32; n += 8) {
-                    if(bits(Rs, n+7, n) == bits(Rb, n+7, n)) {
-                        val = insertBits(val, n+7, n, 0xff);
-                    }
-                }
-                Ra = val;
+            255: crnand({{
+                uint32_t crBa = bits(CR, 31 - ba);
+                uint32_t crBb = bits(CR, 31 - bb);
+                CR = insertBits(CR, 31 - bt, !(crBa & crBb));
             }});
 
-            24: slw({{
-                if (Rb & 0x20) {
-                    Ra = 0;
-                } else {
-                    Ra = Rs << (Rb & 0x1f);
-                }
+            193: crxor({{
+                uint32_t crBa = bits(CR, 31 - ba);
+                uint32_t crBb = bits(CR, 31 - bb);
+                CR = insertBits(CR, 31 - bt, crBa ^ crBb);
             }});
 
-            536: srw({{
-                if (Rb & 0x20) {
-                    Ra = 0;
-                } else  {
-                    Ra = Rs >> (Rb & 0x1f);
-                }
+            33: crnor({{
+                uint32_t crBa = bits(CR, 31 - ba);
+                uint32_t crBb = bits(CR, 31 - bb);
+                CR = insertBits(CR, 31 - bt, !(crBa | crBb));
             }});
 
-            792: sraw({{
-                bool shiftSetCA = false;
-                int32_t s = Rs;
-                if (Rb == 0) {
-                    Ra = Rs;
-                    shiftSetCA = true;
-                } else if (Rb & 0x20) {
-                    if (s < 0) {
-                        Ra = (uint32_t)-1;
-                        if (s & 0x7fffffff) {
-                            shiftSetCA = true;
-                        } else {
-                            shiftSetCA = false;
-                        }
-                    } else {
-                        Ra = 0;
-                        shiftSetCA = false;
-                    }
-                } else {
-                    Ra = s >> (Rb & 0x1f);
-                    if (s < 0 && (s << (32 - (Rb & 0x1f))) != 0) {
-                        shiftSetCA = true;
-                    } else {
-                        shiftSetCA = false;
-                    }
-                }
-                Xer xer1 = XER;
-                if (shiftSetCA) {
-                    xer1.ca = 1;
-                } else {
-                    xer1.ca = 0;
-                }
-                XER = xer1;
+            289: creqv({{
+                uint32_t crBa = bits(CR, 31 - ba);
+                uint32_t crBb = bits(CR, 31 - bb);
+                CR = insertBits(CR, 31 - bt, crBa == crBb);
+            }});
+
+            129: crandc({{
+                uint32_t crBa = bits(CR, 31 - ba);
+                uint32_t crBb = bits(CR, 31 - bb);
+                CR = insertBits(CR, 31 - bt, crBa & !crBb);
+            }});
+
+            417: crorc({{
+                uint32_t crBa = bits(CR, 31 - ba);
+                uint32_t crBb = bits(CR, 31 - bb);
+                CR = insertBits(CR, 31 - bt, crBa | !crBb);
             }});
         }
 
-        // Integer logic instructions with a shift value.
-        format IntShiftOp {
-            824: srawi({{
-                bool shiftSetCA = false;
-                if (sh == 0) {
-                    Ra = Rs;
-                    shiftSetCA = false;
-                } else {
-                    int32_t s = Rs;
-                    Ra = s >> sh;
-                    if (s < 0 && (s << (32 - sh)) != 0) {
-                        shiftSetCA = true;
-                    } else {
-                        shiftSetCA = false;
-                    }
-                }
-                Xer xer1 = XER;
-                if (shiftSetCA) {
-                    xer1.ca = 1;
-                } else {
-                    xer1.ca = 0;
-                }
-                XER = xer1;
+        format CondMoveOp {
+            0: mcrf({{
+                uint32_t crBfa = bits(CR, 31 - bfa*4, 28 - bfa*4);
+                CR = insertBits(CR, 31 - bf*4, 28 - bf*4, crBfa);
             }});
         }
 
-        // Generic integer format instructions.
-        format IntOp {
-            0: cmp({{
-                Xer xer = XER;
-                uint32_t cr = makeCRField(Ra_sw, Rb_sw, xer.so);
-                CR = insertCRField(CR, BF, cr);
-                }});
-            32: cmpl({{
-                Xer xer = XER;
-                uint32_t cr = makeCRField(Ra, Rb, xer.so);
-                CR = insertCRField(CR, BF, cr);
-                }});
-            144: mtcrf({{
-                uint32_t mask = 0;
-                for (int i = 0; i < 8; ++i) {
-                    if (((FXM >> i) & 0x1) == 0x1) {
-                        mask |= 0xf << (4 * i);
-                    }
-                }
-                CR = (Rs & mask) | (CR & ~mask);
-                }});
-            19: mfcr({{ Rt = CR; }});
-            339: decode SPR {
-                0x20: mfxer({{ Rt = XER; }});
-                0x100: mflr({{ Rt = LR; }});
-                0x120: mfctr({{ Rt = CTR; }});
-            }
-            467: decode SPR {
-                0x20: mtxer({{ XER = Rs; }});
-                0x100: mtlr({{ LR = Rs; }});
-                0x120: mtctr({{ CTR = Rs; }});
-            }
-        }
-
-        // All loads with an index register. The non-update versions
-        // all use the value 0 if Ra == R0, not the value contained in
-        // R0. Others update Ra with the effective address. In all cases,
-        // Ra and Rb are source registers, Rt is the destintation.
-        format LoadIndexOp {
-            87: lbzx({{ Rt = Mem_ub; }});
-            279: lhzx({{ Rt = Mem_uh; }});
-            343: lhax({{ Rt = Mem_sh; }});
-            23: lwzx({{ Rt = Mem; }});
-            341: lwax({{ Rt = Mem_sw; }});
-            20: lwarx({{ Rt = Mem_sw; Rsv = 1; RsvLen = 4; RsvAddr = EA; }});
-            535: lfsx({{ Ft_sf = Mem_sf; }});
-            599: lfdx({{ Ft = Mem_df; }});
-            855: lfiwax({{ Ft_uw = Mem; }});
-        }
-
-        format LoadIndexUpdateOp {
-            119: lbzux({{ Rt = Mem_ub; }});
-            311: lhzux({{ Rt = Mem_uh; }});
-            375: lhaux({{ Rt = Mem_sh; }});
-            55: lwzux({{ Rt = Mem; }});
-            373: lwaux({{ Rt = Mem_sw; }});
-            567: lfsux({{ Ft_sf = Mem_sf; }});
-            631: lfdux({{ Ft = Mem_df; }});
-        }
-
-        format StoreIndexOp {
-            215: stbx({{ Mem_ub = Rs_ub; }});
-            407: sthx({{ Mem_uh = Rs_uh; }});
-            151: stwx({{ Mem = Rs; }});
-            150: stwcx({{
-                bool store_performed = false;
-                Mem = Rs;
-                if (Rsv) {
-                    if (RsvLen == 4) {
-                        if (RsvAddr == EA) {
-                            store_performed = true;
-                        }
-                    }
-                }
-                Xer xer = XER;
-                Cr cr = CR;
-                cr.cr0 = ((store_performed ? 0x2 : 0x0) | xer.so);
-                CR = cr;
-                Rsv = 0;
-            }});
-            663: stfsx({{ Mem_sf = Fs_sf; }});
-            727: stfdx({{ Mem_df = Fs; }});
-            983: stfiwx({{ Mem = Fs_uw; }});
-        }
-
-        format StoreIndexUpdateOp {
-            247: stbux({{ Mem_ub = Rs_ub; }});
-            439: sthux({{ Mem_uh = Rs_uh; }});
-            183: stwux({{ Mem = Rs; }});
-            695: stfsux({{ Mem_sf = Fs_sf; }});
-            759: stfdux({{ Mem_df = Fs; }});
-        }
-
-        // These instructions all provide data cache hints
         format MiscOp {
-            278: dcbt({{ }});
-            246: dcbtst({{ }});
-            598: sync({{ }}, [ IsMemBarrier ]);
-            854: eieio({{ }}, [ IsMemBarrier ]);
+            150: isync({{ }}, [ IsSerializeAfter ]);
+
+            18:  rfid({{
+                uint32_t msr12=(bits(MSR,60)&bits(SRR1,12))
+                               |((bits(MSR,60)^0x01)&bits(MSR,12));
+                MSR = insertBits(MSR,12,msr12);
+                uint32_t msr60=bits(MSR,60)&bits(SRR1,60);
+                MSR = insertBits(MSR,60,msr60);
+                if((bits(MSR,34,32)!=0x02)|(bits(SRR1,34,32)!=0x00))
+                    MSR = insertBits(MSR,34,32,bits(SRR1,34,32));
+                MSR = insertBits(MSR,15,(bits(SRR1,15)|bits(SRR1,14)));
+                MSR = insertBits(MSR,5,(bits(SRR1,5)|bits(SRR1,14)));
+                MSR = insertBits(MSR,4,(bits(SRR1,4)|bits(SRR1,14)));
+                MSR = insertBits(MSR,63,61,bits(SRR1,63,61));
+                MSR = insertBits(MSR,59,35,bits(SRR1,59,35));
+                MSR = insertBits(MSR,31,bits(SRR1,31));
+                MSR = insertBits(MSR,26,22,bits(SRR1,26,22));
+                MSR = insertBits(MSR,14,13,bits(SRR1,14,13));
+                MSR = insertBits(MSR,11,6,bits(SRR1,11,6));
+                MSR = insertBits(MSR,3,0,bits(SRR1,3,0));
+                NIA = SRR0 & -4ULL;
+            }}, [ IsPrivileged ]);
+            274:  hrfid({{
+                if((bits(MSR,34,32)!=0x02)|(bits(HSRR1,34,32)!=0x00))
+                    MSR = insertBits(MSR,34,32,bits(HSRR1,34,32));
+                MSR = insertBits(MSR,15,(bits(HSRR1,15)|bits(HSRR1,14)));
+                MSR = insertBits(MSR,5,(bits(HSRR1,5)|bits(HSRR1,14)));
+                MSR = insertBits(MSR,4,(bits(HSRR1,4)|bits(HSRR1,14)));
+                MSR = insertBits(MSR,63,35,bits(HSRR1,63,35));
+                MSR = insertBits(MSR,31,bits(HSRR1,31));
+                MSR = insertBits(MSR,26,22,bits(HSRR1,26,22));
+                MSR = insertBits(MSR,14,6,bits(HSRR1,14,6));
+                MSR = insertBits(MSR,3,0,bits(HSRR1,3,0));
+                NIA = HSRR0 & -4ULL;
+            }});
         }
+
+        default: decode DX_XO {
+            format IntDispArithOp {
+                2: addpcis({{ Rt = NIA + (disp << 16); }});
+            }
+        }
+    }
+
+//TODO:Right now sc instruction not handles LEV=1 case
+
+    format IntOp {
+        17: sc({{
+            if (FullSystem) {
+                fault= std::make_shared<SystemCallInterrupt>();
+            } else {
+                //xc->syscall(R0, &fault);
+            }
+            }},
+              [ IsSyscall, IsNonSpeculative, IsSerializeAfter ]);
+    }
+
+    format LoadDispOp {
+        34: lbz({{ Rt = Mem_ub; }});
+        40: lhz({{ Rt = Mem_uh; }});
+        42: lha({{ Rt = Mem_sh; }});
+        32: lwz({{ Rt = Mem_uw; }});
+    }
+
+    58: decode DS_XO {
+        format LoadDispShiftOp {
+            2: lwa({{ Rt = Mem_sw; }});
+            0: ld({{ Rt = Mem; }});
+        }
+
+        format LoadDispShiftUpdateOp {
+            1: ldu({{ Rt = Mem; }});
+        }
+    }
+
+    62: decode DS_XO {
+        format StoreDispShiftOp {
+            0: std({{ Mem = Rs; }});
+        }
+
+        format StoreDispShiftUpdateOp {
+            1: stdu({{ Mem = Rs; }});
+        }
+    }
+
+    format LoadDispUpdateOp {
+        35: lbzu({{ Rt = Mem_ub; }});
+        41: lhzu({{ Rt = Mem_uh; }});
+        43: lhau({{ Rt = Mem_sh; }});
+        33: lwzu({{ Rt = Mem_uw; }});
+    }
+
+    format StoreDispOp {
+        38: stb({{ Mem_ub = Rs_ub; }});
+        44: sth({{ Mem_uh = Rs_uh; }});
+        36: stw({{ Mem_uw = Rs_uw; }});
+    }
+
+    format StoreDispUpdateOp {
+        39: stbu({{ Mem_ub = Rs_ub; }});
+        45: sthu({{ Mem_uh = Rs_uh; }});
+        37: stwu({{ Mem_uw = Rs_uw; }});
     }
 
     format IntImmArithCheckRaOp {
-        14: addi({{ Rt = Ra + imm; }},
-                 {{ Rt = imm }});
-        15: addis({{ Rt = Ra + (imm << 16); }},
-                  {{ Rt = imm << 16; }});
+        14: addi({{ Rt = Ra + simm; }},
+                 {{ Rt = simm }});
+        15: addis({{ Rt = Ra + (simm << 16); }},
+                  {{ Rt = simm << 16; }});
     }
 
     format IntImmArithOp {
-        12: addic({{ uint32_t src = Ra; Rt = src + imm; }},
-                  [computeCA]);
-        13: addic_({{ uint32_t src = Ra; Rt = src + imm; }},
-                   [computeCA, computeCR0]);
-        8: subfic({{ int32_t src = ~Ra; Rt = src + imm + 1; }},
-                  [computeCA]);
+        12: addic({{
+            uint64_t src = Ra;
+            Rt = src + simm;
+        }},
+        true);
+
+        13: addic_({{
+            uint64_t src = Ra;
+            Rt = src + simm;
+        }},
+        true, true);
+
+        8: subfic({{
+            uint64_t src = ~Ra;
+            Rt = src + simm + 1;
+        }},
+        true);
+
         7: mulli({{
-            int32_t src = Ra_sw;
-            int64_t prod = src * imm;
-            Rt = (uint32_t)prod;
+            int64_t res = Ra_sd * simm;
+            Rt = res;
         }});
     }
+
+    4: decode VA_XO {
+
+        // Arithmetic instructions that use source registers Ra, Rb and Rc,
+        // with destination register Rt.
+        format IntArithOp {
+            48: maddhd({{
+                int64_t res;
+                std::tie(std::ignore, res) = multiplyAdd(Ra_sd, Rb_sd, Rc_sd);
+                Rt = res;
+            }});
+
+            49: maddhdu({{
+                uint64_t res;
+                std::tie(std::ignore, res) = multiplyAdd(Ra, Rb, Rc);
+                Rt = res;
+            }});
+
+            51: maddld({{
+                uint64_t res;
+                std::tie(res, std::ignore) = multiplyAdd(Ra_sd, Rb_sd, Rc_sd);
+                Rt = res;
+            }});
+        }
+    }
+
+
+    format IntImmArithOp {
+
+        3: twi({{
+             if(FullSystem) {
+               int32_t val = Ra_sw;
+               if(((TO & 0x10) && (val < simm))                    ||
+                 ((TO & 0x08) && (val > simm))                     ||
+                 ((TO & 0x04) && (val == simm))                    ||
+                 ((TO & 0x02) && ((uint32_t)val < (uint32_t)simm)) ||
+                 ((TO & 0x01) && ((uint32_t)val > (uint32_t)simm))) {
+                  fault= std::make_shared<ProgramTrapInterrupt>();
+               }
+             }
+        }});
+
+        2: tdi({{
+            if(FullSystem) {
+              int64_t val1 = Ra_sd;
+              int64_t val2 = simm;
+              //printf("Val 1 : 0x%016lx val2: 0x%016lx\n", val,val2);
+              if(((TO & 0x10) && (val1 < val2))                    ||
+                ((TO & 0x08) && (val1 > val2))                     ||
+                ((TO & 0x04) && (val1 == val2))                    ||
+                ((TO & 0x02) && ((uint64_t)val1 < (uint64_t)val2)) ||
+                ((TO & 0x01) && ((uint64_t)val1 > (uint64_t)val2))) {
+                fault= std::make_shared<ProgramTrapInterrupt>();
+              }
+            }
+        }});
+      }
+
+    format IntImmCompOp {
+        11: cmpi({{
+            if (length) {
+                cr = makeCRField(Ra_sd, simm, xer.so);
+            } else {
+                cr = makeCRField((int32_t)Ra_sd, simm, xer.so);
+            }
+        }});
+    }
+
+    format IntImmCompLogicOp {
+        10: cmpli({{
+            if (length) {
+                cr = makeCRField(Ra, uimm, xer.so);
+            } else {
+                cr = makeCRField((uint32_t)Ra, uimm, xer.so);
+            }
+        }});
+     }
 
     format IntImmLogicOp {
         24: ori({{ Ra = Rs | uimm; }});
@@ -380,142 +342,1042 @@ decode OPCODE default Unknown::unknown() {
                    true);
     }
 
-    16: decode AA {
-
-        // Conditionally branch relative to PC based on CR and CTR.
-        format BranchPCRelCondCtr {
-            0: bc({{ NIA = (uint32_t)(CIA + disp); }});
-        }
-
-        // Conditionally branch to fixed address based on CR and CTR.
-        format BranchNonPCRelCondCtr {
-            1: bca({{ NIA = targetAddr; }});
-        }
-    }
-
-    18: decode AA {
-
-        // Unconditionally branch relative to PC.
-        format BranchPCRel {
-            0: b({{ NIA = (uint32_t)(CIA + disp); }});
-        }
-
-        // Unconditionally branch to fixed address.
-        format BranchNonPCRel {
-            1: ba({{ NIA = targetAddr; }});
-        }
-    }
-
-    19: decode XO_XO {
-
-        // Conditionally branch to address in LR based on CR and CTR.
-        format BranchLrCondCtr {
-           16: bclr({{ NIA = LR & 0xfffffffc; }});
-        }
-
-        // Conditionally branch to address in CTR based on CR.
-        format BranchCtrCond {
-           528: bcctr({{ NIA = CTR & 0xfffffffc; }});
-        }
-
-        // Condition register manipulation instructions.
-        format CondLogicOp {
-            257: crand({{
-                uint32_t crBa = bits(CR, 31 - ba);
-                uint32_t crBb = bits(CR, 31 - bb);
-                CR = insertBits(CR, 31 - bt, crBa & crBb);
-            }});
-            449: cror({{
-                uint32_t crBa = bits(CR, 31 - ba);
-                uint32_t crBb = bits(CR, 31 - bb);
-                CR = insertBits(CR, 31 - bt, crBa | crBb);
-            }});
-            255: crnand({{
-                uint32_t crBa = bits(CR, 31 - ba);
-                uint32_t crBb = bits(CR, 31 - bb);
-                CR = insertBits(CR, 31 - bt, !(crBa & crBb));
-            }});
-            193: crxor({{
-                uint32_t crBa = bits(CR, 31 - ba);
-                uint32_t crBb = bits(CR, 31 - bb);
-                CR = insertBits(CR, 31 - bt, crBa ^ crBb);
-            }});
-            33: crnor({{
-                uint32_t crBa = bits(CR, 31 - ba);
-                uint32_t crBb = bits(CR, 31 - bb);
-                CR = insertBits(CR, 31 - bt, !(crBa | crBb));
-            }});
-            289: creqv({{
-                uint32_t crBa = bits(CR, 31 - ba);
-                uint32_t crBb = bits(CR, 31 - bb);
-                CR = insertBits(CR, 31 - bt, crBa == crBb);
-            }});
-            129: crandc({{
-                uint32_t crBa = bits(CR, 31 - ba);
-                uint32_t crBb = bits(CR, 31 - bb);
-                CR = insertBits(CR, 31 - bt, crBa & !crBb);
-            }});
-            417: crorc({{
-                uint32_t crBa = bits(CR, 31 - ba);
-                uint32_t crBb = bits(CR, 31 - bb);
-                CR = insertBits(CR, 31 - bt, crBa | !crBb);
-            }});
-        }
-        format CondMoveOp {
-            0: mcrf({{
-                uint32_t crBfa = bits(CR, 31 - bfa*4, 28 - bfa*4);
-                CR = insertBits(CR, 31 - bf*4, 28 - bf*4, crBfa);
-            }});
-        }
-        format MiscOp {
-            150: isync({{ }}, [ IsSerializeAfter ]);
-        }
-    }
-
     format IntRotateOp {
-        21: rlwinm({{ Ra = rotateValue(Rs, sh) & fullMask; }});
-        23: rlwnm({{ Ra = rotateValue(Rs, Rb) & fullMask; }});
-        20: rlwimi({{ Ra = (rotateValue(Rs, sh) & fullMask) | (Ra & ~fullMask); }});
+        21: rlwinm({{
+            uint64_t res;
+            res = rotate(Rs, shift);
+            res = res & bitmask(maskBeg, maskEnd);
+            Ra = res;
+        }});
+
+        23: rlwnm({{
+            uint64_t res;
+            res = rotate(Rs, Rb);
+            res = res & bitmask(maskBeg, maskEnd);
+            Ra = res;
+        }});
+
+        20: rlwimi({{
+            uint64_t res, mask;
+            mask = bitmask(maskBeg, maskEnd);
+            res = rotate(Rs, shift);
+            res = (res & mask) | (Ra & ~mask);
+            Ra = res;
+        }});
+    }
+
+    // There are a large number of instructions that have the same primary
+    // opcode (PO) of 31. In this case, the instructions are of different
+    // forms. For every form, the XO fields may vary in position and width.
+    // The X, XFL, XFX and XL form instructions use bits 21 - 30 and the
+    // XO form instructions use bits 22 - 30 as extended opcode (XO). To
+    // avoid conflicts, instructions of each form have to be defined under
+    // separate decode blocks. However, only a single decode block can be
+    // associated with a particular PO and it will recognize only one type
+    // of XO field. A solution for associating decode blocks for the other
+    // types of XO fields with the same PO is to have the other blocks as
+    // nested default cases.
+    31: decode X_XO {
+
+        // All loads with an index register. The non-update versions
+        // all use the value 0 if Ra == R0, not the value contained in
+        // R0. Others update Ra with the effective address. In all cases,
+        // Ra and Rb are source registers, Rt is the destintation.
+        format LoadIndexOp {
+            87: lbzx({{ Rt = Mem_ub; }});
+            52: lbarx({{ Rt = Mem_ub; }}, mem_flags = LLSC);
+            279: lhzx({{ Rt = Mem_uh; }});
+            343: lhax({{ Rt = Mem_sh; }});
+            116: lharx({{ Rt = Mem_uh; }}, mem_flags = LLSC);
+            790: lhbrx({{ Rt = swap_byte(Mem_uh); }});
+            23: lwzx({{ Rt = Mem_uw; }});
+            341: lwax({{ Rt = Mem_sw; }});
+            20: lwarx({{ Rt = Mem_uw; }}, mem_flags = LLSC);
+            534: lwbrx({{ Rt = swap_byte(Mem_uw); }});
+            21: ldx({{ Rt = Mem; }});
+            84: ldarx({{ Rt = Mem_ud; }}, mem_flags = LLSC);
+            532: ldbrx({{ Rt = swap_byte(Mem); }});
+            535: lfsx({{ Ft_sf = Mem_sf; }});
+            599: lfdx({{ Ft = Mem_df; }});
+            855: lfiwax({{ Ft_uw = Mem; }});
+        }
+
+        format LoadIndexUpdateOp {
+            119: lbzux({{ Rt = Mem_ub; }});
+            311: lhzux({{ Rt = Mem_uh; }});
+            375: lhaux({{ Rt = Mem_sh; }});
+            55: lwzux({{ Rt = Mem_uw; }});
+            373: lwaux({{ Rt = Mem_sw; }});
+            53: ldux({{ Rt = Mem; }});
+            567: lfsux({{ Ft_sf = Mem_sf; }});
+            631: lfdux({{ Ft = Mem_df; }});
+        }
+
+        format StoreIndexOp {
+            215: stbx({{ Mem_ub = Rs_ub; }});
+            694: stbcx({{ Mem_ub = Rs_ub; }}, mem_flags = LLSC);
+            407: sthx({{ Mem_uh = Rs_uh; }});
+            726: sthcx({{ Mem_uh = Rs_uh; }}, mem_flags = LLSC);
+            918: sthbrx({{ Mem_uh = swap_byte(Rs_uh); }});
+            151: stwx({{ Mem_uw = Rs_uw; }});
+            150: stwcx({{ Mem_uw = Rs_uw; }}, mem_flags = LLSC);
+            662: stwbrx({{ Mem_uw = swap_byte(Rs_uw); }});
+            149: stdx({{ Mem = Rs }});
+            214: stdcx({{ Mem_ud = Rs; }}, mem_flags = LLSC);
+            660: stdbrx({{ Mem = swap_byte(Rs); }});
+        }
+
+        format StoreIndexUpdateOp {
+            247: stbux({{ Mem_ub = Rs_ub; }});
+            439: sthux({{ Mem_uh = Rs_uh; }});
+            183: stwux({{ Mem_uw = Rs_uw; }});
+            181: stdux({{ Mem = Rs; }});
+        }
+
+        format IntArithOp {
+
+            4: tw({{
+                if(FullSystem) {
+                  int32_t val1 = Ra_sw;
+                  int32_t val2 = Rb_sw;
+                  if(((TO & 0x10) && (val1 < val2))                    ||
+                    ((TO & 0x08) && (val1 > val2))                     ||
+                    ((TO & 0x04) && (val1 == val2))                    ||
+                    ((TO & 0x02) && ((uint32_t)val1 < (uint32_t)val2)) ||
+                    ((TO & 0x01) && ((uint32_t)val1 > (uint32_t)val2))) {
+                    fault= std::make_shared<ProgramTrapInterrupt>();
+                  }
+                }
+
+            }});
+
+            68: td ({{
+                if(FullSystem) {
+                  int64_t val1 = Ra_sd;
+                  int64_t val2 = Rb_sd;
+                  if(((TO & 0x10) && (val1 < val2))                    ||
+                    ((TO & 0x08) && (val1 > val2))                     ||
+                    ((TO & 0x04) && (val1 == val2))                    ||
+                    ((TO & 0x02) && ((uint64_t)val1 < (uint64_t)val2)) ||
+                    ((TO & 0x01) && ((uint64_t)val1 > (uint64_t)val2))) {
+                    fault= std::make_shared<ProgramTrapInterrupt>();
+                  }
+                }
+            }});
+
+                779: modsw({{
+                int64_t src1 = Ra_sw;
+                int64_t src2 = Rb_sw;
+                if ((src1 != INT32_MIN || src2 != -1) && src2 != 0) {
+                    Rt = src1 % src2;
+                } else {
+                    Rt = 0;
+                }
+            }});
+
+            267: moduw({{
+                uint64_t src1 = Ra_uw;
+                uint64_t src2 = Rb_uw;
+                if (src2 != 0) {
+                    Rt = src1 % src2;
+                } else {
+                    Rt = 0;
+                }
+            }});
+
+         //TODO: Right now we doesn't support DARN instruction
+         // Not returning random number, Just Setting value to -1.
+         //Need to FIX that instruction
+
+             755: darn({{
+                  Rt = -1;
+            }});
+
+            777: modsd({{
+                int64_t src1 = Ra_sd;
+                int64_t src2 = Rb_sd;
+                if ((src1 != INT64_MIN || src2 != -1) && src2 != 0) {
+                    Rt = src1 % src2;
+                } else {
+                    Rt = 0;
+                }
+            }});
+
+            265: modud({{
+                uint64_t src1 = Ra;
+                uint64_t src2 = Rb;
+                if (src2 != 0) {
+                    Rt = src1 % src2;
+                } else {
+                    Rt = 0;
+                }
+            }});
+        }
+
+        format IntCompOp {
+            0: cmp({{
+                if (length) {
+                    cr = makeCRField(Ra_sd, Rb_sd, xer.so);
+                } else {
+                    cr = makeCRField((int32_t)Ra_sd, (int32_t)Rb_sd, xer.so);
+                }
+            }});
+
+            32: cmpl({{
+                if (length) {
+                    cr = makeCRField(Ra, Rb, xer.so);
+                } else {
+                    cr = makeCRField((uint32_t)Ra, (uint32_t)Rb, xer.so);
+                }
+            }});
+
+            192: cmprb({{
+                uint32_t src1 = Ra_ub;
+                uint32_t src2 = Rb_uw;
+                uint8_t src2lo = src2 & 0xff;
+                uint8_t src2hi = (src2 >>= 8) & 0xff;
+                uint32_t res = (src2lo <= src1) & (src1 <= src2hi);
+                if (length) {
+                    src2lo = (src2 >>= 8) & 0xff;
+                    src2hi = (src2 >>= 8) & 0xff;
+                    res = ((src2lo <= src1) & (src1 <= src2hi)) | res;
+                }
+                cr = res << 2;
+            }});
+
+            224: cmpeqb({{
+                const uint64_t m1 = 0x0101010101010101;
+                const uint64_t m2 = 0x8080808080808080;
+                uint64_t res = Rb ^ (Ra_ub * m1);
+                res = (res - m1) & ~res & m2;
+                cr = (res != 0) << 2;
+            }});
+        }
+
+        // Generic integer format instructions.
+        format IntOp {
+            339: decode SPR {
+                0x004: mftfhar({{ Rt = TFHAR; }});
+                0x008: mfvrsave({{ Rt = VRSAVE; }});
+                0x018: mfsier({{Rt = SIER;}});
+                0x019: mfbescrs({{Rt = BESCRS;}});
+                0x01C: mfppr({{ Rt = PPR; }});
+                0x020: mfxer({{ Rt = XER; }});
+                0x024: mftfiar({{ Rt = TFIAR; }});
+                0x039: mfbescrsu({{Rt = BESCRSU;}});
+                0x044: mftexasr({{ Rt = TEXASR; }});
+                0x05C: mfppr2({{ Rt =PPR32; }});
+                0x078: mfupmc1({{Rt = PMC1;}});
+                0x098: mfupmc2({{Rt = PMC2;}});
+                0x099: mfebbhr({{Rt = EBBHR;}});
+                0x0b8: mfupmc3({{Rt = PMC3;}});
+                0x0b9: mfebbrr({{Rt = EBBRR;}});
+                0x0d8: mfupmc4({{Rt = PMC4;}});
+                0x0d9: mfbescr({{Rt = BESCR;}});
+                0x0f8: mfupmc5({{Rt = PMC5;}});
+                0x100: mflr({{ Rt = LR; }});
+                0x104: mfctrl({{ Rt = CTRL; }});
+                0x118: mfupmc6r({{Rt = PMC6;}});
+                0x120: mfctr({{ Rt = CTR; }});
+                0x188: mftb({{ Rt = TB; }});
+                0x1A8: mftbu({{ Rt = TBU; }});
+                0x1b8: mfsdar({{Rt = SDAR;}});
+                0x1f9: mftar({{Rt = TAR;}});
+                0x204: mftidr({{ Rt = TIDR; }}, [ IsPrivileged ]);
+                0x205: mfdpdes({{ Rt = DPDES; }}, [ IsPrivileged ]);
+                0x208: mfsprg0({{Rt = SPRG0;}});
+                0x209: mfhsprg0({{Rt = HSPRG0;}});
+                0x20a: mfhmer({{Rt = HMER;}});
+                0x20E: mfptcr({{ Rt = PTCR; }});
+                0x219: mfasdr({{Rt = ASDR;}});
+                0x21a: mfic({{Rt = IC;}}, [ IsPrivileged ]);
+                0x21f: mfhir0({{Rt = HIR0;}});
+                0x220: mfdscr({{ Rt = DSCR; }});
+                0x228: mfsprg1({{Rt = SPRG1;}});
+                0x229: mfhsprg1({{Rt = HSPRG1;}});
+                0x22a: mfhmeer({{Rt = HMEER;}});
+                0x23a: mfvtb({{Rt = VTB;}}, [ IsPrivileged ]);
+                0x240: mfdsisr({{ Rt = DSISR; }});
+                0x248: mfsprg2({{Rt = SPRG2;}});
+                0x249: mfhdisr({{Rt = HDSISR;}});
+                0x24a: mfpcr({{Rt = PCR;}});
+                0x260: mfdar({{ Rt = DAR; }});
+                0x268: mfsprg3({{Rt = SPRG3;}});
+                0x269: mfhdar({{Rt = HDAR;}});
+                0x285: mfdawr0({{ Rt = DAWR0; }});
+                0x289: mfspurr({{Rt = SPURR;}}, [ IsPrivileged ]);
+                0x2a9: mfpurr({{Rt = PURR;}}, [ IsPrivileged ]);
+                0x2C0: mfdec({{ Rt = DEC; }});
+                0x2c9: mfhdec({{Rt = HDEC;}});
+                0x2fa: mfpsscr({{Rt = PSSCR;}});
+                0x324: mffscr({{Rt = FSCR;}});
+                0x329: mfhrmor({{Rt = HRMOR;}});
+                0x340: mfsrr0({{ Rt = SRR0; }});
+                0x345: mfrpr({{ Rt = RPR; }});
+                0x349: mfhssr0({{Rt = HSRR0;}});
+                0x360: mfsrr1({{ Rt = SRR1; }});
+                0x365: mfciabr({{ Rt = CIABR; }});
+                0x368: mfcir({{Rt = CIR;}}, [ IsPrivileged ]);
+                0x369: mfhssr1({{Rt = HSRR1;}});
+                0x380: mfcfar({{ Rt = CFAR; }});
+                0x3a0: mfamr({{ Rt = AMR; }}, [ IsPrivileged ]);
+                0x3a1: mfiamr({{Rt = IAMR;}});
+                0x3a4: mfuamor({{ Rt = UAMOR; }}, [ IsPrivileged ]);
+                0x3aa: mfamor({{Rt = AMOR;}});
+                0x3a9: mfspr({{ }});
+                0x3c5: mfhfscr({{Rt = HFSCR;}});
+                0x3c9: mflpcr({{Rt = LPCR;}});
+                0x3E8: mfpvr({{ Rt = PVR; }});
+                0x3e9: mflpidr({{Rt = LPIDR;}});
+                0x3ff: mfpir({{ Rt = PIR;}}, [ IsPrivileged ]);
+            }
+            467: decode SPR {
+                0x004: mttfhar({{TFHAR = Rs;}});
+                0x008: mtvrsave({{ VRSAVE = Rs; }});
+                0x019: mtbescrs({{BESCRS = Rs;}});
+                0x01C: mtppr({{ PPR = Rs; }});
+                0x020: mtxer({{ XER = Rs; }});
+                0x024: mttfiar({{TFIAR = Rs;}});
+                0x039: mtbescrsu({{BESCRSU = Rs;}});
+                0x044: mttexasr({{TEXASR = Rs;}});
+                0x05C: mtppr32({{ PPR32 = Rs; }});
+                0x078: mtupmc1({{PMC1 = Rs;}});
+                0x098: mtupmc2({{PMC2 = Rs;}});
+                0x099: mtebbhr({{EBBHR = Rs;}});
+                0x0b8: mtupmc3({{PMC3 = Rs;}});
+                0x0b9: mtebbrr({{EBBRR = Rs;}});
+                0x0d8: mtupmc4({{PMC4 = Rs;}});
+                0x0d9: mtbescr({{BESCR = Rs;}});
+                0x0f8: mtupmc5({{PMC5 = Rs;}});
+                0x100: mtlr({{ LR = Rs; }});
+                0x118: mtupmc6({{PMC6 = Rs;}});
+                0x120: mtctr({{ CTR = Rs; }});
+                0x1A8: mttbu({{ TBU = Rs; }});
+                0x1f9: mttar({{TAR = Rs;}});
+                0x201: mtpidr({{PIDR = Rs;}});
+                0x204: mttidr({{TIDR = Rs;}}, [ IsPrivileged ]);
+                0x205: mtdpdes({{DPDES = Rs;}});
+                0x208: mtsprg0({{SPRG0 = Rs;}});
+                0x209: mthsprg0({{HSPRG0 = Rs;}});
+                0x20a: mthmer({{HMER = Rs;}});
+                0x20E: mtptcr({{ PTCR = Rs; }});
+                0x219: mtasdr({{ASDR = Rs;}});
+                0x21a: mtic({{IC = Rs;}});
+                0x21f: mthir0({{HIR0 = Rs;}});
+                0x220: mtdscr({{ DSCR = Rs; }});
+                0x228: mtsprg1({{SPRG1 = Rs;}});
+                0x229: mthsprg1({{HSPRG1 = Rs;}});
+                0x22a: mthmeer({{HMEER = Rs;}});
+                0x238: mtmmcr2({{MMCR2 = Rs;}});
+                0x23a: mtvtb({{VTB = Rs;}});
+                0x240: mtdsisr({{ DSISR = Rs; }});
+                0x248: mtsprg2({{SPRG2 = Rs;}});
+                0x249: mthdisr({{HDSISR = Rs;}});
+                0x24a: mtpcr({{PCR = Rs;}});
+                0x258: mtmmcra({{MMCRA = Rs;}});
+                0x260: mtdar({{ DAR = Rs; }});
+                0x268: mtsprg3({{SPRG3 = Rs;}});
+                0x269: mthdar({{HDAR = Rs;}});
+                0x27a: mtmmcrc({{MMCRC = Rs;}});
+                0x285: mtdawr0({{DAWR0 = Rs;}});
+                0x289: mtspurr({{SPURR = Rs;}});
+                0x2a9: mtpurr({{PURR = Rs;}});
+                0x2C0: mtdec({{ DEC = Rs; }});
+                0x2c9: mthdec({{HDEC = Rs;}});
+                0x2fa: mtpsscr({{PSSCR = Rs;}});
+                0x304: mtctrl({{ CTRL = Rs; }});
+                0x324: mtfscr({{FSCR = Rs;}});
+                0x329: mthrmor({{HRMOR = Rs;}});
+                0x340: mtsrr0({{ SRR0 = Rs; }});
+                0x345: mtrpr({{RPR = Rs;}});
+                0x349: mthssr0({{HSRR0 = Rs;}});
+                0x360: mtsrr1({{ SRR1 = Rs; }});
+                0x365: mtciabr({{CIABR = Rs;}});
+                0x369: mthssr1({{HSRR1 = Rs;}});
+                0x378: mtmmcr0({{MMCR0 = Rs;}});
+                0x380: mtcfar({{ CFAR = Rs; }});
+                0x390: mttbl({{ TBL = Rs; }});
+                0x33c: mtspr({{ }});
+                0x3a0: mtamr({{AMR = Rs;}}, [ IsPrivileged ]);
+                0x3a1: mtiamr({{IAMR = Rs;}});
+                0x3a4: mtuamor({{UAMOR = Rs;}}, [ IsPrivileged ]);
+                0x3aa: mtamor({{AMOR = Rs;}});
+                0x3c5: mthfscr({{HFSCR = Rs;}});
+                0x3c8: mttbu40({{TBU40 = Rs;}});
+                0x3c9: mtlpcr({{LPCR = Rs;}});
+                0x3d8: mtmmcr1({{MMCR1 = Rs;}});
+                0x3e9: mtlpidr({{LPIDR = Rs;}});
+            }
+
+            83: mfmsr({{ Rt = MSR; }}, [ IsPrivileged ]);
+
+            178: mtmsrd({{
+                if (L == 0 ) {
+                    uint64_t val = bits(Rs, 34, 32);
+
+                     if(bits(MSR, 34, 32) != 0x2 || val != 0x0) {
+                      MSR =  insertBits(MSR, 34, 32, val);
+                    }
+
+                    val = bits(Rs, 14);
+
+                    MSR = insertBits(MSR,  5,  bits(Rs, 5) | val);
+                    MSR = insertBits(MSR,  4,  bits(Rs, 4) | val);
+
+                    MSR = insertBits(MSR, 63, 61, bits(Rs, 63, 61));
+                    MSR = insertBits(MSR, 59, 35, bits(Rs, 59, 35));
+                    MSR = insertBits(MSR, 31, 16, bits(Rs, 31, 16));
+                    MSR = insertBits(MSR, 14, 13, bits(Rs, 14, 13));
+                    MSR = insertBits(MSR, 11,  6, bits(Rs, 11,  6));
+                    MSR = insertBits(MSR,  3,  1, bits(Rs,  3,  1));
+                } else {
+                    MSR = insertBits(MSR, 15, bits(Rs, 15));
+                    MSR = insertBits(MSR,  1, bits(Rs,  1));
+                }
+            }}, [ IsPrivileged ]);
+
+            146: mtmsr({{
+                 if( L ==0 ){
+                     MSR = insertBits(MSR,15,bits(Rs,15)|bits(Rs,14));
+                     MSR = insertBits(MSR,5,bits(Rs,5)|bits(Rs,14));
+                     MSR = insertBits(MSR,4,bits(Rs,4)|bits(Rs,14));
+                     MSR = insertBits(MSR,31,16,bits(Rs,31,16));
+                     MSR = insertBits(MSR,14,13,bits(Rs,14,13));
+                     MSR = insertBits(MSR,11,6,bits(Rs,11,6));
+                     MSR = insertBits(MSR,3,1,bits(Rs,3,1));
+                 }
+                 else{
+                     MSR = insertBits(MSR,15,bits(Rs,15));
+                     MSR = insertBits(MSR,1,bits(Rs,1));
+                 }
+            }}, [ IsPrivileged ]);
+        }
+
+        // Integer logic instructions use source registers Rs and Rb,
+        // with destination register Ra.
+        format IntLogicOp {
+            28: and({{ Ra = Rs & Rb; }}, true);
+            316: xor({{ Ra = Rs ^ Rb; }}, true);
+            476: nand({{ Ra = ~(Rs & Rb); }}, true);
+            444: or({{ Ra = Rs | Rb; }}, true);
+            124: nor({{ Ra = ~(Rs | Rb); }}, true);
+            60: andc({{ Ra = Rs & ~Rb; }}, true);
+            284: eqv({{ Ra = ~(Rs ^ Rb); }}, true);
+            412: orc({{ Ra = Rs | ~Rb; }}, true);
+            954: extsb({{ Ra = Rs_sb; }}, true);
+            922: extsh({{ Ra = Rs_sh; }}, true);
+            986: extsw({{ Ra = Rs_sw; }}, true);
+            26: cntlzw({{ Ra = findLeadingZeros(Rs_uw); }}, true);
+            58: cntlzd({{ Ra = findLeadingZeros(Rs); }}, true);
+            538: cnttzw({{ Ra = findTrailingZeros(Rs_uw); }}, true);
+            570: cnttzd({{ Ra = findTrailingZeros(Rs); }}, true);
+
+            508: cmpb({{
+                uint64_t mask = 0xff;
+                uint64_t res = 0;
+                for (int i = 0; i < 8; ++i) {
+                    if ((Rs & mask) == (Rb & mask)) {
+                        res |= mask;
+                    }
+                    mask <<= 8;
+                }
+                Ra = res;
+            }});
+
+            122: popcntb({{
+                const uint64_t m1 = 0x5555555555555555ULL;
+                const uint64_t m2 = 0x3333333333333333ULL;
+                const uint64_t m4 = 0x0f0f0f0f0f0f0f0fULL;
+                uint64_t res = Rs;
+                res = (res & m1) + ((res >> 1) & m1);
+                res = (res & m2) + ((res >> 2) & m2);
+                res = (res & m4) + ((res >> 4) & m4);
+                Ra = res;
+            }});
+
+            378: popcntw({{
+                const uint64_t m1 = 0x5555555555555555ULL;
+                const uint64_t m2 = 0x3333333333333333ULL;
+                const uint64_t m4 = 0x0f0f0f0f0f0f0f0fULL;
+                const uint64_t m8 = 0x00ff00ff00ff00ffULL;
+                const uint64_t m16 = 0x0000ffff0000ffffULL;
+                uint64_t res = Rs;
+                res = (res & m1) + ((res >> 1) & m1);
+                res = (res & m2) + ((res >> 2) & m2);
+                res = (res & m4) + ((res >> 4) & m4);
+                res = (res & m8) + ((res >> 8) & m8);
+                res = (res & m16) + ((res >> 16) & m16);
+                Ra = res;
+            }});
+
+            506: popcntd({{ Ra = popCount(Rs); }});
+
+            154: prtyw({{
+                uint64_t res = Rs;
+                res = res ^ (res >> 16);
+                res = res ^ (res >> 8);
+                res = res & 0x100000001;
+                Ra = res;
+            }});
+
+            186: prtyd({{
+                uint64_t res = Rs;
+                res = res ^ (res >> 32);
+                res = res ^ (res >> 16);
+                res = res ^ (res >> 8);
+                res = res & 0x1;
+                Ra = res;
+            }});
+
+            252: bpermd({{
+                uint64_t res = 0;
+                for (int i = 0; i < 8; ++i) {
+                    int index = (Rs >> (i * 8)) & 0xff;
+                    if (index < 64) {
+                        if (Rb & (1ULL << (63 - index))) {
+                            res |= 1 << i;
+                        }
+                    }
+                }
+                Ra = res;
+            }});
+        }
+
+        // Integer instructions with a shift value.
+        format IntShiftOp {
+            24: slw({{
+                int32_t shift = Rb_sw;
+                uint32_t res = Rs_uw & ~((shift << 26) >> 31);
+                if (shift != 0) {
+                    shift = shift & 0x1f;
+                    res = res << shift;
+                }
+                Ra = res;
+            }});
+
+            536: srw({{
+                int32_t shift = Rb_sw;
+                uint32_t res = Rs_uw & ~((shift << 26) >> 31);
+                if (shift != 0) {
+                    shift = shift & 0x1f;
+                    res = res >> shift;
+                }
+                Ra = res;
+            }});
+
+            792: sraw({{
+                int32_t src = Rs_sw;
+                uint32_t shift = Rb_uw;
+                int64_t res;
+                if ((shift & 0x20) != 0) {
+                    res = src >> 31;
+                    if (res != 0) {
+                        setCA = true;
+                    }
+                } else {
+                    if (shift != 0) {
+                        shift = shift & 0x1f;
+                        res = src >> shift;
+                        if (src < 0 && (src & mask(shift)) != 0) {
+                            setCA = true;
+                        }
+                    } else {
+                        res = src;
+                    }
+                }
+                Ra = res;
+            }},
+            true);
+
+            824: srawi({{
+                int32_t src = Rs_sw;
+                int64_t res;
+                if (shift != 0) {
+                    res = src >> shift;
+                    if (src < 0 && (src & mask(shift)) != 0) {
+                        setCA = true;
+                    }
+                } else {
+                    res = src;
+                }
+                Ra = res;
+            }},
+            true);
+        }
+
+        format IntConcatShiftOp {
+            27: sld({{
+                int64_t shift = Rb_sd;
+                uint64_t res = Rs & ~((shift << 57) >> 63);
+                if (shift != 0) {
+                    shift = shift & 0x3f;
+                    res = res << shift;
+                }
+                Ra = res;
+            }});
+
+            539: srd({{
+                int64_t shift = Rb_sd;
+                uint64_t res = Rs & ~((shift << 57) >> 63);
+                if (shift != 0) {
+                    shift = shift & 0x3f;
+                    res = res >> shift;
+                }
+                Ra = res;
+            }});
+
+            794: srad({{
+                int64_t src = Rs_sd;
+                uint64_t shift = Rb;
+                int64_t res;
+                if ((shift & 0x40) != 0) {
+                    res = src >> 63;
+                    if (res != 0) {
+                        setCA = true;
+                    }
+                } else {
+                    if (shift != 0) {
+                        shift = shift & 0x3f;
+                        res = src >> shift;
+                        if (src < 0 && (src & mask(shift)) != 0) {
+                            setCA = true;
+                        }
+                    } else {
+                        res = src;
+                    }
+                }
+                Ra = res;
+            }},
+            true);
+        }
+
+        format StoreIndexOp {
+            663: stfsx({{ Mem_sf = Fs_sf; }});
+            727: stfdx({{ Mem_df = Fs; }});
+            983: stfiwx({{ Mem = Fs_uw; }});
+        }
+
+        format StoreIndexUpdateOp {
+            695: stfsux({{ Mem_sf = Fs_sf; }});
+            759: stfdux({{ Mem_df = Fs; }});
+        }
+
+        format MiscOp {
+            238: msgclr({{
+                ThreadContext *tc = xc->tcBase();
+                ThreadID t = tc->threadId();
+                if(bits(Rb_ud, 31, 27) == 0x5) {
+                  printf("Get msgclr instr for threadid %d\n",(int)t);
+                  tc->getCpuPtr()->clearInterrupt(t, 7, 0);
+                }
+                }});
+
+            886:msgsync({{ }});
+
+            206: msgsnd({{
+                if(bits(Rb_ud, 31, 27) == 0x5) {
+                  ThreadContext *tc = xc->tcBase();
+
+                  //Check for all threads in that processor
+                  //to generate Doorbell Interrupt.
+
+                  for(ThreadID i = 0; i < tc->getCpuPtr()->numContexts();
+                            i++) {
+                    if(i != tc->threadId())
+                    {
+
+                    ThreadContext *t = tc->getCpuPtr()->getContext(i);
+                    printf("Read register PIR value %d Thread Id %d\n",
+                        (int)t->readIntReg(INTREG_PIR),(int)i);
+                    uint32_t val1 = t->readIntReg(INTREG_PIR);
+                    printf("Read second register\n");
+                    printf("Read register Rb_ud value 0x%016lxThread Id %d\n",
+                            Rb_ud,(int)tc->threadId());
+                    uint64_t val2 = Rb_ud;
+                     printf("Reading done");
+                     printf("Msr value is 0x%016lx\n", MSR);
+                    if(bits(val1, 19, 0) == bits(val2, 19, 0)){
+                      printf("Intterupt Happen\n");
+                      t->getCpuPtr()->postInterrupt(i, 7, 0);
+                  }
+                   }
+                }
+                }
+                }});
+
+            174: msgclrp({{
+                ThreadContext *tc = xc->tcBase();
+                int t = tc->threadId();
+                if(bits(Rb_ud, 31, 27) == 0x5) {
+                  DPDES = DPDES & ~(1 << (t - 1));
+                }
+                }}, [ IsPrivileged ]);
+        }
+
+        // These instructions all provide data cache hints
+        // Right now doesn't have cache support
+        format MiscOp {
+            278: dcbt({{ }});
+            246: dcbtst({{ }});
+
+            1014: dcbz({{
+                  Request::Flags flags = Request::PHYSICAL;
+                  Addr EA;
+                  if(RA == 0)
+                    EA = Rb & -128ULL;
+                  else
+                    EA = (Ra + Rb) & -128ULL;
+                  Mem = 0;
+                  for (int i = 0; i < 16; ++i) {
+                    writeMemAtomicBE(xc, traceData, Mem,EA + i*8,
+                                            flags, NULL);
+                }
+            }});
+
+            86: dcbf({{ }});
+            598: sync({{ }}, [ IsMemBarrier ]);
+            854: eieio({{ }}, [ IsMemBarrier ]);
+            54:  dcbst({{ }});
+            982: icbi({{ }});
+            306: tlbie({{ }});
+            274: tlbiel({{ }}, [ IsPrivileged ]);
+            566: tlbsync({{ }});
+            498: slbia({{ }}, [ IsPrivileged ]);
+        }
+
+        // These instructions are of XO form with bit 21 as the OE bit.
+        default: decode XO_XO {
+
+            // These instructions can all be reduced to the form
+            // Rt = src1 + src2 [+ CA], therefore we just give src1 and src2
+            // (and, if necessary, CA) definitions and let the python script
+            // deal with setting things up correctly. We also give flags to
+            // say which control registers to set.
+            format IntSumOp {
+                266: add({{ Ra }}, {{ Rb }});
+                40: subf({{ ~Ra }}, {{ Rb }}, {{ 1 }});
+                10: addc({{ Ra }}, {{ Rb }},
+                         computeCA = true);
+                8: subfc({{ ~Ra }}, {{ Rb }}, {{ 1 }},
+                         true);
+                104: neg({{ ~Ra }}, {{ 1 }});
+                138: adde({{ Ra }}, {{ Rb }}, {{ xer.ca }},
+                          true);
+                234: addme({{ Ra }}, {{ -1ULL }}, {{ xer.ca }},
+                           true);
+                136: subfe({{ ~Ra }}, {{ Rb }}, {{ xer.ca }},
+                           true);
+                232: subfme({{ ~Ra }}, {{ -1ULL }}, {{ xer.ca }},
+                            true);
+                202: addze({{ Ra }}, {{ xer.ca }},
+                           computeCA = true);
+                200: subfze({{ ~Ra }}, {{ xer.ca }},
+                            computeCA = true);
+            }
+
+            // Arithmetic instructions all use source registers Ra and Rb,
+            // with destination register Rt.
+            format IntArithCheckRcOp {
+                75: mulhw({{
+                    uint64_t res = (int64_t)Ra_sw * Rb_sw;
+                    res = res >> 32;
+                    Rt = res;
+                }});
+
+                11: mulhwu({{
+                    uint64_t res = (uint64_t)Ra_uw * Rb_uw;
+                    res = res >> 32;
+                    Rt = res;
+                }});
+
+                235: mullw({{
+                    int64_t res = (int64_t)Ra_sw * Rb_sw;
+                    if (res != (int32_t)res) {
+                        setOV = true;
+                    }
+                    Rt = res;
+                }},
+                true);
+
+                73: mulhd({{
+                    int64_t res;
+                    std::tie(std::ignore, res) = multiply(Ra_sd, Rb_sd);
+                    Rt = res;
+                }});
+
+                9: mulhdu({{
+                    uint64_t res;
+                    std::tie(std::ignore, res) = multiply(Ra, Rb);
+                    Rt = res;
+                }});
+
+                233: mulld({{
+                    int64_t src1 = Ra_sd;
+                    int64_t src2 = Rb_sd;
+                    uint64_t res = src1 * src2;
+                    std::tie(res, std::ignore) = multiply(src1, src2);
+                    if (src1 != 0 && (int64_t)res / src1 != src2) {
+                        setOV = true;
+                    }
+                    Rt = res;
+                }},
+                true);
+
+                491: divw({{
+                    int32_t src1 = Ra_sw;
+                    int32_t src2 = Rb_sw;
+                    if ((src1 != INT32_MIN || src2 != -1) && src2 != 0) {
+                        Rt = (uint32_t)(src1 / src2);
+                    } else {
+                        Rt = 0;
+                        setOV = true;
+                    }
+                }},
+                true);
+
+                459: divwu({{
+                    uint32_t src1 = Ra_uw;
+                    uint32_t src2 = Rb_uw;
+                    if (src2 != 0) {
+                        Rt = src1 / src2;
+                    } else {
+                        Rt = 0;
+                        setOV = true;
+                    }
+                }},
+                true);
+
+                427: divwe({{
+                    int32_t src1 = Ra_sw;
+                    int32_t src2 = Rb_sw;
+                    int64_t res;
+                    if ((src1 != INT32_MIN || src2 != -1) && src2 != 0) {
+                        res = ((int64_t)src1 << 32) / src2;
+                        if (res == (int32_t)res) {
+                            Rt = (uint32_t)res;
+                        } else {
+                            Rt = 0;
+                            setOV = true;
+                        }
+                    } else {
+                        Rt = 0;
+                        setOV = true;
+                    }
+                }},
+                true);
+
+                395: divweu({{
+                    uint32_t src1 = Ra_ud;
+                    uint32_t src2 = Rb_ud;
+                    uint64_t res;
+                    if (src2 != 0) {
+                        res = ((uint64_t)src1 << 32) / src2;
+                        if (res <= UINT32_MAX) {
+                            Rt = (uint32_t)res;
+                        } else {
+                            Rt = 0;
+                            setOV = true;
+                        }
+                    } else {
+                        Rt = 0;
+                        setOV = true;
+                    }
+                }},
+                true);
+
+                489: divd({{
+                    int64_t src1 = Ra_sd;
+                    int64_t src2 = Rb_sd;
+                    if ((src1 != INT64_MIN || src2 != -1) && src2 != 0) {
+                        Rt = src1 / src2;
+                    } else {
+                        Rt = 0;
+                        setOV = true;
+                    }
+                }},
+                true);
+
+                457: divdu({{
+                    uint64_t src1 = Ra;
+                    uint64_t src2 = Rb;
+                    if (src2 != 0) {
+                        Rt = src1 / src2;
+                    } else {
+                        Rt = 0;
+                        setOV = true;
+                    }
+                }},
+                true);
+
+                425: divde({{
+                    int64_t src1 = Ra_sd;
+                    int64_t src2 = Rb_sd;
+                    int64_t res;
+                    std::tie(setOV, res, std::ignore) = divide(0, src1, src2);
+                    if (!setOV) {
+                        Rt = res;
+                    } else {
+                        Rt = 0;
+                    }
+                }},
+                true);
+
+                393: divdeu({{
+                    uint64_t src1 = Ra;
+                    uint64_t src2 = Rb;
+                    uint64_t res;
+                    std::tie(setOV, res, std::ignore) = divide(0, src1, src2);
+                    if (!setOV) {
+                        Rt = res;
+                    } else {
+                        Rt = 0;
+                    }
+                }},
+                true);
+            }
+
+            // These instructions are of XS form and use bits 21 - 29 as XO.
+            default: decode XS_XO {
+                format IntConcatShiftOp {
+                    413: sradi({{
+                        int64_t src = Rs_sd;
+                        if (shift != 0) {
+                            Ra = src >> shift;
+                            if (src < 0 && (src & mask(shift))) {
+                                setCA = true;
+                            }
+                        } else {
+                            Ra = src;
+                        }
+                    }},
+                    true);
+
+                    445: extswsli({{
+                        int64_t src = Rs_sw;
+                        if (shift != 0) {
+                            Ra = src << shift;
+                        } else {
+                            Ra = src;
+                        }
+                    }});
+                }
+
+                default: decode XFX_XO {
+                    format IntOp {
+                        144: mtcrf({{
+                            uint32_t mask = 0;
+                            for (int i = 0; i < 8; ++i) {
+                                if (((FXM >> i) & 0x1) == 0x1) {
+                                    mask |= 0xf << (4 * i);
+                                }
+                            }
+                            CR = (Rs & mask) | (CR & ~mask);
+                        }});
+
+                        19: mfcr({{ Rt = CR; }});
+                    }
+                }
+            }
+        }
+    }
+
+    // These instructions are of MD form and use bits 27 - 29 as XO.
+    30: decode MD_XO {
+        format IntConcatRotateOp {
+            0: rldicl({{
+                uint64_t res;
+                if (shift != 0) {
+                    res = rotate(Rs, shift);
+                } else {
+                    res = Rs;
+                }
+                res = res & bitmask(maskBeg, 63);
+                Ra = res;
+            }});
+
+            1: rldicr({{
+                uint64_t res;
+                if (shift != 0) {
+                    res = rotate(Rs, shift);
+                } else {
+                    res = Rs;
+                }
+                res = res & bitmask(0, maskEnd);
+                Ra = res;
+            }});
+
+            2: rldic({{
+                uint64_t res;
+                if (shift != 0) {
+                    res = rotate(Rs, shift);
+                } else {
+                    res = Rs;
+                }
+                res = res & bitmask(maskBeg, ~shift);
+                Ra = res;
+            }});
+
+            3: rldimi({{
+                uint64_t res, mask;
+                mask = bitmask(maskBeg, ~shift);
+                if (shift != 0) {
+                    res = rotate(Rs, shift);
+                } else {
+                    res = Rs;
+                }
+                res = res & mask;
+                res = res | (Ra & ~mask);
+                Ra = res;
+            }});
+
+            // These instructions are of MDS form and use bits 27 - 30 as XO.
+            default: decode MDS_XO {
+                8: rldcl({{
+                    uint64_t res;
+                    uint32_t shift = Rb & 0x3f;
+                    if (shift != 0) {
+                        res = rotate(Rs, shift);
+                    } else {
+                        res = Rs;
+                    }
+                    res = res & bitmask(maskBeg, 63);
+                    Ra = res;
+                }});
+
+                9: rldcr({{
+                    uint64_t res;
+                    uint32_t shift = Rb & 0x3f;
+                    if (shift != 0) {
+                        res = rotate(Rs, shift);
+                    } else {
+                        res = Rs;
+                    }
+                    res = res & bitmask(0, maskEnd);
+                    Ra = res;
+                }});
+            }
+        }
     }
 
     format LoadDispOp {
-        34: lbz({{ Rt = Mem_ub; }});
-        40: lhz({{ Rt = Mem_uh; }});
-        42: lha({{ Rt = Mem_sh; }});
-        32: lwz({{ Rt = Mem; }});
-        58: lwa({{ Rt = Mem_sw; }},
-                {{ EA = Ra + (disp & 0xfffffffc); }},
-                {{ EA = disp & 0xfffffffc; }});
         48: lfs({{ Ft_sf = Mem_sf; }});
         50: lfd({{ Ft = Mem_df; }});
     }
 
     format LoadDispUpdateOp {
-        35: lbzu({{ Rt = Mem_ub; }});
-        41: lhzu({{ Rt = Mem_uh; }});
-        43: lhau({{ Rt = Mem_sh; }});
-        33: lwzu({{ Rt = Mem; }});
         49: lfsu({{ Ft_sf = Mem_sf; }});
         51: lfdu({{ Ft = Mem_df; }});
     }
 
     format StoreDispOp {
-        38: stb({{ Mem_ub = Rs_ub; }});
-        44: sth({{ Mem_uh = Rs_uh; }});
-        36: stw({{ Mem = Rs; }});
         52: stfs({{ Mem_sf = Fs_sf; }});
         54: stfd({{ Mem_df = Fs; }});
     }
 
     format StoreDispUpdateOp {
-        39: stbu({{ Mem_ub = Rs_ub; }});
-        45: sthu({{ Mem_uh = Rs_uh; }});
-        37: stwu({{ Mem = Rs; }});
         53: stfsu({{ Mem_sf = Fs_sf; }});
         55: stfdu({{ Mem_df = Fs; }});
     }
-
-    17: IntOp::sc({{ return std::make_shared<SESyscallFault>(); }});
 
     format FloatArithOp {
         59: decode A_XO {
@@ -542,7 +1404,22 @@ decode OPCODE default Unknown::unknown() {
             30: fnmsub({{ Ft = -((Fa * Fc) - Fb); }});
         }
 
-        default: decode XO_XO {
+        default: decode X_XO {
+            format FloatRCCheckOp {
+                72: fmr({{ Ft = Fb; }});
+                264: fabs({{
+                    Ft_ud = Fb_ud;
+                    Ft_ud = insertBits(Ft_ud, 63, 0); }});
+                136: fnabs({{
+                    Ft_ud = Fb_ud;
+                    Ft_ud = insertBits(Ft_ud, 63, 1); }});
+                40: fneg({{ Ft = -Fb; }});
+                8: fcpsgn({{
+                    Ft_ud = Fb_ud;
+                    Ft_ud = insertBits(Ft_ud, 63, Fa_ud<63:63>);
+                }});
+            }
+
             format FloatConvertOp {
                 12: frsp({{ Ft_sf = Fb; }});
                 15: fctiwz({{ Ft_sw = (int32_t)trunc(Fb); }});
@@ -559,37 +1436,28 @@ decode OPCODE default Unknown::unknown() {
             }
 
             format FloatRCCheckOp {
-                72: fmr({{ Ft = Fb; }});
-                264: fabs({{
-                    Ft_ud = Fb_ud;
-                    Ft_ud = insertBits(Ft_ud, 63, 0); }});
-                136: fnabs({{
-                    Ft_ud = Fb_ud;
-                    Ft_ud = insertBits(Ft_ud, 63, 1); }});
-                40: fneg({{ Ft = -Fb; }});
-                8: fcpsgn({{
-                    Ft_ud = Fb_ud;
-                    Ft_ud = insertBits(Ft_ud, 63, Fa_ud<63:63>);
-                }});
                 583: mffs({{ Ft_ud = FPSCR; }});
                 134: mtfsfi({{
                     FPSCR = insertCRField(FPSCR, BF + (8 * (1 - W_FIELD)),
                                           U_FIELD);
                 }});
-                711: mtfsf({{
-                    if (L_FIELD == 1) { FPSCR = Fb_ud; }
-                    else {
-                        for (int i = 0; i < 8; ++i) {
-                            if (bits(FLM, i) == 1) {
-                                int k = 4 * (i + (8 * (1 - W_FIELD)));
-                                FPSCR = insertBits(FPSCR, k + 3, k,
-                                                   bits(Fb_ud, k + 3, k));
-                            }
-                        }
-                    }
-                }});
                 70: mtfsb0({{ FPSCR = insertBits(FPSCR, 31 - BT, 0); }});
                 38: mtfsb1({{ FPSCR = insertBits(FPSCR, 31 - BT, 1); }});
+
+                default: decode XFL_XO {
+                    711: mtfsf({{
+                    if (L_FIELD == 1) { FPSCR = Fb_ud; }
+                        else {
+                            for (int i = 0; i < 8; ++i) {
+                                if (bits(FLM, i) == 1) {
+                                    int k = 4 * (i + (8 * (1 - W_FIELD)));
+                                    FPSCR = insertBits(FPSCR, k + 3, k,
+                                                   bits(Fb_ud, k + 3, k));
+                                }
+                            }
+                        }
+                    }});
+                }
             }
         }
     }

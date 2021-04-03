@@ -245,18 +245,21 @@ ElfObject::determineArch()
     } else if (emach == EM_RISCV) {
         arch = (eclass == ELFCLASS64) ? Riscv64 : Riscv32;
     } else if (emach == EM_PPC && eclass == ELFCLASS32) {
+        fatal("The binary you're trying to load is compiled for 32-bit "
+              "Power.\ngem5 only supports 64-bit Power. Please "
+              "recompile your binary.\n");
+    } else if (emach == EM_PPC64 &&
+               ehdr.e_ident[EI_CLASS] == ELFCLASS64) {
         arch = Power;
+        //if (ehdr.e_ident[EI_DATA] != ELFDATA2LSB) {
         if (edata != ELFDATA2MSB) {
             fatal("The binary you're trying to load is compiled for "
                   "little endian Power.\ngem5 only supports big "
                   "endian Power. Please recompile your binary.\n");
         }
-    } else if (emach == EM_PPC64) {
-        fatal("The binary you're trying to load is compiled for 64-bit "
-              "Power. M5\n only supports 32-bit Power. Please "
-              "recompile your binary.\n");
     } else {
-        warn("Unknown architecture: %d\n", emach);
+        warn("Unknown architecture: %d\n", ehdr.e_machine);
+        arch = UnknownArch;
     }
 }
 

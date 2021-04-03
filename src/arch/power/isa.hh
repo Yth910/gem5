@@ -31,6 +31,7 @@
 #define __ARCH_POWER_ISA_HH__
 
 #include "arch/generic/isa.hh"
+#include "arch/power/miscregs.hh"
 #include "arch/power/registers.hh"
 #include "arch/power/types.hh"
 #include "base/logging.hh"
@@ -41,6 +42,8 @@ struct PowerISAParams;
 class ThreadContext;
 class Checkpoint;
 class EventManager;
+
+#define MiscReg RegVal
 
 namespace PowerISA
 {
@@ -53,32 +56,31 @@ class ISA : public BaseISA
 
   public:
     typedef PowerISAParams Params;
+    void
+    clear()
+    {
+        memset(miscRegs, 0, NumMiscRegs * sizeof(MiscReg));
+    }
 
-    void clear() {}
+    MiscReg readMiscRegNoEffect(RegIndex misc_reg) const;
 
-  public:
-    RegVal
-    readMiscRegNoEffect(int misc_reg) const
+    MiscReg
+    readMiscReg(RegIndex misc_reg, ThreadContext *tc)
     {
         fatal("Power does not currently have any misc regs defined\n");
         return dummy;
     }
 
-    RegVal
-    readMiscReg(int misc_reg)
+    MiscReg
+    readMiscReg(RegIndex misc_reg)
     {
-        fatal("Power does not currently have any misc regs defined\n");
-        return dummy;
+        return miscRegs[misc_reg];
     }
 
-    void
-    setMiscRegNoEffect(int misc_reg, RegVal val)
-    {
-        fatal("Power does not currently have any misc regs defined\n");
-    }
+    void setMiscRegNoEffect(RegIndex misc_reg, const MiscReg &val);
 
     void
-    setMiscReg(int misc_reg, RegVal val)
+    setMiscReg(RegIndex misc_reg, RegVal val)
     {
         fatal("Power does not currently have any misc regs defined\n");
     }

@@ -43,9 +43,14 @@ if env['TARGET_ISA'] == 'power':
     Source('interrupts.cc')
     Source('linux/linux.cc')
     Source('linux/process.cc')
+    #Source('linux/system.cc')
+    Source('linux/fs_workload.cc')
     Source('isa.cc')
     Source('pagetable.cc')
     Source('process.cc')
+    Source('radixwalk.cc')
+    #Source('system.cc')
+    Source('fs_workload.cc')
     Source('remote_gdb.cc')
     Source('tlb.cc')
     Source('utility.cc')
@@ -53,8 +58,10 @@ if env['TARGET_ISA'] == 'power':
     SimObject('PowerInterrupts.py')
     SimObject('PowerISA.py')
     SimObject('PowerTLB.py')
+    SimObject('PowerFsWorkload.py')
 
     DebugFlag('Power')
+    DebugFlag('RadixWalk')
 
     ISADesc('isa/main.isa')
 

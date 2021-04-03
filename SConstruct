@@ -337,6 +337,20 @@ if main['GCC'] or main['CLANG']:
     main.Append(PSHLINKFLAGS=shared_partial_flags)
     main.Append(PLINKFLAGS=shared_partial_flags)
 
+    # Treat warnings as errors but white list some warnings that we
+    # want to allow (e.g., deprecation warnings).
+    main.Append(CCFLAGS=['-Werror',
+                         '-Wno-error=deprecated-declarations',
+                         '-Wno-error=deprecated',
+                         '-Wno-ignored-qualifiers',
+                         '-Wno-cast-function-type',
+                         '-Wno-error=class-memaccess',
+                         '-Wno-error=catch-value',
+                         '-Wno-error=deprecated-copy',
+                         '-Wno-error=address-of-packed-member',
+                         '-Wno-error=array-bounds',
+                        ])
+
 else:
     error('\n'.join((
           "Don't know what compiler options to use for your compiler.",
@@ -381,6 +395,15 @@ if main['GCC']:
         if not GetOption('force_lto'):
             main.Append(PSHLINKFLAGS='-flinker-output=rel')
             main.Append(PLINKFLAGS='-flinker-output=rel')
+
+    # Make sure we warn if the user has requested to compile with the
+    # Undefined Benahvior Sanitizer and this version of gcc does not
+    # support it.
+    if GetOption('with_ubsan') and \
+            compareVersions(gcc_version, '4.9') < 0:
+        print(termcap.Yellow + termcap.Bold +
+            'Warning: UBSan is only supported using gcc 4.9 and later.' +
+            termcap.Normal)
 
     disable_lto = GetOption('no_lto')
     if not disable_lto and main.get('BROKEN_INCREMENTAL_LTO', False) and \
@@ -643,6 +666,7 @@ if main['USE_PYTHON']:
     # CPPPATH
     py_includes = list(map(
         lambda s: s[2:] if s.startswith('-I') else s, py_includes))
+
     main.Append(CPPPATH=py_includes)
 
     # Read the linker flags and split them into libraries and other link

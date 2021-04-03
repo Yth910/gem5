@@ -49,7 +49,23 @@ def template MiscOpExecute {{
     }
 }};
 
+// Check the PR bit in MSR (which is bit number 14 of MSR)
+// to see if Program interrupt is there.
+
+let {{
+
+def GetPriCode(code):
+    cond_code =  'if (bits(MSR,14)==1) {\n'
+    cond_code += 'fault=std::make_shared<ProgramPriInterrupt>();\n'
+    cond_code += '} else {\n'
+    cond_code += code + '\n'
+    cond_code += '}\n'
+    return cond_code
+
+}};
 def format MiscOp(code, opt_flags = []) {{
+    if 'IsPrivileged' in opt_flags:
+        code = GetPriCode(code)
     iop = InstObjParams(name, Name, 'IntOp',
                         {"code": code},
                         opt_flags)

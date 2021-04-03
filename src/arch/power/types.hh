@@ -46,22 +46,37 @@ BitUnion32(ExtMachInst)
 
     // Shifts and masks
     Bitfield<15, 11> sh;
+    Bitfield<1>      shn;
     Bitfield<10,  6> mb;
+    Bitfield<5>      mbn;
     Bitfield< 5,  1> me;
+    Bitfield<5>      men;
 
     // Immediate fields
     Bitfield<15,  0> si;
+    Bitfield<15,  0> ui;
     Bitfield<15,  0> d;
+    Bitfield<15,  2> ds;
+    Bitfield<15,  6> d0;
+    Bitfield<20, 16> d1;
+    Bitfield< 1,  0> d2;
+
+    // Compare fields
+    Bitfield<21>     l;
 
     // Special purpose register identifier
     Bitfield<20, 11> spr;
-    Bitfield<25,  2> li;
-    Bitfield<1>      aa;
     Bitfield<25, 23> bf;
-    Bitfield<15,  2> bd;
-    Bitfield<25, 21> bo;
-    Bitfield<20, 16> bi;
     Bitfield<20, 18> bfa;
+
+    // Branch instruction fields
+    Bitfield<1>      aa;
+    Bitfield<15,  2> bd;
+    Bitfield<20, 16> bi;
+    Bitfield<12, 11> bh;
+    Bitfield<25, 21> bo;
+    Bitfield<25,  2> li;
+    Bitfield<0>      lk;
 
     // Record bits
     Bitfield<0>      rc31;

@@ -63,6 +63,7 @@ os_types = { 'mips'  : [ 'linux' ],
                          'android-jellybean',
                          'android-kitkat',
                          'android-nougat', ],
+             'power' : [ 'linux' ],
            }
 
 class CowIdeDisk(IdeDisk):
@@ -642,6 +643,40 @@ def makeBareMetalRiscvSystem(mem_mode, mdesc=None, cmdline=None):
     self.bridge.ranges = [AddrRange(IO_address_space_base, Addr.max)]
 
     self.system_port = self.membus.slave
+    return self
+def makeLinuxPowerSystem(mem_mode, numCPUs=1, mdesc=None, cmdline=None):
+    uart_pio_size = 8
+    self = LinuxPowerSystem()
+    if not mdesc:
+        mdesc = SysConfig()
+    self.readfile = mdesc.script()
+    self.iobus = IOXBar()
+    self.membus = MemBus()
+    self.bridge = Bridge(delay='50ns')
+    self.g500 = G500()
+    self.g500.attachIO(self.iobus)
+    self.mem_mode = mem_mode
+    self.mem_ranges = [AddrRange('3GB')]
+    self.bridge.master = self.iobus.slave
+    self.bridge.slave = self.membus.master
+    self.bridge.ranges = \
+        [
+        AddrRange(0xC0000000, 0xFFFF0000),
+        AddrRange(self.g500.puart0.pio_addr,
+            self.g500.puart0.pio_addr + uart_pio_size - 1)
+        ]
+    self.system_port = self.membus.slave
+    self.intrctrl = IntrControl()
+    if not cmdline:
+        cmdline = 'earlyprintk=ttyS0 console=ttyS0 irqpoll lpj=1000000000'
+    self.boot_osflags = fillInCmdline(mdesc, cmdline)
+    #self.kernel = binary('vmlinux')
+    self.skiboot = binary('skiboot.elf');
+    self.kernel = binary('vmlinux');
+    self.initramfs = binary('initramfs.cpio');
+    self.dtb_filename = binary('gem5-power9-fs.dtb')
+    self.multi_thread = True;
+    self._num_cpus = 2;
     return self
 
 def makeDualRoot(full_system, testSystem, driveSystem, dumpfile):

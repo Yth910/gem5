@@ -195,6 +195,7 @@ class StaticInst : public RefCounted, public StaticInstFlags
     bool isIprAccess() const { return flags[IsIprAccess]; }
     bool isUnverifiable() const { return flags[IsUnverifiable]; }
     bool isSyscall() const { return flags[IsSyscall]; }
+    bool isPrivileged() const { return flags[IsPrivileged]; }
     bool isMacroop() const { return flags[IsMacroop]; }
     bool isMicroop() const { return flags[IsMicroop]; }
     bool isDelayedCommit() const { return flags[IsDelayedCommit]; }

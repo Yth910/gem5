@@ -50,15 +50,19 @@ class RemoteGDB : public BaseRemoteGDB
       using BaseGdbRegCache::BaseGdbRegCache;
       private:
         struct {
-            uint32_t gpr[NumIntArchRegs];
+            uint64_t gpr[NumIntArchRegs];
             uint64_t fpr[NumFloatArchRegs];
-            uint32_t pc;
-            uint32_t msr;
+            uint64_t pc;
+            uint64_t msr;
             uint32_t cr;
-            uint32_t lr;
-            uint32_t ctr;
+            uint64_t lr;
+            uint64_t ctr;
             uint32_t xer;
-        } r;
+
+            /* Remote target is expected to have 174 registers in the 'g'
+               packet with a total size of 1076 bytes */
+            uint8_t __padding[524];
+        } M5_ATTR_PACKED r;
       public:
         char *data() const { return (char *)&r; }
         size_t size() const { return sizeof(r); }
