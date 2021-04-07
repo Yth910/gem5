@@ -144,7 +144,7 @@ BranchDispCondOp::generateDisassembly(
 PowerISA::PCState
 BranchRegCondOp::branchTarget(ThreadContext *tc) const
 {
-    Addr addr = tc->readIntReg(_srcRegIdx[_numSrcRegs - 1].index());
+    Addr addr = tc->readIntReg(srcRegIdx(_numSrcRegs - 1).index());
     return addr & -4ULL;
 }
 

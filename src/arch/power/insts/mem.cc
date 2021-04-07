@@ -54,14 +54,14 @@ MemDispOp::generateDisassembly(
             // If the instruction updates the source register with the
             // EA, then this source register is placed in position 0,
             // therefore we print the last destination register.
-            printReg(ss, _destRegIdx[_numDestRegs-1]);
+            printReg(ss, destRegIdx(_numDestRegs - 1));
         }
     }
 
     // Print the data register for a store
     else {
         if (_numSrcRegs > 0) {
-            printReg(ss, _srcRegIdx[0]);
+            printReg(ss, srcRegIdx(0));
         }
     }
 
@@ -72,7 +72,7 @@ MemDispOp::generateDisassembly(
     // Print the address register for a load
     if (!flags[IsStore]) {
         if (_numSrcRegs > 0) {
-            printReg(ss, _srcRegIdx[0]);
+            printReg(ss, srcRegIdx(0));
         }
 
         // The address register is skipped if it is R0
@@ -84,7 +84,7 @@ MemDispOp::generateDisassembly(
     // Print the address register for a store
     else {
         if (_numSrcRegs > 1) {
-            printReg(ss, _srcRegIdx[1]);
+            printReg(ss, srcRegIdx(1));
         }
 
         // The address register is skipped if it is R0
@@ -114,14 +114,14 @@ MemDispShiftOp::generateDisassembly(
             // If the instruction updates the source register with the
             // EA, then this source register is placed in position 0,
             // therefore we print the last destination register.
-            printReg(ss, _destRegIdx[_numDestRegs-1]);
+            printReg(ss, destRegIdx(_numDestRegs - 1));
         }
     }
 
     // Print the data register for a store
     else {
         if (_numSrcRegs > 0) {
-            printReg(ss, _srcRegIdx[0]);
+            printReg(ss, srcRegIdx(0));
         }
     }
 
@@ -132,7 +132,7 @@ MemDispShiftOp::generateDisassembly(
     // Print the address register for a load
     if (!flags[IsStore]) {
         if (_numSrcRegs > 0) {
-            printReg(ss, _srcRegIdx[0]);
+            printReg(ss, srcRegIdx(0));
         }
 
         // The address register is skipped if it is R0
@@ -144,7 +144,7 @@ MemDispShiftOp::generateDisassembly(
     // Print the address register for a store
     else {
         if (_numSrcRegs > 1) {
-            printReg(ss, _srcRegIdx[1]);
+            printReg(ss, srcRegIdx(1));
         }
 
         // The address register is skipped if it is R0
@@ -174,14 +174,14 @@ MemIndexOp::generateDisassembly(
             // If the instruction updates the source register with the
             // EA, then this source register is placed in position 0,
             // therefore we print the last destination register.
-            printReg(ss, _destRegIdx[_numDestRegs-1]);
+            printReg(ss, destRegIdx(_numDestRegs - 1));
         }
     }
 
     // Print the data register for a store
     else {
         if (_numSrcRegs > 0) {
-            printReg(ss, _srcRegIdx[0]);
+            printReg(ss, srcRegIdx(0));
         }
     }
 
@@ -190,30 +190,30 @@ MemIndexOp::generateDisassembly(
     // Print the address registers for a load
     if (!flags[IsStore]) {
         if (_numSrcRegs > 1) {
-            printReg(ss, _srcRegIdx[0]);
+            printReg(ss, srcRegIdx(0));
             ss << ", ";
-            printReg(ss, _srcRegIdx[1]);
+            printReg(ss, srcRegIdx(1));
         }
 
         // The first address register is skipped if it is R0
         else if (_numSrcRegs > 0) {
             ss << "0, ";
-            printReg(ss, _srcRegIdx[0]);
+            printReg(ss, srcRegIdx(0));
         }
     }
 
     // Print the address registers for a store
     else {
         if (_numSrcRegs > 2) {
-            printReg(ss, _srcRegIdx[1]);
+            printReg(ss, srcRegIdx(1));
             ss << ", ";
-            printReg(ss, _srcRegIdx[2]);
+            printReg(ss, srcRegIdx(2));
         }
 
         // The first address register is skipped if it is R0
         else if (_numSrcRegs > 1) {
             ss << "0, ";
-            printReg(ss, _srcRegIdx[1]);
+            printReg(ss, srcRegIdx(1));
         }
     }
 

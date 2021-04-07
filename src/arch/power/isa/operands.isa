@@ -55,7 +55,7 @@ def operands {{
     'Ft': ('FloatReg', 'df', 'FRT', 'IsFloating', 5),
 
     # Memory Operand
-    'Mem': ('Mem', 'ud', None, ('IsMemRef', 'IsLoad', 'IsStore'), 8),
+    'Mem': ('Mem', 'ud', None, (None, 'IsLoad', 'IsStore'), 8),
 
     # Program counter and next
     'CIA': ('PCState', 'ud', 'pc', (None, None, 'IsControl'), 9),

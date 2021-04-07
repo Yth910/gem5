@@ -210,14 +210,14 @@ TLB::trySnoopOpalConsole(uint64_t paddr, ThreadContext *tc)
     delete buf;
 }
 
-TLB::TLB(const Params *p)
-    : BaseTLB(p), size(p->size), nlu(0)
+TLB::TLB(const Params &p)
+    : BaseTLB(p), size(p.size), nlu(0)
 {
     table = new PowerISA::PTE[size];
     memset(table, 0, sizeof(PowerISA::PTE[size]));
     smallPages = 0;
-    rwalk = p->walker;
-    initConsoleSnoop();
+    rwalk = p.walker;
+    //initConsoleSnoop();
 }
 
 TLB::~TLB()
@@ -592,11 +592,4 @@ Port *
 TLB::getTableWalkerPort()
 {
     return &rwalk->getRequestPort("port");
-}
-
-
-PowerISA::TLB *
-PowerTLBParams::create()
-{
-    return new PowerISA::TLB(this);
 }

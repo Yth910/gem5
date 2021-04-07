@@ -178,9 +178,6 @@ class BaseCPU(ClockedObject):
 
     _cached_ports += ArchMMU.walkerPorts()
 
-    if buildEnv['TARGET_ISA'] in ['x86', 'arm', 'power']:
-        _cached_ports += ["itb.walker.port", "dtb.walker.port"]
-
     _uncached_interrupt_response_ports = []
     _uncached_interrupt_request_ports = []
     if buildEnv['TARGET_ISA'] == 'x86':

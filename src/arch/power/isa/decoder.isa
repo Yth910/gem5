@@ -1035,8 +1035,8 @@ decode PO default Unknown::unknown() {
             }});
 
             86: dcbf({{ }});
-            598: sync({{ }}, [ IsMemBarrier ]);
-            854: eieio({{ }}, [ IsMemBarrier ]);
+            598: sync({{ }}, [ IsReadBarrier ]);
+            854: eieio({{ }}, [ IsReadBarrier ]);
             54:  dcbst({{ }});
             982: icbi({{ }});
             306: tlbie({{ }});

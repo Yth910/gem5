@@ -132,7 +132,14 @@ class ISA : public BaseISA
 
     const Params *params() const;
 
-    ISA(Params *p);
+    bool
+    inUserMode() const override
+    {
+        Msr msr = readMiscRegNoEffect(INTREG_MSR);
+        return msr.pr == 1;
+    }
+
+    ISA(const Params &p);
 };
 
 } // namespace PowerISA

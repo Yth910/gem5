@@ -44,7 +44,7 @@ IntOp::generateDisassembly(
     string myMnemonic(mnemonic);
 
     // Special cases
-    if (!myMnemonic.compare("or") && _srcRegIdx[0] == _srcRegIdx[1]) {
+    if (!myMnemonic.compare("or") && srcRegIdx(0) == srcRegIdx(1)) {
         myMnemonic = "mr";
         printSecondSrc = false;
     } else if (!myMnemonic.compare("mtlr")) {
@@ -60,7 +60,7 @@ IntOp::generateDisassembly(
 
     // Print the first destination only
     if (_numDestRegs > 0 && printDest) {
-        printReg(ss, _destRegIdx[0]);
+        printReg(ss, destRegIdx(0));
     }
 
     // Print the (possibly) two source registers
@@ -68,10 +68,10 @@ IntOp::generateDisassembly(
         if (_numDestRegs > 0 && printDest) {
             ss << ", ";
         }
-        printReg(ss, _srcRegIdx[0]);
+        printReg(ss, srcRegIdx(0));
         if (_numSrcRegs > 1 && printSecondSrc) {
           ss << ", ";
-          printReg(ss, _srcRegIdx[1]);
+          printReg(ss, srcRegIdx(1));
         }
     }
 
@@ -89,7 +89,7 @@ IntImmOp::generateDisassembly(
 
     // Print the first destination only
     if (_numDestRegs > 0) {
-        printReg(ss, _destRegIdx[0]);
+        printReg(ss, destRegIdx(0));
     }
 
     // Print the source register
@@ -97,7 +97,7 @@ IntImmOp::generateDisassembly(
         if (_numDestRegs > 0) {
             ss << ", ";
         }
-        printReg(ss, _srcRegIdx[0]);
+        printReg(ss, srcRegIdx(0));
     }
 
     // Print the immediate value last
@@ -138,7 +138,7 @@ IntArithOp::generateDisassembly(
 
     // Print the first destination only
     if (_numDestRegs > 0) {
-        printReg(ss, _destRegIdx[0]);
+        printReg(ss, destRegIdx(0));
     }
 
     // Print the first source register
@@ -146,17 +146,17 @@ IntArithOp::generateDisassembly(
         if (_numDestRegs > 0) {
             ss << ", ";
         }
-        printReg(ss, _srcRegIdx[0]);
+        printReg(ss, srcRegIdx(0));
 
         // Print the second source register
         if (_numSrcRegs > 1 && printSecondSrc) {
             ss << ", ";
-            printReg(ss, _srcRegIdx[1]);
+            printReg(ss, srcRegIdx(1));
 
             // Print the third source register
             if (_numSrcRegs > 2 && printThirdSrc) {
                 ss << ", ";
-                printReg(ss, _srcRegIdx[2]);
+                printReg(ss, srcRegIdx(2));
             }
         }
     }
@@ -206,7 +206,7 @@ IntImmArithOp::generateDisassembly(
 
     // Print the first destination only
     if (_numDestRegs > 0) {
-        printReg(ss, _destRegIdx[0]);
+        printReg(ss, destRegIdx(0));
     }
 
     // Print the source register
@@ -214,7 +214,7 @@ IntImmArithOp::generateDisassembly(
         if (_numDestRegs > 0) {
             ss << ", ";
         }
-        printReg(ss, _srcRegIdx[0]);
+        printReg(ss, srcRegIdx(0));
     }
 
     // Print the immediate value
@@ -256,7 +256,7 @@ IntDispArithOp::generateDisassembly(
 
     // Print the first destination only
     if (_numDestRegs > 0) {
-        printReg(ss, _destRegIdx[0]);
+        printReg(ss, destRegIdx(0));
     }
 
     // Print the source register
@@ -264,7 +264,7 @@ IntDispArithOp::generateDisassembly(
         if (_numDestRegs > 0) {
             ss << ", ";
         }
-        printReg(ss, _srcRegIdx[0]);
+        printReg(ss, srcRegIdx(0));
     }
 
     // Print the displacement
@@ -291,7 +291,7 @@ IntLogicOp::generateDisassembly(
     string myMnemonic(mnemonic);
 
     // Special cases
-    if (!myMnemonic.compare("or") && _srcRegIdx[0] == _srcRegIdx[1]) {
+    if (!myMnemonic.compare("or") && srcRegIdx(0) == srcRegIdx(1)) {
         myMnemonic = "mr";
         printSecondSrc = false;
     } else if (!myMnemonic.compare("extsb") ||
@@ -318,7 +318,7 @@ IntLogicOp::generateDisassembly(
         if (_numDestRegs > 0) {
             ss << ", ";
         }
-        printReg(ss, _srcRegIdx[0]);
+        printReg(ss, srcRegIdx(0));
 
         // Print the second source register
         if (printSecondSrc) {
@@ -330,12 +330,12 @@ IntLogicOp::generateDisassembly(
             if (rcSet) {
                 if (_numSrcRegs > 2) {
                     ss << ", ";
-                    printReg(ss, _srcRegIdx[2]);
+                    printReg(ss, srcRegIdx(2));
                 }
             } else {
                 if (_numSrcRegs > 1) {
                     ss << ", ";
-                    printReg(ss, _srcRegIdx[1]);
+                    printReg(ss, srcRegIdx(1));
                 }
             }
         }
@@ -357,11 +357,11 @@ IntImmLogicOp::generateDisassembly(
 
     // Special cases
     if (!myMnemonic.compare("ori") &&
-        _destRegIdx[0].index() == 0 && _srcRegIdx[0].index() == 0) {
+        destRegIdx(0).index() == 0 && srcRegIdx(0).index() == 0) {
         myMnemonic = "nop";
         printRegs = false;
     } else if (!myMnemonic.compare("xori") &&
-               _destRegIdx[0].index() == 0 && _srcRegIdx[0].index() == 0) {
+               destRegIdx(0).index() == 0 && srcRegIdx(0).index() == 0) {
         myMnemonic = "xnop";
         printRegs = false;
     } else if (!myMnemonic.compare("andi_")) {
@@ -376,7 +376,7 @@ IntImmLogicOp::generateDisassembly(
 
         // Print the first destination only
         if (_numDestRegs > 0) {
-            printReg(ss, _destRegIdx[0]);
+            printReg(ss, destRegIdx(0));
         }
 
         // Print the source register
@@ -384,7 +384,7 @@ IntImmLogicOp::generateDisassembly(
             if (_numDestRegs > 0) {
                 ss << ", ";
             }
-            printReg(ss, _srcRegIdx[0]);
+            printReg(ss, srcRegIdx(0));
         }
 
         // Print the immediate value
@@ -449,12 +449,12 @@ IntCompOp::generateDisassembly(
         if (!printFieldPrefix || field > 0 || printLength) {
             ss << ", ";
         }
-        printReg(ss, _srcRegIdx[0]);
+        printReg(ss, srcRegIdx(0));
 
         // Print the second source register
         if (_numSrcRegs > 1) {
             ss << ", ";
-            printReg(ss, _srcRegIdx[1]);
+            printReg(ss, srcRegIdx(1));
         }
     }
 
@@ -508,7 +508,7 @@ IntImmCompOp::generateDisassembly(
         if (!printFieldPrefix || field > 0 || printLength) {
             ss << ", ";
         }
-        printReg(ss, _srcRegIdx[0]);
+        printReg(ss, srcRegIdx(0));
     }
 
     // Print the immediate value
@@ -564,7 +564,7 @@ IntImmCompLogicOp::generateDisassembly(Addr pc,
         if (!printFieldPrefix || field > 0 || printLength) {
             ss << ", ";
         }
-        printReg(ss, _srcRegIdx[0]);
+        printReg(ss, srcRegIdx(0));
     }
 
     // Print the immediate value
@@ -597,7 +597,7 @@ IntShiftOp::generateDisassembly(
 
     // Print the first destination only
     if (_numDestRegs > 0) {
-        printReg(ss, _destRegIdx[0]);
+        printReg(ss, destRegIdx(0));
     }
 
     // Print the first source register
@@ -605,7 +605,7 @@ IntShiftOp::generateDisassembly(
         if (_numDestRegs > 0) {
             ss << ", ";
         }
-        printReg(ss, _srcRegIdx[0]);
+        printReg(ss, srcRegIdx(0));
 
         // Print the second source register
         if (printSecondSrc) {
@@ -617,12 +617,12 @@ IntShiftOp::generateDisassembly(
             if (rcSet) {
                 if (_numSrcRegs > 2) {
                     ss << ", ";
-                    printReg(ss, _srcRegIdx[2]);
+                    printReg(ss, srcRegIdx(2));
                 }
             } else {
                 if (_numSrcRegs > 1) {
                     ss << ", ";
-                    printReg(ss, _srcRegIdx[1]);
+                    printReg(ss, srcRegIdx(1));
                 }
             }
         }
@@ -662,7 +662,7 @@ IntConcatShiftOp::generateDisassembly(
 
     // Print the first destination only
     if (_numDestRegs > 0) {
-        printReg(ss, _destRegIdx[0]);
+        printReg(ss, destRegIdx(0));
     }
 
     // Print the first source register
@@ -670,7 +670,7 @@ IntConcatShiftOp::generateDisassembly(
         if (_numDestRegs > 0) {
             ss << ", ";
         }
-        printReg(ss, _srcRegIdx[0]);
+        printReg(ss, srcRegIdx(0));
 
         // Print the second source register
         if (printSecondSrc) {
@@ -682,12 +682,12 @@ IntConcatShiftOp::generateDisassembly(
             if (rcSet) {
                 if (_numSrcRegs > 2) {
                     ss << ", ";
-                    printReg(ss, _srcRegIdx[2]);
+                    printReg(ss, srcRegIdx(2));
                 }
             } else {
                 if (_numSrcRegs > 1) {
                     ss << ", ";
-                    printReg(ss, _srcRegIdx[1]);
+                    printReg(ss, srcRegIdx(1));
                 }
             }
         }
@@ -744,7 +744,7 @@ IntRotateOp::generateDisassembly(
 
     // Print the first destination only
     if (_numDestRegs > 0) {
-        printReg(ss, _destRegIdx[0]);
+        printReg(ss, destRegIdx(0));
     }
 
     // Print the first source register
@@ -752,7 +752,7 @@ IntRotateOp::generateDisassembly(
         if (_numDestRegs > 0) {
             ss << ", ";
         }
-        printReg(ss, _srcRegIdx[0]);
+        printReg(ss, srcRegIdx(0));
 
         // Print the second source register
         if (printSecondSrc) {
@@ -764,12 +764,12 @@ IntRotateOp::generateDisassembly(
             if (rcSet) {
                 if (_numSrcRegs > 2) {
                     ss << ", ";
-                    printReg(ss, _srcRegIdx[2]);
+                    printReg(ss, srcRegIdx(2));
                 }
             } else {
                 if (_numSrcRegs > 1) {
                     ss << ", ";
-                    printReg(ss, _srcRegIdx[1]);
+                    printReg(ss, srcRegIdx(1));
                 }
             }
         }
@@ -830,7 +830,7 @@ IntConcatRotateOp::generateDisassembly(Addr pc,
 
     // Print the first destination only
     if (_numDestRegs > 0) {
-        printReg(ss, _destRegIdx[0]);
+        printReg(ss, destRegIdx(0));
     }
 
     // Print the first source register
@@ -838,7 +838,7 @@ IntConcatRotateOp::generateDisassembly(Addr pc,
         if (_numDestRegs > 0) {
             ss << ", ";
         }
-        printReg(ss, _srcRegIdx[0]);
+        printReg(ss, srcRegIdx(0));
 
         // Print the second source register
         if (printSecondSrc) {
@@ -850,12 +850,12 @@ IntConcatRotateOp::generateDisassembly(Addr pc,
             if (rcSet) {
                 if (_numSrcRegs > 2) {
                     ss << ", ";
-                    printReg(ss, _srcRegIdx[2]);
+                    printReg(ss, srcRegIdx(2));
                 }
             } else {
                 if (_numSrcRegs > 1) {
                     ss << ", ";
-                    printReg(ss, _srcRegIdx[1]);
+                    printReg(ss, srcRegIdx(1));
                 }
             }
         }

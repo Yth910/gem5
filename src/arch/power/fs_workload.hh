@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 ARM Limited
+ * Copyright (c) 2010, 2012-2013, 2015-2019 ARM Limited
  * All rights reserved
  *
  * The license below extends only to copyright in the software and shall
@@ -10,6 +10,9 @@
  * terms below provided that you ensure that this notice is replicated
  * unmodified and in its entirety in all distributions of the software,
  * modified or unmodified, in source code or in binary form.
+ *
+ * Copyright (c) 2002-2005 The Regents of The University of Michigan
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -35,32 +38,89 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "arch/power/isa.hh"
+#ifndef __ARCH_POWER_FS_WORKLOAD_HH__
+#define __ARCH_POWER_FS_WORKLOAD_HH__
 
-#include "arch/power/miscregs.hh"
-#include "cpu/base.hh"
-#include "params/PowerISA.hh"
+#include <memory>
+#include <vector>
+
+#include "kern/linux/events.hh"
+#include "params/PowerFsWorkload.hh"
+#include "sim/kernel_workload.hh"
+#include "sim/sim_object.hh"
 
 namespace PowerISA
 {
 
-ISA::ISA(const Params &p) : BaseISA(p)
+class FsWorkload : public KernelWorkload
 {
-    clear();
-}
+  protected:
+    /** Bootloaders */
+    std::vector<std::unique_ptr<Loader::ObjectFile>> bootLoaders;
 
-MiscReg
-ISA::readMiscRegNoEffect(RegIndex misc_reg) const
-{
-    assert(isValidMiscReg(misc_reg));
-    return miscRegs[misc_reg];
-}
+    /**
+     * Pointer to the bootloader object
+     */
+    Loader::ObjectFile *bootldr = nullptr;
 
-void
-ISA::setMiscRegNoEffect(RegIndex misc_reg, const MiscReg &val)
-{
-    assert(isValidMiscReg(misc_reg));
-    miscRegs[misc_reg] = val;
-}
+    /**
+     * This differs from entry since it takes into account where
+     * the kernel is loaded in memory (with loadAddrMask and
+     * loadAddrOffset).
+     */
+    Addr kernelEntry = 0;
 
-}
+    /**
+     * Get a boot loader that matches the kernel.
+     *
+     * @param obj Kernel binary
+     * @return Pointer to boot loader ObjectFile or nullptr if there
+     *         is no matching boot loader.
+     */
+    Loader::ObjectFile *getBootLoader(Loader::ObjectFile *const obj);
+
+  public:
+    public:
+    typedef PowerFsWorkloadParams Params;
+    const Params *
+    params() const
+    {
+        return dynamic_cast<const Params *>(&_params);
+    }
+
+    Addr
+    getEntry() const override
+    {
+        if (bootldr)
+            return bootldr->entryPoint();
+        else
+            return kernelEntry;
+    }
+
+    Loader::Arch
+    getArch() const override
+    {
+        if (bootldr)
+            return bootldr->getArch();
+        else if (kernelObj)
+            return kernelObj->getArch();
+        else
+            return Loader::Power;
+    }
+
+    FsWorkload(const Params &p);
+
+    void initState() override;
+
+    Addr
+    fixFuncEventAddr(Addr addr) const override
+    {
+        // Remove the low bit that thumb symbols have set
+        // but that aren't actually odd aligned
+        return addr & ~1;
+    }
+};
+
+} // namespace PowerISA
+
+#endif // __ARCH_POWER_FS_WORKLOAD_HH__
