@@ -136,6 +136,7 @@
 
 #include <string>
 
+#include "arch/power/utility.hh"
 #include "blobs/gdb_xml_power.hh"
 #include "cpu/thread_state.hh"
 #include "debug/GDBAcc.hh"
@@ -178,17 +179,18 @@ RemoteGDB::PowerGdbRegCache::getRegs(ThreadContext *context)
     // where only CR, FPSCR, XER are 32-bit each and the rest are 64-bit
 
     for (int i = 0; i < NumIntArchRegs; i++)
-        r.gpr[i] = htog(context->readIntReg(i), ByteOrder::big);
+        r.gpr[i] = htog(context->readIntReg(i), byteOrder(context));
 
     for (int i = 0; i < NumFloatArchRegs; i++)
         r.fpr[i] = context->readFloatReg(i);
 
-    r.pc = htog(context->pcState().pc(), ByteOrder::big);
+    r.pc = htog(context->pcState().pc(), byteOrder(context));
     r.msr = 0; // Is MSR modeled?
-    r.cr = htog((uint32_t)context->readIntReg(INTREG_CR), ByteOrder::big);
-    r.lr = htog(context->readIntReg(INTREG_LR), ByteOrder::big);
-    r.ctr = htog(context->readIntReg(INTREG_CTR), ByteOrder::big);
-    r.xer = htog((uint32_t)context->readIntReg(INTREG_XER), ByteOrder::big);
+    r.cr = htog((uint32_t)context->readIntReg(INTREG_CR), byteOrder(context));
+    r.lr = htog(context->readIntReg(INTREG_LR), byteOrder(context));
+    r.ctr = htog(context->readIntReg(INTREG_CTR), byteOrder(context));
+    r.xer = htog((uint32_t)context->readIntReg(INTREG_XER),
+                byteOrder(context));
 }
 
 void
@@ -197,17 +199,17 @@ RemoteGDB::PowerGdbRegCache::setRegs(ThreadContext *context) const
     DPRINTF(GDBAcc, "setRegs in remotegdb \n");
 
     for (int i = 0; i < NumIntArchRegs; i++)
-        context->setIntReg(i, gtoh(r.gpr[i], ByteOrder::big));
+        context->setIntReg(i, gtoh(r.gpr[i], byteOrder(context)));
 
     for (int i = 0; i < NumFloatArchRegs; i++)
         context->setFloatReg(i, r.fpr[i]);
 
-    context->pcState(gtoh(r.pc, ByteOrder::big));
+    context->pcState(gtoh(r.pc, byteOrder(context)));
     // Is MSR modeled?
-    context->setIntReg(INTREG_CR, gtoh(r.cr, ByteOrder::big));
-    context->setIntReg(INTREG_LR, gtoh(r.lr, ByteOrder::big));
-    context->setIntReg(INTREG_CTR, gtoh(r.ctr, ByteOrder::big));
-    context->setIntReg(INTREG_XER, gtoh(r.xer, ByteOrder::big));
+    context->setIntReg(INTREG_CR, gtoh(r.cr, byteOrder(context)));
+    context->setIntReg(INTREG_LR, gtoh(r.lr, byteOrder(context)));
+    context->setIntReg(INTREG_CTR, gtoh(r.ctr, byteOrder(context)));
+    context->setIntReg(INTREG_XER, gtoh(r.xer, byteOrder(context)));
 }
 
 BaseGdbRegCache*

@@ -74,7 +74,19 @@ def template LoadExecute {{
         %(ea_code)s;
 
         if (fault == NoFault) {
-            fault = readMemAtomicBE(xc, traceData, EA, Mem, memAccessFlags);
+            Msr msr = xc->tcBase()->readIntReg(INTREG_MSR);
+            if (msr.le == 0)
+                fault = readMemAtomicBE(xc,
+                                        traceData,
+                                        EA,
+                                        Mem,
+                                        memAccessFlags);
+            else
+                fault = readMemAtomicLE(xc,
+                                        traceData,
+                                        EA,
+                                        Mem,
+                                        memAccessFlags);
             %(memacc_code)s;
         }
 
@@ -151,8 +163,21 @@ def template StoreExecute {{
         }
 
         if (fault == NoFault) {
-            fault = writeMemAtomicBE(xc, traceData, Mem, EA, memAccessFlags,
-                    NULL);
+            Msr msr = xc->tcBase()->readIntReg(INTREG_MSR);
+            if (msr.le == 0)
+                fault = writeMemAtomicBE(xc,
+                                         traceData,
+                                         Mem,
+                                         EA,
+                                         memAccessFlags,
+                                         NULL);
+            else
+                fault = writeMemAtomicLE(xc,
+                                         traceData,
+                                         Mem,
+                                         EA,
+                                         memAccessFlags,
+                                         NULL);
         }
 
         if (fault == NoFault) {

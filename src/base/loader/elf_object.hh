@@ -46,6 +46,7 @@
 
 #include "base/loader/object_file.hh"
 #include "gelf.h"
+#include "sim/byteswap.hh"
 
 namespace Loader
 {
@@ -119,6 +120,12 @@ class ElfObject : public ObjectFile
     Addr programHeaderTable() {return _programHeaderTable;}
     uint16_t programHeaderSize() {return _programHeaderSize;}
     uint16_t programHeaderCount() {return _programHeaderCount;}
+    ByteOrder elf_endian()
+    {
+        return ehdr.e_ident[EI_DATA] == ELFDATA2MSB ?
+            ByteOrder::big : ByteOrder::little;
+    }
+    int elf_flags() {return ehdr.e_flags;}
 };
 
 /**

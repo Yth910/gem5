@@ -62,12 +62,17 @@ class Decoder : public InstDecoder
         instDone = false;
     }
 
+    ByteOrder fetch_endian;
+    void fetchByteOrder(ByteOrder endian = ByteOrder::big)
+    {
+        fetch_endian = endian;
+    }
     // Use this to give data to the predecoder. This should be used
     // when there is control flow.
     void
     moreBytes(const PCState &pc, Addr fetchPC, MachInst inst)
     {
-        emi = betoh(inst);
+        emi = gtoh(inst, fetch_endian);
         instDone = true;
     }
 

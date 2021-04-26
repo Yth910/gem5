@@ -29,8 +29,10 @@
 
 #include "arch/power/process.hh"
 
+#include "arch/power/decoder.hh"
 #include "arch/power/isa_traits.hh"
 #include "arch/power/types.hh"
+#include "arch/power/utility.hh"
 #include "base/loader/elf_object.hh"
 #include "base/loader/object_file.hh"
 #include "base/logging.hh"
@@ -168,7 +170,7 @@ PowerProcess::argsInit(int intSize, int pageSize)
         auxv.push_back(auxv_t(M5_AT_PLATFORM, 0));
         //The address of 16 bytes in the data section containing a random
         //value; it is required for stack protection using a canary value.
-        //auxv.push_back(auxv_t(M5_AT_RANDOM, objFile->dataBase()));
+        auxv.push_back(auxv_t(M5_AT_RANDOM, 0));
     }
 
     //Figure out how big the initial stack nedes to be
@@ -257,10 +259,13 @@ PowerProcess::argsInit(int intSize, int pageSize)
     DPRINTF(Stack, "0x%x - stack min\n", stack_min);
 
     // write contents to stack
+    //uint64_t data = 1;
+    //initVirtMem->writeBlob(memState->getStackBase(), &data, 8);
 
     // figure out argc
     uint64_t argc = argv.size();
-    uint64_t guestArgc = htog<uint64_t>(argc, ByteOrder::big);
+    ThreadContext *tc = system->threads[contextIds[0]];
+    uint64_t guestArgc = htog<uint64_t>(argc, byteOrder(tc));
 
     //Write out the sentry void *
     uint64_t sentry_NULL = 0;
@@ -283,7 +288,7 @@ PowerProcess::argsInit(int intSize, int pageSize)
     //Copy the aux stuff
     Addr auxv_array_end = auxv_array_base;
     for (const auto &aux: auxv) {
-        initVirtMem->write(auxv_array_end, aux, GuestByteOrder);
+        initVirtMem->write(auxv_array_end, aux, byteOrder(tc));
         auxv_array_end += sizeof(aux);
     }
     //Write out the terminating zeroed auxilliary vector
@@ -292,19 +297,43 @@ PowerProcess::argsInit(int intSize, int pageSize)
     auxv_array_end += sizeof(zero);
 
     copyStringArray(envp, envp_array_base, env_data_base,
-                    ByteOrder::big, *initVirtMem);
+                    byteOrder(tc), *initVirtMem);
     copyStringArray(argv, argv_array_base, arg_data_base,
-                    ByteOrder::big, *initVirtMem);
+                    byteOrder(tc), *initVirtMem);
 
     initVirtMem->writeBlob(argc_base, &guestArgc, intSize);
-
-    ThreadContext *tc = system->threads[contextIds[0]];
 
     //Set the stack pointer register
     tc->setIntReg(StackPointerReg, stack_min);
 
-    tc->pcState(getStartPC());
+    if (elfObject->elf_flags() == 0x1) {
+        /* abi v1 */
+        uint64_t entry_point;
+        uint64_t vaddr = getStartPC();
+        PortProxy &proxy = tc->getVirtProxy();
+        int size = 2;
+        uint64_t is[size];
+        proxy.readBlob(vaddr, &is, sizeof(is));
+        entry_point = gtoh(is[0], elfObject->elf_endian());
+        tc->pcState(entry_point);
+    } else {
+        /* abi v2 and above */
+        tc->pcState(getStartPC());
+    }
 
+    Msr msr = tc->readIntReg(INTREG_MSR);
+
+    if (elfObject->elf_endian() == ByteOrder::little) {
+        msr.le = 1;
+    } else {
+        msr.le = 0;
+    }
+    tc->getDecoderPtr()->fetchByteOrder(elfObject->elf_endian());
+    tc->setIntReg(INTREG_MSR, msr);
     //Align the "stack_min" to a page boundary.
     memState->setStackMin(roundDown(stack_min, pageSize));
+
+    // write contents to stack
+    uint64_t data = 1;
+    initVirtMem->writeBlob(stack_min, &data, 8);
 }

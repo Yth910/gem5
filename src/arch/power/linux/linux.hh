@@ -30,6 +30,7 @@
 #ifndef __ARCH_POWER_LINUX_LINUX_HH__
 #define __ARCH_POWER_LINUX_LINUX_HH__
 
+#include "arch/power/isa_traits.hh"
 #include "kern/linux/linux.hh"
 
 /*
@@ -40,7 +41,7 @@ class PowerLinux : public Linux
 {
   public:
 
-    static const ByteOrder byteOrder = ByteOrder::big;
+    static const ByteOrder byteOrder = PowerISA::GuestByteOrder;
 
     typedef int32_t time_t;
 

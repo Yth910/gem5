@@ -5,6 +5,7 @@
 #include "arch/power/faults.hh"
 #include "arch/power/miscregs.hh"
 #include "arch/power/tlb.hh"
+#include "arch/power/utility.hh"
 #include "base/bitfield.hh"
 #include "cpu/base.hh"
 #include "cpu/thread_context.hh"
@@ -324,7 +325,7 @@ RadixWalk::getRPDEntry(ThreadContext * tc, Addr vaddr)
             (efflpid * sizeof(uint64_t) * 2) + 8;
     uint64_t dataSize = 8;
     uint64_t pate1 = htog<uint64_t>(
-            this->readPhysMem(pate1Addr, dataSize), ByteOrder::big);
+            this->readPhysMem(pate1Addr, dataSize), byteOrder(tc));
 
     DPRINTF(RadixWalk,"2nd Double word of partition table entry: 0x%016lx\n",
             pate1);
@@ -386,7 +387,7 @@ RadixWalk::getRPDEntry(ThreadContext * tc, Addr vaddr)
     uint64_t prte0Addr = prtb + effPID * sizeof(prtb) * 2 ;
     DPRINTF(RadixWalk,"Process table base: 0x%016lx\n",prtb);
     uint64_t prte0 = htog<uint64_t>(
-            this->readPhysMem(prte0Addr, dataSize), ByteOrder::big);
+            this->readPhysMem(prte0Addr, dataSize), byteOrder(tc));
 
     //prte0 ---> Process Table Entry
 
@@ -479,7 +480,7 @@ RadixWalk::walkTree(Addr vaddr ,uint64_t curBase ,ThreadContext * tc ,
 
         uint64_t entryAddr = curBase + (index * sizeof(uint64_t));
         Rpde rpde = htog<uint64_t>(
-                this->readPhysMem(entryAddr, dataSize), ByteOrder::big);
+                this->readPhysMem(entryAddr, dataSize), byteOrder(tc));
         DPRINTF(RadixWalk,"rpde:0x%016lx\n",(uint64_t)rpde);
         usefulBits = usefulBits - curSize;
         Msr msr = tc->readIntReg(INTREG_MSR);
@@ -532,7 +533,7 @@ RadixWalk::walkTree(Addr vaddr ,uint64_t curBase ,ThreadContext * tc ,
             if (mode == BaseTLB::Write) {
                 rpte.c = 1;
             }
-            gtoh<uint64_t>(rpte, ByteOrder::big);
+            gtoh<uint64_t>(rpte, byteOrder(tc));
             this->writePhysMem(rpte, dataSize);
 
           return AddrTran;

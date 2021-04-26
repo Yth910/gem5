@@ -58,6 +58,12 @@ advancePC(PCState &pc, const StaticInstPtr &inst)
     pc.advance();
 }
 
+inline ByteOrder byteOrder(const ThreadContext *tc)
+{
+    Msr msr = tc->readIntReg(INTREG_MSR);
+    return (msr.le == 0) ? ByteOrder::big : ByteOrder::little;
+};
+
 } // namespace PowerISA
 
 
