@@ -58,7 +58,7 @@ PowerProcess::PowerProcess(
     Addr brk_point = image.maxAddr();
     brk_point = roundUp(brk_point, PageBytes);
 
-    Addr stack_base = 0xbf000000L;
+    Addr stack_base = 0x3ffffb100000L;
 
     Addr max_stack_size = 8 * 1024 * 1024;
 
@@ -78,7 +78,7 @@ PowerProcess::initState()
 {
     Process::initState();
 
-    argsInit(sizeof(uint32_t), PageBytes);
+    argsInit(sizeof(uint64_t), PageBytes);
 }
 
 void
@@ -86,6 +86,8 @@ PowerProcess::argsInit(int intSize, int pageSize)
 {
     typedef AuxVector<uint64_t> auxv_t;
     std::vector<auxv_t> auxv;
+
+    pageSize = 0x1000;
 
     std::string filename;
     if (argv.size() < 1)
@@ -152,25 +154,25 @@ PowerProcess::argsInit(int intSize, int pageSize)
         // This is the base address of the ELF interpreter; it should be
         // zero for static executables or contain the base address for
         // dynamic executables.
-        auxv.push_back(auxv_t(M5_AT_BASE, getBias()));
+        auxv.emplace_back(M5_AT_BASE, getBias());
         //XXX Figure out what this should be.
-        auxv.push_back(auxv_t(M5_AT_FLAGS, 0));
+        auxv.emplace_back(M5_AT_FLAGS, 0);
         //The entry point to the program
-        auxv.push_back(auxv_t(M5_AT_ENTRY, objFile->entryPoint()));
+        auxv.emplace_back(M5_AT_ENTRY, objFile->entryPoint());
         //Different user and group IDs
-        auxv.push_back(auxv_t(M5_AT_UID, uid()));
-        auxv.push_back(auxv_t(M5_AT_EUID, euid()));
-        auxv.push_back(auxv_t(M5_AT_GID, gid()));
-        auxv.push_back(auxv_t(M5_AT_EGID, egid()));
+        auxv.emplace_back(M5_AT_UID, uid());
+        auxv.emplace_back(M5_AT_EUID, euid());
+        auxv.emplace_back(M5_AT_GID, gid());
+        auxv.emplace_back(M5_AT_EGID, egid());
         //Whether to enable "secure mode" in the executable
-        auxv.push_back(auxv_t(M5_AT_SECURE, 0));
+        auxv.emplace_back(M5_AT_SECURE, 0);
         //The filename of the program
-        auxv.push_back(auxv_t(M5_AT_EXECFN, 0));
+        auxv.emplace_back(M5_AT_EXECFN, 0);
         //The string "v51" with unknown meaning
-        auxv.push_back(auxv_t(M5_AT_PLATFORM, 0));
+        auxv.emplace_back(M5_AT_PLATFORM, 0);
         //The address of 16 bytes in the data section containing a random
         //value; it is required for stack protection using a canary value.
-        auxv.push_back(auxv_t(M5_AT_RANDOM, 0));
+        auxv.emplace_back(M5_AT_RANDOM, 0);
     }
 
     //Figure out how big the initial stack nedes to be
@@ -285,6 +287,16 @@ PowerProcess::argsInit(int intSize, int pageSize)
         }
     }
 
+    Msr msr = tc->readIntReg(INTREG_MSR);
+
+    if (elfObject->elf_endian() == ByteOrder::little) {
+        msr.le = 1;
+    } else {
+        msr.le = 0;
+    }
+    tc->getDecoderPtr()->fetchByteOrder(elfObject->elf_endian());
+    tc->setIntReg(INTREG_MSR, msr);
+
     //Copy the aux stuff
     Addr auxv_array_end = auxv_array_base;
     for (const auto &aux: auxv) {
@@ -321,15 +333,6 @@ PowerProcess::argsInit(int intSize, int pageSize)
         tc->pcState(getStartPC());
     }
 
-    Msr msr = tc->readIntReg(INTREG_MSR);
-
-    if (elfObject->elf_endian() == ByteOrder::little) {
-        msr.le = 1;
-    } else {
-        msr.le = 0;
-    }
-    tc->getDecoderPtr()->fetchByteOrder(elfObject->elf_endian());
-    tc->setIntReg(INTREG_MSR, msr);
     //Align the "stack_min" to a page boundary.
     memState->setStackMin(roundDown(stack_min, pageSize));
 

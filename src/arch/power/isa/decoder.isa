@@ -169,7 +169,7 @@ decode PO default Unknown::unknown() {
             if (FullSystem) {
                 fault= std::make_shared<SystemCallInterrupt>();
             } else {
-                //xc->syscall(R0, &fault);
+                return std::make_shared<SESyscallFault>();
             }
             }},
               [ IsSyscall, IsNonSpeculative, IsSerializeAfter ]);

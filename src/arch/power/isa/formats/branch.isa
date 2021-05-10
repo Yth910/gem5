@@ -48,6 +48,7 @@ def template BranchAaConstructor {{
         %(class_name)s::%(class_name)s(ExtMachInst machInst)
           : %(base_class)s("%(mnemonic)s", machInst, %(op_class)s)
         {
+            %(set_reg_idx_arr)s;
             %(constructor)s;
             aaSet = true;
         }
@@ -59,6 +60,7 @@ def template BranchLkConstructor {{
         %(class_name)s::%(class_name)s(ExtMachInst machInst)
           : %(base_class)s("%(mnemonic)s", machInst, %(op_class)s)
         {
+            %(set_reg_idx_arr)s;
             %(constructor)s;
             lkSet = true;
         }
@@ -70,6 +72,7 @@ def template BranchAaLkConstructor {{
         %(class_name)s::%(class_name)s(ExtMachInst machInst)
           : %(base_class)s("%(mnemonic)s", machInst, %(op_class)s)
         {
+            %(set_reg_idx_arr)s;
             %(constructor)s;
             aaSet = true;
             lkSet = true;

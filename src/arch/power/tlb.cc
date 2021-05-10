@@ -547,7 +547,6 @@ TLB::translateAtomic(const RequestPtr &req, ThreadContext *tc, Mode mode)
     if (mode == Execute)
          return translateInst(req, tc);
     else{
-        std::cout<<"translateData"<<std::endl;
         return translateData(req, tc, mode == Write);
    }
 }
