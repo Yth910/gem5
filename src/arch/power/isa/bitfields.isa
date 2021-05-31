@@ -59,6 +59,12 @@ def bitfield FRB           <15:11>;
 def bitfield FRC           <10:6>;
 def bitfield FRS           <25:21>;
 def bitfield FRT           <25:21>;
+def bitfield VRA           <20:16>;
+def bitfield VRB           <15:11>;
+def bitfield VRC           <10:6>;
+def bitfield VRS           <25:21>;
+def bitfield VRT           <25:21>;
+
 
 // The record bit can be in two positions
 // Used to enable setting of the condition register

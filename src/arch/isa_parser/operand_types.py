@@ -440,10 +440,11 @@ class VecRegOperand(Operand):
             return self.buildWriteCode(func)
 
         wb = '''
+        \t\txc->%s(this, %s, tmp_d%d);\n
         if (traceData) {
             traceData->setData(tmp_d%d);
         }
-        ''' % self.dest_reg_idx
+        ''' % (func, self.dest_reg_idx, self.dest_reg_idx, self.dest_reg_idx)
         return wb
 
     def finalize(self, predRead, predWrite):

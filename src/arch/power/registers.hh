@@ -38,19 +38,22 @@ namespace PowerISA
 {
 
 // Not applicable to Power
-using VecElem = ::DummyVecElem;
-using VecReg = ::DummyVecReg;
-using ConstVecReg = ::DummyConstVecReg;
-using VecRegContainer = ::DummyVecRegContainer;
-constexpr unsigned NumVecElemPerVecReg = ::DummyNumVecElemPerVecReg;
-constexpr size_t VecRegSizeBytes = ::DummyVecRegSizeBytes;
+constexpr unsigned NumVecElemPerVecReg = 4;
 
-// Not applicable to Power
-using VecPredReg = ::DummyVecPredReg;
-using ConstVecPredReg = ::DummyConstVecPredReg;
-using VecPredRegContainer = ::DummyVecPredRegContainer;
+using VecElem = uint32_t;
+using VecReg = ::VecRegT<VecElem, NumVecElemPerVecReg, false>;
+using ConstVecReg = ::VecRegT<VecElem, NumVecElemPerVecReg, true>;
+using VecRegContainer = VecReg::Container;
+//constexpr unsigned NumVecElemPerVecReg = ::DummyNumVecElemPerVecReg;
+constexpr size_t VecRegSizeBytes = 16;
+
 constexpr size_t VecPredRegSizeBits = ::DummyVecPredRegSizeBits;
 constexpr bool VecPredRegHasPackedRepr = ::DummyVecPredRegHasPackedRepr;
+using VecPredReg = ::VecPredRegT<VecElem, NumVecElemPerVecReg,
+                                 VecPredRegHasPackedRepr, false>;
+using ConstVecPredReg = ::VecPredRegT<VecElem, NumVecElemPerVecReg,
+                                      VecPredRegHasPackedRepr, true>;
+using VecPredRegContainer = VecPredReg::Container;
 
 // Constants Related to the number of registers
 const int NumIntArchRegs = 32;
@@ -62,8 +65,8 @@ const int NumFloatArchRegs = 32;
 
 const int NumIntRegs = NumIntArchRegs + NumIntSpecialRegs;
 const int NumFloatRegs = NumFloatArchRegs;
-const int NumVecRegs = 1;  // Not applicable to Power
-                           // (1 to prevent warnings)
+const int NumVecRegs = 64;
+const int NumVecScalarRegs = 64;
 const int NumVecPredRegs = 1;  // Not applicable to Power
                                // (1 to prevent warnings)
 const int NumCCRegs = 0;

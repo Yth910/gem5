@@ -189,11 +189,13 @@ class InstRecord
                       "Type T has an unrecognized size.");
     }
 
+    void setData(__uint128_t d) { data.as_int = d; data_status = DataInt64; }
     void setData(uint64_t d) { data.as_int = d; data_status = DataInt64; }
     void setData(uint32_t d) { data.as_int = d; data_status = DataInt32; }
     void setData(uint16_t d) { data.as_int = d; data_status = DataInt16; }
     void setData(uint8_t d) { data.as_int = d; data_status = DataInt8; }
 
+    void setData(__int128_t d) { setData((__uint128_t)d); }
     void setData(int64_t d) { setData((uint64_t)d); }
     void setData(int32_t d) { setData((uint32_t)d); }
     void setData(int16_t d) { setData((uint16_t)d); }

@@ -400,6 +400,8 @@ decode PO default Unknown::unknown() {
             535: lfsx({{ Ft_sf = Mem_sf; }});
             599: lfdx({{ Ft = Mem_df; }});
             855: lfiwax({{ Ft_uw = Mem; }});
+            7: lvebx({{ for(auto i = 0; i < 16; i++)
+                                 Vt_ub[i] = ((uint8_t *)&Mem_uq)[i]; }});
         }
 
         format LoadIndexUpdateOp {
@@ -425,6 +427,8 @@ decode PO default Unknown::unknown() {
             149: stdx({{ Mem = Rs }});
             214: stdcx({{ Mem_ud = Rs; }}, mem_flags = LLSC);
             660: stdbrx({{ Mem = swap_byte(Rs); }});
+            135: stvebx({{ for(auto i = 0; i < 16; i++)
+                                ((uint8_t *)&Mem_uq)[i] = Vs_ub[i]; }});
         }
 
         format StoreIndexUpdateOp {
