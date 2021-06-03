@@ -402,6 +402,14 @@ decode PO default Unknown::unknown() {
             855: lfiwax({{ Ft_uw = Mem; }});
             7: lvebx({{ for(auto i = 0; i < 16; i++)
                                  Vt_ub[i] = ((uint8_t *)&Mem_uq)[i]; }});
+            39: lvehx({{ for(auto i = 0; i < 8; i++)
+                                 Vt_uh[i] = ((uint16_t *)&Mem_uq)[i]; }});
+            71: lvewx({{ for(auto i = 0; i < 4; i++)
+                                 Vt_uw[i] = ((uint32_t *)&Mem_uq)[i]; }});
+            103: lvx({{ for(auto i = 0; i < 2; i++)
+                                 Vt_ud[i] = ((uint64_t *)&Mem_uq)[i]; }});
+            359: lvxl({{ for(auto i = 0; i < 2; i++)
+                                 Vt_ud[i] = ((uint64_t *)&Mem_uq)[i]; }});
         }
 
         format LoadIndexUpdateOp {
@@ -429,6 +437,14 @@ decode PO default Unknown::unknown() {
             660: stdbrx({{ Mem = swap_byte(Rs); }});
             135: stvebx({{ for(auto i = 0; i < 16; i++)
                                 ((uint8_t *)&Mem_uq)[i] = Vs_ub[i]; }});
+            167: stvehx({{ for(auto i = 0; i < 8; i++)
+                                ((uint16_t *)&Mem_uq)[i] = Vs_uh[i]; }});
+            199: stvewx({{ for(auto i = 0; i < 4; i++)
+                                ((uint32_t *)&Mem_uq)[i] = Vs_uw[i]; }});
+            231: stvx({{ for(auto i = 0; i < 2; i++)
+                                ((uint64_t *)&Mem_uq)[i] = Vs_ud[i]; }});
+            487: stvxl({{ for(auto i = 0; i < 2; i++)
+                                ((uint64_t *)&Mem_uq)[i] = Vs_ud[i]; }});
         }
 
         format StoreIndexUpdateOp {
