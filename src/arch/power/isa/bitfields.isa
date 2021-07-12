@@ -42,6 +42,7 @@ def bitfield MD_XO         <4:2>;
 def bitfield MDS_XO        <4:1>;
 def bitfield VA_XO         <5:0>;
 def bitfield X_XO          <10:1>;
+def bitfield VX_XO         <10:0>;
 def bitfield XFL_XO        <10:1>;
 def bitfield XFX_XO        <10:1>;
 def bitfield XL_XO         <10:1>;

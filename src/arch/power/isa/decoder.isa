@@ -276,6 +276,80 @@ decode PO default Unknown::unknown() {
                 std::tie(res, std::ignore) = multiplyAdd(Ra_sd, Rb_sd, Rc_sd);
                 Rt = res;
             }});
+            // ###4: decode VA_XO IntArithOp###
+        }
+
+        format FloatArithOp {
+            46: vmaddfp({{
+                ThreadContext *tc = xc->tcBase();
+                RegId src1_id(VecRegClass, VRA + 32);
+                RegId src2_id(VecRegClass, VRB + 32);
+                RegId src3_id(VecRegClass, VRC + 32);
+                RegId dst_id(VecRegClass, VRT + 32);
+                auto src1_reg = tc->readVecReg(src1_id);
+                auto src1_val = src1_reg.as<float>();
+                auto src2_reg = tc->readVecReg(src2_id);
+                auto src2_val = src2_reg.as<float>();
+                auto src3_reg = tc->readVecReg(src3_id);
+                auto src3_val = src3_reg.as<float>();
+                auto dst_reg = tc->readVecReg(dst_id);
+                auto dst_val = dst_reg.as<float>();
+
+                for (auto i = 0; i < 4; i++) {
+                    dst_val[i] = src1_val[i] * src3_val[i] + src2_val[i];
+                }
+
+                tc->setVecReg(dst_id, dst_reg);
+            }});
+            // ###4: decode VA_XO FloatArithOp###
+        }
+
+        default: decode VX_XO {
+            format IntArithOp {
+                384: vaddcuw({{
+                    ThreadContext *tc = xc->tcBase();
+                    RegId src1_id(VecRegClass, VRA + 32);
+                    RegId src2_id(VecRegClass, VRB + 32);
+                    RegId dst_id(VecRegClass, VRT + 32);
+                    auto src1_reg = tc->readVecReg(src1_id);
+                    auto src1_val = src1_reg.as<uint32_t>();
+                    auto src2_reg = tc->readVecReg(src2_id);
+                    auto src2_val = src2_reg.as<uint32_t>();
+                    auto dst_reg = tc->readVecReg(dst_id);
+                    auto dst_val = dst_reg.as<uint32_t>();
+
+                    for (auto i = 0; i < 4; i++) {
+                        dst_val[i] =
+                            ((uint64_t(src1_val[i]) + uint64_t(src2_val[i]))
+                            >> 32);
+                    }
+
+                    tc->setVecReg(dst_id, dst_reg);
+                }});
+                // ###4: decode VX_XO IntArithOp###
+            }
+
+            format FloatArithOp {
+                10: vaddfp({{
+                    ThreadContext *tc = xc->tcBase();
+                    RegId src1_id(VecRegClass, VRA + 32);
+                    RegId src2_id(VecRegClass, VRB + 32);
+                    RegId dst_id(VecRegClass, VRT + 32);
+                    auto src1_reg = tc->readVecReg(src1_id);
+                    auto src1_val = src1_reg.as<float>();
+                    auto src2_reg = tc->readVecReg(src2_id);
+                    auto src2_val = src2_reg.as<float>();
+                    auto dst_reg = tc->readVecReg(dst_id);
+                    auto dst_val = dst_reg.as<float>();
+
+                    for (auto i = 0; i < 4; i++) {
+                        dst_val[i] = src1_val[i] + src2_val[i];
+                    }
+
+                    tc->setVecReg(dst_id, dst_reg);
+                }});
+                // ###4: decode VX_XO FloatArithOp###
+            }
         }
     }
 
@@ -400,16 +474,88 @@ decode PO default Unknown::unknown() {
             535: lfsx({{ Ft_sf = Mem_sf; }});
             599: lfdx({{ Ft = Mem_df; }});
             855: lfiwax({{ Ft_uw = Mem; }});
-            7: lvebx({{ for(auto i = 0; i < 16; i++)
-                                 Vt_ub[i] = ((uint8_t *)&Mem_uq)[i]; }});
-            39: lvehx({{ for(auto i = 0; i < 8; i++)
-                                 Vt_uh[i] = ((uint16_t *)&Mem_uq)[i]; }});
-            71: lvewx({{ for(auto i = 0; i < 4; i++)
-                                 Vt_uw[i] = ((uint32_t *)&Mem_uq)[i]; }});
-            103: lvx({{ for(auto i = 0; i < 2; i++)
-                                 Vt_ud[i] = ((uint64_t *)&Mem_uq)[i]; }});
-            359: lvxl({{ for(auto i = 0; i < 2; i++)
-                                 Vt_ud[i] = ((uint64_t *)&Mem_uq)[i]; }});
+            7: lvebx({{
+                         ThreadContext *tc = xc->tcBase();
+                         RegId id(VecRegClass, VRT + 32);
+                         auto reg = tc->readVecReg(id);
+                         auto val = reg.as<uint8_t>();
+
+                         Msr msr_v = tc->readIntReg(INTREG_MSR);
+                         if (msr_v.le) {
+                             val[0] = Mem_ub;
+                         } else {
+                             val[15] = Mem_ub;
+                         }
+
+                         tc->setVecReg(id, reg);
+                     }});
+            39: lvehx({{
+                         ThreadContext *tc = xc->tcBase();
+                         RegId id(VecRegClass, VRT + 32);
+                         auto reg = tc->readVecReg(id);
+                         auto val = reg.as<uint16_t>();
+
+                         Msr msr_v = tc->readIntReg(INTREG_MSR);
+                         if (msr_v.le) {
+                             val[0] = Mem_uw;
+                         } else {
+                             val[7] = Mem_uw;
+                         }
+
+                         tc->setVecReg(id, reg);
+                     }});
+            71: lvewx({{
+                         ThreadContext *tc = xc->tcBase();
+                         RegId id(VecRegClass, VRT + 32);
+                         auto reg = tc->readVecReg(id);
+                         auto val = reg.as<uint32_t>();
+
+                         Msr msr_v = tc->readIntReg(INTREG_MSR);
+                         if (msr_v.le) {
+                             val[0] = Mem_uw;
+                         } else {
+                             val[3] = Mem_uw;
+                         }
+
+                         tc->setVecReg(id, reg);
+                     }});
+            103: lvx({{
+                         ThreadContext *tc = xc->tcBase();
+                         RegId id(VecRegClass, VRT + 32);
+                         auto reg = tc->readVecReg(id);
+                         auto val = reg.as<__uint128_t>();
+                         val[0] = Mem_uq;
+                         tc->setVecReg(id, reg);
+                     }});
+            359: lvxl({{
+                         ThreadContext *tc = xc->tcBase();
+                         RegId id(VecRegClass, VRT + 32);
+                         auto reg = tc->readVecReg(id);
+                         auto val = reg.as<__uint128_t>();
+                         val[0] = Mem_uq;
+                         tc->setVecReg(id, reg);
+                     }});
+            6: lvsl({{
+                        uint8_t sh = bits(EA, 63, 60);
+                        ThreadContext *tc = xc->tcBase();
+                        RegId id(VecRegClass, VRT + 32);
+                        auto reg = tc->readVecReg(id);
+                        auto val = reg.as<uint8_t>();
+                        for(auto i = 0; i < 16; i++) {
+                             val[i] = ((uint8_t *)&Mem_uq)[(i + sh) % 16];
+                        }
+                        tc->setVecReg(id, reg);
+                     }});
+            38: lvsr({{
+                         uint8_t sh = bits(EA, 63, 60);
+                         ThreadContext *tc = xc->tcBase();
+                         RegId id(VecRegClass, VRT + 32);
+                         auto reg = tc->readVecReg(id);
+                         auto val = reg.as<uint8_t>();
+                         for(auto i = 0; i < 16; i++)
+                             val[(i + sh) % 16] = ((uint8_t *)&Mem_uq)[i];
+                         tc->setVecReg(id, reg);
+                     }});
         }
 
         format LoadIndexUpdateOp {
@@ -435,16 +581,56 @@ decode PO default Unknown::unknown() {
             149: stdx({{ Mem = Rs }});
             214: stdcx({{ Mem_ud = Rs; }}, mem_flags = LLSC);
             660: stdbrx({{ Mem = swap_byte(Rs); }});
-            135: stvebx({{ for(auto i = 0; i < 16; i++)
-                                ((uint8_t *)&Mem_uq)[i] = Vs_ub[i]; }});
-            167: stvehx({{ for(auto i = 0; i < 8; i++)
-                                ((uint16_t *)&Mem_uq)[i] = Vs_uh[i]; }});
-            199: stvewx({{ for(auto i = 0; i < 4; i++)
-                                ((uint32_t *)&Mem_uq)[i] = Vs_uw[i]; }});
-            231: stvx({{ for(auto i = 0; i < 2; i++)
-                                ((uint64_t *)&Mem_uq)[i] = Vs_ud[i]; }});
-            487: stvxl({{ for(auto i = 0; i < 2; i++)
-                                ((uint64_t *)&Mem_uq)[i] = Vs_ud[i]; }});
+            135: stvebx({{
+                           ThreadContext *tc = xc->tcBase();
+                           RegId id(VecRegClass, VRS + 32);
+                           auto reg = tc->readVecReg(id);
+                           auto val = reg.as<uint8_t>();
+                           Msr msr_v = tc->readIntReg(INTREG_MSR);
+                           if (msr_v.le) {
+                               Mem_ub = val[0];
+                           } else {
+                               Mem_ub = val[15];
+                           }
+                       }});
+            167: stvehx({{
+                           ThreadContext *tc = xc->tcBase();
+                           RegId id(VecRegClass, VRS + 32);
+                           auto reg = tc->readVecReg(id);
+                           auto val = reg.as<uint16_t>();
+                           Msr msr_v = tc->readIntReg(INTREG_MSR);
+                           if (msr_v.le) {
+                               Mem_uh = val[0];
+                           } else {
+                               Mem_uh = val[7];
+                           }
+                       }});
+            199: stvewx({{
+                           ThreadContext *tc = xc->tcBase();
+                           RegId id(VecRegClass, VRS + 32);
+                           auto reg = tc->readVecReg(id);
+                           auto val = reg.as<uint32_t>();
+                           Msr msr_v = tc->readIntReg(INTREG_MSR);
+                           if (msr_v.le) {
+                               Mem_uw = val[0];
+                           } else {
+                               Mem_uw = val[3];
+                           }
+                       }});
+            231: stvx({{
+                           ThreadContext *tc = xc->tcBase();
+                           RegId id(VecRegClass, VRS + 32);
+                           auto reg = tc->readVecReg(id);
+                           auto val = reg.as<__uint128_t>();
+                           Mem_uq = val[0];
+                       }});
+            487: stvxl({{
+                           ThreadContext *tc = xc->tcBase();
+                           RegId id(VecRegClass, VRS + 32);
+                           auto reg = tc->readVecReg(id);
+                           auto val = reg.as<__uint128_t>();
+                           Mem_uq = val[0];
+                       }});
         }
 
         format StoreIndexUpdateOp {
