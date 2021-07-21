@@ -142,6 +142,66 @@ class FloatOp : public PowerStaticInst
         return c;
     }
 
+    inline int32_t si32_CONVERT_FROM_BFP32(float x, uint32_t y) const
+    {
+        return x * y;
+    }
+
+    inline uint32_t ui32_CONVERT_FROM_BFP32(float x, uint32_t y) const
+    {
+        return x * y;
+    }
+
+    inline float bfp32_CONVERT_FROM_SI32(int32_t x, uint32_t y) const
+    {
+        return x * y;
+    }
+
+    inline float bfp32_CONVERT_FROM_UI32(uint32_t x, uint32_t y) const
+    {
+        return x * y;
+    }
+
+    inline int32_t bfp32_ROUND_TO_INTEGER_FLOOR(float x) const
+    {
+        return x;
+    }
+
+    inline int32_t bfp32_ROUND_TO_INTEGER_NEAR(float x) const
+    {
+        return x;
+    }
+
+    inline int32_t bfp32_ROUND_TO_INTEGER_CEIL(float x) const
+    {
+        return x;
+    }
+
+    inline int32_t bfp32_ROUND_TO_INTEGER_TRUNC(float x) const
+    {
+        return x;
+    }
+
+    inline float bfp32_POWER2_ESTIMATE(float x) const
+    {
+        return x;
+    }
+
+    inline float bfp32_LOG_BASE2_ESTIMATE(float x) const
+    {
+        return x;
+    }
+
+    inline float bfp32_RECIPROCAL_ESTIMATE(float x) const
+    {
+        return x;
+    }
+
+    inline float bfp32_RECIPROCAL_SQRT_ESTIMATE(float x) const
+    {
+        return x;
+    }
+
     std::string generateDisassembly(
             Addr pc, const Loader::SymbolTable *symtab) const override;
 };

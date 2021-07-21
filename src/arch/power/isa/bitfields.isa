@@ -43,6 +43,22 @@ def bitfield MDS_XO        <4:1>;
 def bitfield VA_XO         <5:0>;
 def bitfield X_XO          <10:1>;
 def bitfield VX_XO         <10:0>;
+def bitfield BF            <25:23>;
+def bitfield EO            <20:16>;
+def bitfield VX_UIM        <20:16>;
+def bitfield VX_SIM        <20:16>;
+
+def bitfield XX_XO         <10:1>;
+
+def bitfield XX2_XO        <10:2>;
+def bitfield XX2_DCMX      <22:16>;
+
+def bitfield XX3_XO        <10:3>;
+def bitfield XX4_XO        <5:4>;
+
+def bitfield Z22_XO         <9:1>;
+def bitfield Z23_XO         <8:1>;
+
 def bitfield XFL_XO        <10:1>;
 def bitfield XFX_XO        <10:1>;
 def bitfield XL_XO         <10:1>;
@@ -65,8 +81,17 @@ def bitfield VRB           <15:11>;
 def bitfield VRC           <10:6>;
 def bitfield VRS           <25:21>;
 def bitfield VRT           <25:21>;
+def bitfield XX_A          <20:16>;
+def bitfield XX_B          <15:11>;
+def bitfield XX_C          <10:6>;
+def bitfield XX_S          <25:21>;
+def bitfield XX_T          <25:21>;
 
-
+def bitfield XX_CX         <3>;
+def bitfield XX_AX         <2>;
+def bitfield XX_BX         <1>;
+def bitfield XX_SX         <0>;
+def bitfield XX_TX         <0>;
 // The record bit can be in two positions
 // Used to enable setting of the condition register
 def bitfield RC31          <0>;

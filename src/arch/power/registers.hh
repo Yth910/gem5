@@ -168,6 +168,7 @@ enum MiscIntRegNums {
     INTREG_VTB,
     INTREG_HSPRG1,
     INTREG_PIR,
+    INTREG_VSCR,
     INTREG_DUMMY
 };
 
