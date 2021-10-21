@@ -1,0 +1,90 @@
+format LoadIndexOp {
+    7: lvebx({{
+        ThreadContext *tc = xc->tcBase();
+        RegId id(VecRegClass, VRT + 32);
+        auto reg = tc->readVecReg(id);
+        auto val = reg.as<uint8_t>();
+
+        Msr msr_v = tc->readIntReg(INTREG_MSR);
+        if (msr_v.le) {
+            val[0] = Mem_ub;
+        } else {
+            val[15] = Mem_ub;
+        }
+
+        tc->setVecReg(id, reg);
+    }});
+
+    39: lvehx({{
+        ThreadContext *tc = xc->tcBase();
+        RegId id(VecRegClass, VRT + 32);
+        auto reg = tc->readVecReg(id);
+        auto val = reg.as<uint16_t>();
+
+        Msr msr_v = tc->readIntReg(INTREG_MSR);
+        if (msr_v.le) {
+            val[0] = Mem_uw;
+        } else {
+            val[7] = Mem_uw;
+        }
+
+        tc->setVecReg(id, reg);
+    }});
+
+    71: lvewx({{
+        ThreadContext *tc = xc->tcBase();
+        RegId id(VecRegClass, VRT + 32);
+        auto reg = tc->readVecReg(id);
+        auto val = reg.as<uint32_t>();
+
+        Msr msr_v = tc->readIntReg(INTREG_MSR);
+        if (msr_v.le) {
+            val[0] = Mem_uw;
+        } else {
+            val[3] = Mem_uw;
+        }
+
+        tc->setVecReg(id, reg);
+    }});
+
+    103: lvx({{
+        ThreadContext *tc = xc->tcBase();
+        RegId id(VecRegClass, VRT + 32);
+        auto reg = tc->readVecReg(id);
+        auto val = reg.as<__uint128_t>();
+        val[0] = Mem_uq;
+        tc->setVecReg(id, reg);
+    }});
+
+    359: lvxl({{
+        ThreadContext *tc = xc->tcBase();
+        RegId id(VecRegClass, VRT + 32);
+        auto reg = tc->readVecReg(id);
+        auto val = reg.as<__uint128_t>();
+        val[0] = Mem_uq;
+        tc->setVecReg(id, reg);
+    }});
+
+    6: lvsl({{
+        uint8_t sh = bits(EA, 63, 60);
+        ThreadContext *tc = xc->tcBase();
+        RegId id(VecRegClass, VRT + 32);
+        auto reg = tc->readVecReg(id);
+        auto val = reg.as<uint8_t>();
+        for(auto i = 0; i < 16; i++) {
+                val[i] = ((uint8_t *)&Mem_uq)[(i + sh) % 16];
+        }
+        tc->setVecReg(id, reg);
+    }});
+
+    38: lvsr({{
+        uint8_t sh = bits(EA, 63, 60);
+        ThreadContext *tc = xc->tcBase();
+        RegId id(VecRegClass, VRT + 32);
+        auto reg = tc->readVecReg(id);
+        auto val = reg.as<uint8_t>();
+        for(auto i = 0; i < 16; i++)
+            val[(i + sh) % 16] = ((uint8_t *)&Mem_uq)[i];
+        tc->setVecReg(id, reg);
+    }});
+}

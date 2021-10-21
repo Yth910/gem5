@@ -1,0 +1,30 @@
+
+format FloatArithOp {
+    3:xxsel({{
+        ThreadContext *tc = xc->tcBase();
+        RegId src1_id(VecRegClass, XX_A + XX_AX * 32);
+        RegId src2_id(VecRegClass, XX_B + XX_BX * 32);
+        RegId src3_id(VecRegClass, XX_C + XX_CX * 32);
+        RegId dst_id(VecRegClass, XX_T + XX_TX * 32);
+        auto src1_reg = tc->readVecReg(src1_id);
+        auto src1_val = src1_reg.as<__uint128_t>();
+        auto src2_reg = tc->readVecReg(src2_id);
+        auto src2_val = src2_reg.as<__uint128_t>();
+        auto src3_reg = tc->readVecReg(src2_id);
+        auto src3_val = src2_reg.as<__uint128_t>();
+        auto dst_reg = tc->readVecReg(dst_id);
+        auto dst_val = dst_reg.as<__uint128_t>();
+
+        __uint128_t tmp = 0;
+        for (auto i = 0; i < 128; i++) {
+            __uint128_t mask = (1 << i);
+            if ((src3_val[0] & mask) == 0) {
+                tmp |= (src1_val[0] & mask);
+            } else {
+                tmp |= (src2_val[0] & mask);
+            }
+        }
+        dst_val[0] = tmp;
+        tc->setVecReg(dst_id, dst_reg);
+    }});
+}

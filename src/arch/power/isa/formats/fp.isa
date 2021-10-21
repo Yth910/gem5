@@ -37,9 +37,10 @@ let {{
     readFPSCRCode = 'Fpscr fpscr = FPSCR;'
 
     computeCR1Code = '''
+        Fpscr fpscr_rc = FPSCR;
         Cr cr = CR;
-        cr.cr1 = (fpscr.fx << 3) | (fpscr.fex << 2) |
-                 (fpscr.vx << 1) | fpscr.ox;
+        cr.cr1 = (fpscr_rc.fx << 3) | (fpscr_rc.fex << 2) |
+                 (fpscr_rc.vx << 1) | fpscr_rc.ox;
         CR = cr;
     '''
 
@@ -86,7 +87,7 @@ def format FloatRCCheckOp(code, inst_flags = []) {{
 def format FloatArithOp(code, inst_flags = []) {{
 
     # Code when Rc is set
-    code_rc1 = code + readFPSCRCode + computeCR1Code
+    code_rc1 = code + readFPSCRCode
 
     # Generate the first class
     (header_output, decoder_output, decode_block, exec_output) = \
@@ -109,6 +110,27 @@ def format FloatArithOp(code, inst_flags = []) {{
 // to alter lots of special registers depending on the result of the
 // operation. The result is always in Ft_sf.
 def format FloatConvertOp(code, inst_flags = []) {{
+
+    # Code when Rc is set
+    code_rc1 = code + readFPSCRCode
+
+    # Generate the first class
+    (header_output, decoder_output, decode_block, exec_output) = \
+        GenAluOp(name, Name, 'FloatOp', code, inst_flags,
+                 CheckRcDecode, BasicConstructor)
+
+    # Generate the second class
+    (header_output_rc1, decoder_output_rc1, _, exec_output_rc1) = \
+        GenAluOp(name, Name + 'RcSet', 'FloatOp', code_rc1, inst_flags,
+                 CheckRcDecode, IntRcConstructor)
+
+    # Finally, add to the other outputs
+    header_output += header_output_rc1
+    decoder_output += decoder_output_rc1
+    exec_output += exec_output_rc1
+}};
+
+def format FloatConvertOpRc(code, inst_flags = []) {{
 
     # Code when Rc is set
     code_rc1 = code + readFPSCRCode + computeCR1Code

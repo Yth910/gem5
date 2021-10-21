@@ -48,7 +48,7 @@ from m5.objects.SimpleMemory import *
 class MemoryMode(Enum): vals = ['invalid', 'atomic', 'timing',
                                 'atomic_noncaching']
 
-if buildEnv['TARGET_ISA'] in ('sparc', 'power'):
+if buildEnv['TARGET_ISA'] in ('sparc'):
     default_byte_order = 'big'
 else:
     default_byte_order = 'little'

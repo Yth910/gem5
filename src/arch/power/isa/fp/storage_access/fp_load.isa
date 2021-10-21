@@ -1,0 +1,6 @@
+format LoadIndexOp {
+    535: lfsx({{ Ft_sf = Mem_sf; }});
+    599: lfdx({{ Ft = Mem_df; }});
+    855: lfiwax({{ Ft_sw = Mem; }});
+    887: lfiwzx({{ Ft_uw = Mem; }});
+}

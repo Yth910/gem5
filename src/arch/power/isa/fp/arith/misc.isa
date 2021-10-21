@@ -1,0 +1,14 @@
+ format FloatRCCheckOp {
+    72: fmr({{ Ft = Fb; }});
+    264: fabs({{
+        Ft_ud = Fb_ud;
+        Ft_ud = insertBits(Ft_ud, 63, 0); }});
+    136: fnabs({{
+        Ft_ud = Fb_ud;
+        Ft_ud = insertBits(Ft_ud, 63, 1); }});
+    40: fneg({{ Ft = -Fb; }});
+    8: fcpsgn({{
+        Ft_ud = Fb_ud;
+        Ft_ud = insertBits(Ft_ud, 63, Fa_ud<63:63>);
+    }});
+}

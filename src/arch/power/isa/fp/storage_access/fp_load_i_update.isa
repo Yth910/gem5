@@ -1,0 +1,4 @@
+format LoadIndexUpdateOp {
+    567: lfsux({{ Ft_sf = Mem_sf; }});
+    631: lfdux({{ Ft = Mem_df; }});
+}

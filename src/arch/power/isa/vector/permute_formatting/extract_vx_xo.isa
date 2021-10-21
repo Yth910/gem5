@@ -1,0 +1,290 @@
+format IntArithOp {
+    525: vextractub({{                                            // wwf
+        /*
+            src ← VSR[VRB+32].byte[UIM]
+            VSR[VRT+32].dword[0] ← EXTZ64(src)
+            VSR[VRT+32].dword[1] ← 0x0000_0000_0000_0000
+        */
+        ThreadContext *tc = xc->tcBase();
+        RegId vrb_id(VecRegClass, VRB + 32);
+        RegId vrt_id(VecRegClass, VRT + 32);                
+        auto vrb_reg = tc->readVecReg(vrb_id);
+        auto vrb = vrb_reg.as<uint8_t>();
+        auto vrt_reg = tc->readVecReg(vrt_id);
+        auto vrt = vrt_reg.as<uint64_t>();            
+                        
+        uint64_t src = vrb[UIM12_15];
+        src = zext<8>(src);
+        vrt[0] = src;
+        vrt[1] = 0x00;
+        data_order_adjust((unsigned char*)&vrt[0], 8);
+            
+        //printf("vector:  UIM= %d  vrb[uim]= %x  src= %llx\n", UIM12_15, vrb[UIM12_15], src); 
+        //printf("vector:  Vt = %llx%llx\n", \
+                                    vrt[0],vrt[1]);
+        
+        tc->setVecReg(vrt_id, vrt_reg);
+    }});
+
+    589: vextractuh({{                                            // wwf
+        /*
+            src ← VSR[VRB+32].byte[UIM:UIM+1]
+            VSR[VRT+32].dword[0] ← EXTZ64(src)
+            VSR[VRT+32].dword[1] ← 0x0000_0000_0000_0000
+        */
+        ThreadContext *tc = xc->tcBase();
+        RegId vrb_id(VecRegClass, VRB + 32);
+        RegId vrt_id(VecRegClass, VRT + 32);                
+        auto vrb_reg = tc->readVecReg(vrb_id);
+        auto vrb = vrb_reg.as<uint8_t>();
+        auto vrt_reg = tc->readVecReg(vrt_id);
+        auto vrt = vrt_reg.as<uint64_t>();            
+                        
+        if(UIM12_15 < 15)
+        {
+            uint8_t tmp_data[2];
+            uint16_t *ppp = (uint16_t *)&tmp_data[0];
+            tmp_data[0] = vrb[UIM12_15+1];
+            tmp_data[1] = vrb[UIM12_15];
+            uint64_t src = *ppp;
+            src = zext<16>(src);
+            vrt[0] = src;
+            vrt[1] = 0x00;
+            data_order_adjust((unsigned char*)&vrt[0], 8);
+            
+            //printf("vector:  UIM= %d  vrb[UIM:UIM+1]= %x  src= %llx\n", UIM12_15, *ppp, src); 
+            //printf("vector:  Vt = %llx%llx\n", \
+                                    vrt[0],vrt[1]);
+        }
+        else
+        {
+            inv_flag = 1;
+            //printf("vector:  undefined!!!\n");
+        }
+        
+        tc->setVecReg(vrt_id, vrt_reg);
+    }});
+
+    653: vextractuw({{                                            // wwf
+        /*
+            src ← VSR[VRB+32].byte[UIM:UIM+3]
+            VSR[VRT+32].dword[0] ← EXTZ64(src)
+            VSR[VRT+32].dword[1] ← 0x0000_0000_0000_0000
+        */
+        ThreadContext *tc = xc->tcBase();
+        RegId vrb_id(VecRegClass, VRB + 32);
+        RegId vrt_id(VecRegClass, VRT + 32);                
+        auto vrb_reg = tc->readVecReg(vrb_id);
+        auto vrb = vrb_reg.as<uint8_t>();
+        auto vrt_reg = tc->readVecReg(vrt_id);
+        auto vrt = vrt_reg.as<uint64_t>();            
+                        
+        if(UIM12_15 < 13)
+        {
+            uint8_t tmp_data[4];
+            uint32_t *ppp = (uint32_t *)&tmp_data[0];
+            tmp_data[0] = vrb[UIM12_15+3];
+            tmp_data[1] = vrb[UIM12_15+2];
+            tmp_data[2] = vrb[UIM12_15+1];
+            tmp_data[3] = vrb[UIM12_15];
+            uint64_t src = *ppp;
+            src = zext<32>(src);
+            vrt[0] = src;
+            vrt[1] = 0x00;
+            data_order_adjust((unsigned char*)&vrt[0], 8);
+            
+            //printf("vector:  UIM= %d  vrb[UIM:UIM+1]= %x  src= %llx\n", UIM12_15, *ppp, src); 
+            //printf("vector:  Vt = %llx%llx\n", \
+                                    vrt[0],vrt[1]);
+        }
+        else
+        {
+            inv_flag = 1;
+            //printf("vector:  undefined!!!\n");
+        }
+        
+        tc->setVecReg(vrt_id, vrt_reg);
+    }});
+
+    717: vextractd({{                                            // wwf
+        /*
+            src ← VSR[VRB+32].byte[UIM:UIM+7]
+            VSR[VRT+32].dword[0] ← src
+            VSR[VRT+32].dword[1] ← 0x0000_0000_0000_0000
+        */
+        ThreadContext *tc = xc->tcBase();
+        RegId vrb_id(VecRegClass, VRB + 32);
+        RegId vrt_id(VecRegClass, VRT + 32);                
+        auto vrb_reg = tc->readVecReg(vrb_id);
+        auto vrb = vrb_reg.as<uint8_t>();
+        auto vrt_reg = tc->readVecReg(vrt_id);
+        auto vrt = vrt_reg.as<uint64_t>();            
+                        
+        if(UIM12_15 < 9)
+        {
+            uint64_t *ppp = (uint64_t *)&vrb[UIM12_15];
+            uint64_t src = *ppp;
+            vrt[0] = src;
+            vrt[1] = 0x00;
+            
+            //printf("vector:  UIM= %d  vrb[UIM:UIM+1]= %llx  src= %llx\n", UIM12_15, *ppp, src); 
+            //printf("vector:  Vt = %llx%llx\n", \
+                                    vrt[0],vrt[1]);
+        }
+        else
+        {
+            inv_flag = 1;
+            //printf("vector:  undefined!!!\n");
+        }
+        
+        tc->setVecReg(vrt_id, vrt_reg);
+    }});
+
+    1549: vextublx({{                                            // wwf
+        /*
+            index ← GPR[RA].bit[60:63]
+            GPR[RT] ← EXTZ64(VSR[VRB+32].byte[index])
+        */
+        ThreadContext *tc = xc->tcBase();
+        RegId vrb_id(VecRegClass, VRB + 32);               
+        auto vrb_reg = tc->readVecReg(vrb_id);
+        auto vrb = vrb_reg.as<uint8_t>();          
+                        
+        uint8_t index = Ra_ud & 0x0F;
+        Rt_ud = zext<8>(vrb[index]);
+        
+        //printf("vector:  Ra= %llx  [RA].bit[60:63] index= %x\n", Ra_ud, index); 
+    }});
+
+    1805: vextubrx({{                                            // wwf
+        /*
+            index ← GPR[RA].bit[60:63]
+            GPR[RT] ← EXTZ64(VSR[VRB+32].byte[15-index])
+        */
+        ThreadContext *tc = xc->tcBase();
+        RegId vrb_id(VecRegClass, VRB + 32);               
+        auto vrb_reg = tc->readVecReg(vrb_id);
+        auto vrb = vrb_reg.as<uint8_t>();          
+                        
+        uint8_t index = Ra_ud & 0x0F;
+        Rt_ud = zext<8>(vrb[15-index]);
+        
+        //printf("vector:  Ra= %llx    15 - [RA].bit[60:63] index= %x\n", Ra_ud, 15-index); 
+    }});
+
+    1613: vextuhlx({{                                            // wwf
+        /*
+            index ← GPR[RA].bit[60:63]
+            GPR[RT] ← EXTZ64(VSR[VRB+32].byte[index:index+1])
+        */
+        ThreadContext *tc = xc->tcBase();
+        RegId vrb_id(VecRegClass, VRB + 32);               
+        auto vrb_reg = tc->readVecReg(vrb_id);
+        auto vrb = vrb_reg.as<uint8_t>();          
+                        
+        uint8_t index = Ra_ud & 0x0F;
+        uint16_t *ppp;
+        uint8_t tmp_data[2];
+        tmp_data[0] = vrb[index+1];
+        tmp_data[1] = vrb[index];
+        ppp = (uint16_t *)&tmp_data[0];
+        
+        if(index < 15)
+            Rt_ud = zext<16>(*ppp);
+        else
+        {
+            inv_flag = 1;
+            //printf("vector:  undefined!!!\n");
+        }
+        
+        //printf("vector:  Ra= %llx    [RA].bit[60:63] index= %x    data=%x\n", Ra_ud, index, *ppp); 
+    }});
+
+    1869: vextuhrx({{                                            // wwf
+        /*
+            index ← GPR[RA].bit[60:63]
+            GPR[RT] ← EXTZ64(VSR[VRB+32].byte[14-index:15-index])
+        */
+        ThreadContext *tc = xc->tcBase();
+        RegId vrb_id(VecRegClass, VRB + 32);               
+        auto vrb_reg = tc->readVecReg(vrb_id);
+        auto vrb = vrb_reg.as<uint8_t>();          
+                        
+        uint8_t index = Ra_ud & 0x0F;
+        uint16_t *ppp;
+        uint8_t tmp_data[2];
+        tmp_data[0] = vrb[15-index];
+        tmp_data[1] = vrb[14-index];
+        ppp = (uint16_t *)&tmp_data[0];
+        
+        if(index < 15)
+            Rt_ud = zext<16>(*ppp);
+        else
+        {
+            inv_flag = 1;
+            //printf("vector:  undefined!!!\n");
+        }
+        
+        //printf("vector:  Ra= %llx    14 - [RA].bit[60:63] index= %x    data=%x\n", Ra_ud, 14-index, *ppp); 
+    }});
+
+    1677: vextuwlx({{                                            // wwf
+        /*
+            index ← GPR[RA].bit[60:63]
+            GPR[RT] ← EXTZ64(VSR[VRB+32].byte[index:index+3])
+        */
+        ThreadContext *tc = xc->tcBase();
+        RegId vrb_id(VecRegClass, VRB + 32);               
+        auto vrb_reg = tc->readVecReg(vrb_id);
+        auto vrb = vrb_reg.as<uint8_t>();          
+                        
+        uint8_t index = Ra_ud & 0x0F;
+        uint32_t *ppp;
+        uint8_t tmp_data[4];
+        tmp_data[0] = vrb[index+3];
+        tmp_data[1] = vrb[index+2];
+        tmp_data[2] = vrb[index+1];
+        tmp_data[3] = vrb[index];
+        ppp = (uint32_t *)&tmp_data[0];
+        
+        if(index < 13)
+            Rt_ud = zext<32>(*ppp);
+        else
+        {
+            inv_flag = 1;
+            //printf("vector:  undefined!!!\n");
+        }
+        
+        //printf("vector:  Ra= %llx    [RA].bit[60:63] index= %x    data=%lx\n", Ra_ud, index, *ppp); 
+    }});
+
+    1933: vextuwrx({{                                            // wwf
+        /*
+            index ← GPR[RA].bit[60:63]
+            GPR[RT] ← EXTZ64(VSR[VRB+32].byte[12-index:15-index])
+        */
+        ThreadContext *tc = xc->tcBase();
+        RegId vrb_id(VecRegClass, VRB + 32);               
+        auto vrb_reg = tc->readVecReg(vrb_id);
+        auto vrb = vrb_reg.as<uint8_t>();          
+                        
+        uint8_t index = Ra_ud & 0x0F;
+        uint32_t *ppp;
+        uint8_t tmp_data[4];
+        tmp_data[0] = vrb[15-index];
+        tmp_data[1] = vrb[14-index];
+        tmp_data[2] = vrb[13-index];
+        tmp_data[3] = vrb[12-index];
+        ppp = (uint32_t *)&tmp_data[0];
+        
+        if(index < 13)
+            Rt_ud = zext<32>(*ppp);
+        else
+        {
+            inv_flag = 1;
+            //printf("vector:  undefined!!!\n");
+        }
+        
+        //printf("vector:  Ra= %llx    12 - [RA].bit[60:63] index= %x    data=%lx\n", Ra_ud, 12-index, *ppp); 
+    }});
+}

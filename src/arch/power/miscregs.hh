@@ -95,15 +95,16 @@ BitUnion32(Fpscr)
             Bitfield<12> fu;
         EndSubBitUnion(fpcc)
     EndSubBitUnion(fprf)
-    Bitfield<10> vxsqrt;
-    Bitfield<9> vxcvi;
-    Bitfield<8> ve;
-    Bitfield<7> oe;
-    Bitfield<6> ue;
-    Bitfield<5> ze;
-    Bitfield<4> xe;
-    Bitfield<3> ni;
-    Bitfield<2,1> rn;
+    Bitfield<10> vxsoft;
+    Bitfield<9> vxsqrt;
+    Bitfield<8> vxcvi;
+    Bitfield<7> ve;
+    Bitfield<6> oe;
+    Bitfield<5> ue;
+    Bitfield<4> ze;
+    Bitfield<3> xe;
+    Bitfield<2> ni;
+    Bitfield<1,0> rn;
 EndBitUnion(Fpscr)
 
 BitUnion64(Msr)

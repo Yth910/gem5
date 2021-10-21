@@ -1,0 +1,161 @@
+format IntArithOp {
+    524: vspltb({{                                            // wwf
+        /*
+            b ← UIM || 0b000
+            do i = 0 to 15
+            VSR[VRT+32].byte[i] ← VSR[VRB+32].bit[b:b+7]
+            end
+        */
+        ThreadContext *tc = xc->tcBase();
+        RegId vrb_id(VecRegClass, VRB + 32);
+        RegId vrt_id(VecRegClass, VRT + 32);                
+        auto vrb_reg = tc->readVecReg(vrb_id);
+        auto vrb = vrb_reg.as<uint8_t>();
+        auto vrt_reg = tc->readVecReg(vrt_id);
+        auto vrt = vrt_reg.as<uint8_t>();            
+                        
+        uint8_t n = (UIM12_15 << 3) & 0xF8;
+        for(int i = 0; i < 16; i++)
+            vrt[i] = vrb[UIM12_15];
+            
+        //printf("vector:  UIM= %d  n= %d  vrb[n]= %x\n", UIM12_15, n, vrb[UIM12_15]); 
+        //printf("vector:  Vt = %x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x\n", \
+                                    vrt[0],vrt[1],vrt[2],vrt[3],vrt[4],vrt[5],vrt[6],vrt[7], \
+                                    vrt[8],vrt[9],vrt[10],vrt[11],vrt[12],vrt[13],vrt[14],vrt[15]);
+        
+        tc->setVecReg(vrt_id, vrt_reg);
+    }});
+
+    588: vsplth({{                                            // wwf
+        /*
+            b ← UIM || 0b0000
+            do i = 0 to 7
+            VSR[VRT+32].hword[i] ← VSR[VRB+32].bit[b:b+15]
+            end
+        */
+        ThreadContext *tc = xc->tcBase();
+        RegId vrb_id(VecRegClass, VRB + 32);
+        RegId vrt_id(VecRegClass, VRT + 32);                
+        auto vrb_reg = tc->readVecReg(vrb_id);
+        auto vrb = vrb_reg.as<uint16_t>();
+        auto vrt_reg = tc->readVecReg(vrt_id);
+        auto vrt = vrt_reg.as<uint16_t>();            
+                        
+        uint8_t n = (UIM13_15 << 4) & 0xF0;
+        for(int i = 0; i < 8; i++)
+            vrt[i] = vrb[UIM13_15];
+            
+        //printf("vector:  UIM= %d  n= %d  vrb[n]= %x\n", UIM13_15, n, vrb[UIM13_15]); 
+        //printf("vector:  Vt = %x%x%x%x%x%x%x%x\n", \
+                                    vrt[0],vrt[1],vrt[2],vrt[3],vrt[4],vrt[5],vrt[6],vrt[7]);
+        
+        tc->setVecReg(vrt_id, vrt_reg);
+    }});
+
+    652: vspltw({{                                            // wwf
+        /*
+            b ← UIM || 0b00000
+            do i = 0 to 3
+            VSR[VRT+32].word[i] ← VSR[VRB+32].bit[b:b+31]
+            end
+        */
+        ThreadContext *tc = xc->tcBase();
+        RegId vrb_id(VecRegClass, VRB + 32);
+        RegId vrt_id(VecRegClass, VRT + 32);                
+        auto vrb_reg = tc->readVecReg(vrb_id);
+        auto vrb = vrb_reg.as<uint32_t>();
+        auto vrt_reg = tc->readVecReg(vrt_id);
+        auto vrt = vrt_reg.as<uint32_t>();            
+                        
+        uint8_t n = (UIM14_15 << 5) & 0xF0;
+        for(int i = 0; i < 4; i++)
+            vrt[i] = vrb[UIM14_15];
+            
+        //printf("vector:  UIM= %d  n= %d  vrb[n]= %x\n", UIM14_15, n, vrb[UIM14_15]); 
+        //printf("vector:  Vt = %x%x%x%x\n", \
+                                    vrt[0],vrt[1],vrt[2],vrt[3]);
+        
+        tc->setVecReg(vrt_id, vrt_reg);
+    }});
+
+    780: vspltisb({{                                            // wwf
+        /*
+            do i = 0 to 15
+            VSR[VRT+32].byte[i] ← EXTS8(SIM, 8)
+            end
+        */
+        ThreadContext *tc = xc->tcBase();
+        RegId vrt_id(VecRegClass, VRT + 32);                
+        auto vrt_reg = tc->readVecReg(vrt_id);
+        auto vrt = vrt_reg.as<uint8_t>();            
+                        
+        uint64_t n = sext<5>(SIM);
+        n = n & 0xFF;
+        for(int i = 0; i < 16; i++)
+            vrt[i] = n;
+            
+        //printf("vector:  SIM= %x  n= %lx \n", SIM, n); 
+        //printf("vector:  Vt = %x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x\n", \
+                                    vrt[0],vrt[1],vrt[2],vrt[3],vrt[4],vrt[5],vrt[6],vrt[7], \
+                                    vrt[8],vrt[9],vrt[10],vrt[11],vrt[12],vrt[13],vrt[14],vrt[15]);
+        
+        tc->setVecReg(vrt_id, vrt_reg);
+    }});
+
+    844: vspltish({{                                            // wwf
+        /*
+            do i = 0 to 7
+            VSR[VRT+32].hword[i] ← EXTS16(SIM, 16)
+            end
+        */
+        ThreadContext *tc = xc->tcBase();
+        RegId vrt_id(VecRegClass, VRT + 32);                
+        auto vrt_reg = tc->readVecReg(vrt_id);
+        auto vrt = vrt_reg.as<uint16_t>();            
+                        
+        uint64_t n = sext<5>(SIM);
+        unsigned char *p_c, uch;
+        n = n & 0xFFFF;
+        for(int i = 0; i < 8; i++)
+        {
+            vrt[i] = n;
+            p_c = (unsigned char*)&vrt[i];
+            uch = p_c[0];  p_c[0] = p_c[1]; p_c[1] = uch;
+        }
+            
+        //printf("vector:  SIM= %x  n= %lx \n", SIM, n); 
+        //printf("vector:  Vt = %x%x%x%x%x%x%x%x\n", \
+                                    vrt[0],vrt[1],vrt[2],vrt[3],vrt[4],vrt[5],vrt[6],vrt[7]);
+        
+        tc->setVecReg(vrt_id, vrt_reg);
+    }});
+
+    908: vspltisw({{                                            // wwf
+        /*
+            do i = 0 to 3
+            VSR[VRT+32].word[i] ← EXTS32(SIM, 32)
+            end
+        */
+        ThreadContext *tc = xc->tcBase();
+        RegId vrt_id(VecRegClass, VRT + 32);                
+        auto vrt_reg = tc->readVecReg(vrt_id);
+        auto vrt = vrt_reg.as<uint32_t>();            
+                        
+        uint64_t n = sext<5>(SIM);
+        unsigned char *p_c, uch;
+        n = n & 0xFFFFFFFF;
+        for(int i = 0; i < 4; i++)
+        {
+            vrt[i] = n;
+            p_c = (unsigned char*)&vrt[i];
+            uch = p_c[0];  p_c[0] = p_c[3]; p_c[3] = uch;
+            uch = p_c[1];  p_c[1] = p_c[2]; p_c[2] = uch;
+        }
+            
+        //printf("vector:  SIM= %x  n= %lx \n", SIM, n); 
+        //printf("vector:  Vt = %x%x%x%x\n", \
+                                    vrt[0],vrt[1],vrt[2],vrt[3]);
+        
+        tc->setVecReg(vrt_id, vrt_reg);
+    }});
+}

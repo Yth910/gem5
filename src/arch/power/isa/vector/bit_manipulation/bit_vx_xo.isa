@@ -1,0 +1,239 @@
+format IntArithOp {
+    1292: vgbbd({{
+        ThreadContext *tc = xc->tcBase();
+        RegId src_id(VecRegClass, VRB + 32);
+        RegId dst_id(VecRegClass, VRT + 32);
+        auto src_reg = tc->readVecReg(src_id);
+        auto src_val = src_reg.as<uint8_t>();
+        auto dst_reg = tc->readVecReg(dst_id);
+        auto dst_val = dst_reg.as<uint8_t>();
+
+        for (int i = 0; i < 2; ++i) {
+            uint8_t mask = 1 << 7;
+            for (int j = 0; j < 8; ++j) {
+                int dst_ind = (1-i) * 8 + (7-j);
+                dst_val[dst_ind] = 0;
+                for (int k = 0; k < 8; ++k) {
+                    int src_ind = (1-i) * 8 + (7-k);
+                    dst_val[dst_ind] <<= 1;
+                    dst_val[dst_ind] |= (src_val[src_ind] & mask) ? 1 : 0;
+                }
+                mask >>= 1;
+            }
+        }
+
+        tc->setVecReg(dst_id, dst_reg);
+    }});
+
+    1794: vclzb({{
+        ThreadContext *tc = xc->tcBase();
+        RegId src_id(VecRegClass, VRB + 32);
+        RegId dst_id(VecRegClass, VRT + 32);
+        auto src_reg = tc->readVecReg(src_id);
+        auto dst_reg = tc->readVecReg(dst_id);
+        auto src_val = src_reg.as<uint8_t>();
+        auto dst_val = dst_reg.as<uint8_t>();
+
+        for (int i = 0; i < 16; ++i) {
+            uint8_t val = src_val[15-i];
+            uint8_t n;
+            for (n = 0; n < 8; ++n) {
+                if (val >> 7)
+                    break;
+                else
+                    val = val << 1;
+            }
+            dst_val[15-i] = n;
+        }
+
+        tc->setVecReg(dst_id, dst_reg);
+    }});
+
+    1858: vclzh({{
+        ThreadContext *tc = xc->tcBase();
+        RegId src_id(VecRegClass, VRB + 32);
+        RegId dst_id(VecRegClass, VRT + 32);
+        auto src_reg = tc->readVecReg(src_id);
+        auto dst_reg = tc->readVecReg(dst_id);
+        auto src_val = src_reg.as<uint16_t>();
+        auto dst_val = dst_reg.as<uint16_t>();
+
+        for (int i = 0; i < 8; ++i) {
+            uint16_t val = src_val[7-i];
+            uint16_t n;
+            for (n = 0; n < 16; ++n) {
+                if (val >> 15)
+                    break;
+                else
+                    val = val << 1;
+            }
+            dst_val[7-i] = n;
+        }
+
+        tc->setVecReg(dst_id, dst_reg);
+    }});
+
+    1922: vclzw({{
+        ThreadContext *tc = xc->tcBase();
+        RegId src_id(VecRegClass, VRB + 32);
+        RegId dst_id(VecRegClass, VRT + 32);
+        auto src_reg = tc->readVecReg(src_id);
+        auto dst_reg = tc->readVecReg(dst_id);
+        auto src_val = src_reg.as<uint32_t>();
+        auto dst_val = dst_reg.as<uint32_t>();
+
+        for (int i = 0; i < 4; ++i) {
+            uint32_t val = src_val[3-i];
+            uint32_t n;
+            for (n = 0; n < 32; ++n) {
+                if (val >> 31)
+                    break;
+                else
+                    val = val << 1;
+            }
+            dst_val[3-i] = n;
+        }
+
+        tc->setVecReg(dst_id, dst_reg);
+    }});
+
+    1986: vclzd({{
+        ThreadContext *tc = xc->tcBase();
+        RegId src_id(VecRegClass, VRB + 32);
+        RegId dst_id(VecRegClass, VRT + 32);
+        auto src_reg = tc->readVecReg(src_id);
+        auto dst_reg = tc->readVecReg(dst_id);
+        auto src_val = src_reg.as<uint64_t>();
+        auto dst_val = dst_reg.as<uint64_t>();
+
+        for (int i = 0; i < 2; ++i) {
+            uint64_t val = src_val[1-i];
+            uint64_t n;
+            for (n = 0; n < 64; ++n) {
+                if (val >> 63)
+                    break;
+                else
+                    val = val << 1;
+            }
+            dst_val[1-i] = n;
+        }
+
+        tc->setVecReg(dst_id, dst_reg);
+    }});
+
+    1795: vpopcntb({{
+        ThreadContext *tc = xc->tcBase();
+        RegId src_id(VecRegClass, VRB + 32);
+        RegId dst_id(VecRegClass, VRT + 32);
+        auto src_reg = tc->readVecReg(src_id);
+        auto dst_reg = tc->readVecReg(dst_id);
+        auto src_val = src_reg.as<uint8_t>();
+        auto dst_val = dst_reg.as<uint8_t>();
+
+        for (int i = 0; i < 16; ++i) {
+            uint8_t val = src_val[15-i];
+            uint8_t n = 0;
+            for (int j = 0; j < 8; ++j) {
+                n += (val & 1);
+                val = val >> 1;
+            }
+            dst_val[15-i] = n;
+        }
+
+        tc->setVecReg(dst_id, dst_reg);
+    }});
+
+    1859: vpopcnth({{
+        ThreadContext *tc = xc->tcBase();
+        RegId src_id(VecRegClass, VRB + 32);
+        RegId dst_id(VecRegClass, VRT + 32);
+        auto src_reg = tc->readVecReg(src_id);
+        auto dst_reg = tc->readVecReg(dst_id);
+        auto src_val = src_reg.as<uint16_t>();
+        auto dst_val = dst_reg.as<uint16_t>();
+
+        for (int i = 0; i < 8; ++i) {
+            uint16_t val = src_val[7-i];
+            uint16_t n = 0;
+            for (int j = 0; j < 16; ++j) {
+                n += (val & 1);
+                val = val >> 1;
+            }
+            dst_val[7-i] = n;
+        }
+
+        tc->setVecReg(dst_id, dst_reg);
+    }});
+
+    1923: vpopcntw({{
+        ThreadContext *tc = xc->tcBase();
+        RegId src_id(VecRegClass, VRB + 32);
+        RegId dst_id(VecRegClass, VRT + 32);
+        auto src_reg = tc->readVecReg(src_id);
+        auto dst_reg = tc->readVecReg(dst_id);
+        auto src_val = src_reg.as<uint32_t>();
+        auto dst_val = dst_reg.as<uint32_t>();
+
+        for (int i = 0; i < 4; ++i) {
+            uint32_t val = src_val[3-i];
+            uint32_t n = 0;
+            for (int j = 0; j < 32; ++j) {
+                n += (val & 1);
+                val = val >> 1;
+            }
+            dst_val[3-i] = n;
+        }
+
+        tc->setVecReg(dst_id, dst_reg);
+    }});
+
+    1987: vpopcntd({{
+        ThreadContext *tc = xc->tcBase();
+        RegId src_id(VecRegClass, VRB + 32);
+        RegId dst_id(VecRegClass, VRT + 32);
+        auto src_reg = tc->readVecReg(src_id);
+        auto dst_reg = tc->readVecReg(dst_id);
+        auto src_val = src_reg.as<uint64_t>();
+        auto dst_val = dst_reg.as<uint64_t>();
+
+        for (int i = 0; i < 2; ++i) {
+            uint64_t val = src_val[1-i];
+            uint64_t n = 0;
+            for (int j = 0; j < 64; ++j) {
+                n += (val & 1);
+                val = val >> 1;
+            }
+            dst_val[1-i] = n;
+        }
+
+        tc->setVecReg(dst_id, dst_reg);
+    }});
+
+    1356: vbpermq({{
+        ThreadContext *tc = xc->tcBase();
+        RegId src1_id(VecRegClass, VRA + 32);
+        RegId src2_id(VecRegClass, VRB + 32);
+        RegId dst_id(VecRegClass, VRT + 32);
+        auto src1_reg = tc->readVecReg(src1_id);
+        auto src2_reg = tc->readVecReg(src2_id);
+        auto dst_reg = tc->readVecReg(dst_id);
+        auto src1_val = src1_reg.as<uint8_t>();
+        auto src2_val = src2_reg.as<uint8_t>();
+        auto dst_val = dst_reg.as<uint64_t>();
+
+        uint64_t perm = 0;
+        for (int i = 15; i >= 0; --i) {
+            uint8_t index = src2_val[i];
+            perm = perm << 1;
+            if (index < 128) {
+                index = 127 - index;
+                bool bit = (src1_val[index/8] >> (index%8)) & 1;
+                perm |= bit;
+            }
+        }
+        dst_val[1] = perm;
+        dst_val[0] = 0;
+
+        tc->setVecReg(dst_id, dst_reg);
+    }});
+}

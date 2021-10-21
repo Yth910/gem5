@@ -60,7 +60,7 @@ const int NumIntArchRegs = 32;
 
 // CR, XER, LR, CTR, TAR, FPSCR, RSV, RSV-LEN, RSV-ADDR
 // and zero register, which doesn't actually exist but needs a number
-const int NumIntSpecialRegs = 89;
+const int NumIntSpecialRegs = 95;
 const int NumFloatArchRegs = 32;
 
 const int NumIntRegs = NumIntArchRegs + NumIntSpecialRegs;

@@ -1,0 +1,463 @@
+format FloatArithOp {
+	99:xvcmpeqdp({{
+		// TODO if (MSR.VEC == 0) ???
+		// std::cout << "Running xvcmpeqdp in XX3RC_XO" << std::endl;
+
+		ThreadContext *tc = xc->tcBase();
+		RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
+        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
+        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
+		auto vra_reg = tc->readVecReg(vra_id); auto vra_val = vra_reg.as<double>();
+		auto vrb_reg = tc->readVecReg(vrb_id); auto vrb_val = vrb_reg.as<double>();
+		auto vrt_reg = tc->readVecReg(vrt_id); auto vrt_val = vrt_reg.as<double>();
+
+		uint32_t ex_flag = 0;
+		uint32_t all_true = 1;
+		uint32_t all_false = 1;
+		bool vxsnan_flag = 0;
+
+		// reset_xflags()
+		Fpscr reg_fpscr = FPSCR;
+		reg_fpscr.vxsnan = 0;
+		reg_fpscr.vximz  = 0;
+		reg_fpscr.vxidi  = 0;
+		reg_fpscr.vxisi  = 0;
+		reg_fpscr.vxzdz  = 0;
+		reg_fpscr.vxsqrt = 0;
+		reg_fpscr.vxcvi  = 0;
+		reg_fpscr.vxvc   = 0;
+		reg_fpscr.ox     = 0;
+		reg_fpscr.ux     = 0;
+		reg_fpscr.xx     = 0;
+		reg_fpscr.zx     = 0;
+		FPSCR = reg_fpscr;
+
+		// TODO
+		// std::cout << "fpscr.ve is " << reg_fpscr.ve << std::endl;
+
+		for (auto i = 0; i < 2; i++) {
+			uint64_t *pVal = reinterpret_cast<uint64_t *>(&vrt_val[i]);
+			vxsnan_flag = isSnan(vra_val[i]) | isSnan(vrb_val[i]);
+
+			if (vra_val[i] == vrb_val[i]) {
+				// vrt_val[i] = 0xFFFFFFFFFFFFFFFF; 
+				*pVal = 0xFFFFFFFFFFFFFFFF; 
+				all_false = 0;
+			}
+			else {
+				// vrt_val[i] = 0x0000000000000000; 
+				*pVal = 0x0000000000000000; 
+				all_true = 0;
+			}
+			ex_flag = ex_flag | (reg_fpscr.ve & vxsnan_flag);
+
+			if (vxsnan_flag) {
+				reg_fpscr = FPSCR;
+				reg_fpscr.fx = 1;
+				reg_fpscr.vx = 1; // TODO ??? fex
+				reg_fpscr.vxsnan = 1;
+				FPSCR = reg_fpscr;
+			}
+		}
+
+		if (RC21)
+			if (!ex_flag)
+				CR = insertCRField(CR, 6, ((all_true << 3) | (all_false << 1)));
+		tc->setVecReg(vrt_id, vrt_val);
+	}}); 
+
+	115:xvcmpgedp({{
+		// TODO if (MSR.VEC == 0) ???
+		ThreadContext *tc = xc->tcBase();
+		RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
+        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
+        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
+		auto vra_reg = tc->readVecReg(vra_id); auto vra_val = vra_reg.as<double>();
+		auto vrb_reg = tc->readVecReg(vrb_id); auto vrb_val = vrb_reg.as<double>();
+		auto vrt_reg = tc->readVecReg(vrt_id); auto vrt_val = vrt_reg.as<double>();
+
+		uint32_t ex_flag = 0;
+		uint32_t all_true = 1;
+		uint32_t all_false = 1;
+		bool vxsnan_flag = 0;
+		bool vxvc_flag = 0;
+
+		// reset_xflags()
+		Fpscr reg_fpscr = FPSCR;
+		reg_fpscr.vxsnan = 0;
+		reg_fpscr.vximz  = 0;
+		reg_fpscr.vxidi  = 0;
+		reg_fpscr.vxisi  = 0;
+		reg_fpscr.vxzdz  = 0;
+		reg_fpscr.vxsqrt = 0;
+		reg_fpscr.vxcvi  = 0;
+		reg_fpscr.vxvc   = 0;
+		reg_fpscr.ox     = 0;
+		reg_fpscr.ux     = 0;
+		reg_fpscr.xx     = 0;
+		reg_fpscr.zx     = 0;
+		FPSCR = reg_fpscr;
+
+		// TODO
+		// std::cout << "fpscr.ve is " << reg_fpscr.ve << std::endl;
+
+		for (auto i = 0; i < 2; i++) {
+			uint64_t *pVal = reinterpret_cast<uint64_t *>(&vrt_val[i]);
+			if (isSnan(vra_val[i]) | isSnan(vrb_val[i])) {
+				vxsnan_flag = 1;
+				if (reg_fpscr.ve == 0)
+					vxvc_flag = 1;
+			}
+			else
+				vxvc_flag = (isQnan(vra_val[i]) | isQnan(vrb_val[i]));
+
+
+			if (vra_val[i] >= vrb_val[i]) {
+				// vrt_val[i] = 0xFFFFFFFFFFFFFFFF; 
+				*pVal = 0xFFFFFFFFFFFFFFFF; 
+				all_false = 0;
+			}
+			else {
+				// vrt_val[i] = 0x0000000000000000; 
+				*pVal = 0x0000000000000000; 
+				all_true = 0;
+			}
+
+			if (vxsnan_flag) {
+				reg_fpscr = FPSCR;
+				reg_fpscr.fx = 1;
+				reg_fpscr.vx = 1; // TODO ??? fex
+				reg_fpscr.vxsnan = 1;
+				FPSCR = reg_fpscr;
+			}
+
+			if (vxvc_flag) {
+				reg_fpscr = FPSCR;
+				reg_fpscr.fx = 1;
+				reg_fpscr.vx = 1; // TODO ??? fex
+				reg_fpscr.vxvc = 1;
+				FPSCR = reg_fpscr;
+			}
+
+			ex_flag = ex_flag | (reg_fpscr.ve & vxsnan_flag) | (reg_fpscr.ve & vxvc_flag);
+		}
+
+		if (RC21)
+			if (!ex_flag)
+				CR = insertCRField(CR, 6, ((all_true << 3) | (all_false << 1)));
+		tc->setVecReg(vrt_id, vrt_val);
+	}}); 
+
+	107:xvcmpgtdp({{
+		// TODO if (MSR.VEC == 0) ???
+		ThreadContext *tc = xc->tcBase();
+		RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
+        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
+        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
+		auto vra_reg = tc->readVecReg(vra_id); auto vra_val = vra_reg.as<double>();
+		auto vrb_reg = tc->readVecReg(vrb_id); auto vrb_val = vrb_reg.as<double>();
+		auto vrt_reg = tc->readVecReg(vrt_id); auto vrt_val = vrt_reg.as<double>();
+
+		uint32_t ex_flag = 0;
+		uint32_t all_true = 1;
+		uint32_t all_false = 1;
+		bool vxsnan_flag = 0;
+		bool vxvc_flag = 0;
+
+		// reset_xflags()
+		Fpscr reg_fpscr = FPSCR;
+		reg_fpscr.vxsnan = 0;
+		reg_fpscr.vximz  = 0;
+		reg_fpscr.vxidi  = 0;
+		reg_fpscr.vxisi  = 0;
+		reg_fpscr.vxzdz  = 0;
+		reg_fpscr.vxsqrt = 0;
+		reg_fpscr.vxcvi  = 0;
+		reg_fpscr.vxvc   = 0;
+		reg_fpscr.ox     = 0;
+		reg_fpscr.ux     = 0;
+		reg_fpscr.xx     = 0;
+		reg_fpscr.zx     = 0;
+		FPSCR = reg_fpscr;
+
+		// TODO
+		// std::cout << "fpscr.ve is " << reg_fpscr.ve << std::endl;
+
+		for (auto i = 0; i < 2; i++) {
+			uint64_t *pVal = reinterpret_cast<uint64_t *>(&vrt_val[i]);
+
+			if (isSnan(vra_val[i]) | isSnan(vrb_val[i])) {
+				vxsnan_flag = 1;
+				if (reg_fpscr.ve == 0)
+					vxvc_flag = 1;
+			}
+			else
+				vxvc_flag = (isQnan(vra_val[i]) | isQnan(vrb_val[i]));
+
+
+			if (vra_val[i] > vrb_val[i]) {
+				// vrt_val[i] = 0xFFFFFFFFFFFFFFFF; 
+				*pVal = 0xFFFFFFFFFFFFFFFF; 
+				all_false = 0;
+			}
+			else {
+				// vrt_val[i] = 0x0000000000000000; 
+				*pVal = 0x0000000000000000; 
+				all_true = 0;
+			}
+
+			if (vxsnan_flag) {
+				reg_fpscr = FPSCR;
+				reg_fpscr.fx = 1;
+				reg_fpscr.vx = 1; // TODO ???
+				reg_fpscr.vxsnan = 1;
+				FPSCR = reg_fpscr;
+			}
+
+			if (vxvc_flag) {
+				reg_fpscr = FPSCR;
+				reg_fpscr.fx = 1;
+				reg_fpscr.vx = 1; // TODO ???
+				reg_fpscr.vxvc = 1;
+				FPSCR = reg_fpscr;
+			}
+
+			ex_flag = ex_flag | (reg_fpscr.ve & vxsnan_flag) | (reg_fpscr.ve & vxvc_flag);
+		}
+
+		if (RC21)
+			if (!ex_flag)
+				CR = insertCRField(CR, 6, ((all_true << 3) | (all_false << 1)));
+		tc->setVecReg(vrt_id, vrt_val);
+	}}); 
+
+	67:xvcmpeqsp({{
+		// TODO if (MSR.VEC == 0) ???
+		ThreadContext *tc = xc->tcBase();
+		RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
+        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
+        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
+		auto vra_reg = tc->readVecReg(vra_id); auto vra_val = vra_reg.as<float>();
+		auto vrb_reg = tc->readVecReg(vrb_id); auto vrb_val = vrb_reg.as<float>();
+		auto vrt_reg = tc->readVecReg(vrt_id); auto vrt_val = vrt_reg.as<float>();
+
+		uint32_t ex_flag = 0;
+		uint32_t all_true = 1;
+		uint32_t all_false = 1;
+		bool vxsnan_flag = 0;
+
+		// reset_xflags()
+		Fpscr reg_fpscr = FPSCR;
+		reg_fpscr.vxsnan = 0;
+		reg_fpscr.vximz  = 0;
+		reg_fpscr.vxidi  = 0;
+		reg_fpscr.vxisi  = 0;
+		reg_fpscr.vxzdz  = 0;
+		reg_fpscr.vxsqrt = 0;
+		reg_fpscr.vxcvi  = 0;
+		reg_fpscr.vxvc   = 0;
+		reg_fpscr.ox     = 0;
+		reg_fpscr.ux     = 0;
+		reg_fpscr.xx     = 0;
+		reg_fpscr.zx     = 0;
+		FPSCR = reg_fpscr;
+		// TODO
+		// std::cout << "fpscr.ve is " << reg_fpscr.ve << std::endl;
+
+		for (auto i = 0; i < 4; i++) {
+			uint32_t *pVal = reinterpret_cast<uint32_t *>(&vrt_val[i]);
+			vxsnan_flag = isSnan(vra_val[i]) | isSnan(vrb_val[i]);
+
+			if (vra_val[i] == vrb_val[i]) {
+				// vrt_val[i] = 0xFFFFFFFF; 
+				*pVal = 0xFFFFFFFF; 
+				all_false = 0;
+			}
+			else {
+				// vrt_val[i] = 0x00000000; 
+				*pVal = 0x00000000; 
+				all_true = 0;
+			}
+			ex_flag = ex_flag | (reg_fpscr.ve & vxsnan_flag);
+
+			if (vxsnan_flag) {
+				reg_fpscr = FPSCR;
+				reg_fpscr.fx = 1;
+				reg_fpscr.vx = 1; // TODO ??? fex
+				reg_fpscr.vxsnan = 1;
+				FPSCR = reg_fpscr;
+			}
+		}
+
+		if (RC21)
+			if (!ex_flag)
+				CR = insertCRField(CR, 6, ((all_true << 3) | (all_false << 1)));
+		tc->setVecReg(vrt_id, vrt_val);
+	}}); 
+
+	83:xvcmpgesp({{
+		// TODO if (MSR.VEC == 0) ???
+		ThreadContext *tc = xc->tcBase();
+		RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
+        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
+        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
+		auto vra_reg = tc->readVecReg(vra_id); auto vra_val = vra_reg.as<float>();
+		auto vrb_reg = tc->readVecReg(vrb_id); auto vrb_val = vrb_reg.as<float>();
+		auto vrt_reg = tc->readVecReg(vrt_id); auto vrt_val = vrt_reg.as<float>();
+
+		uint32_t ex_flag = 0;
+		uint32_t all_true = 1;
+		uint32_t all_false = 1;
+		bool vxsnan_flag = 0;
+		bool vxvc_flag = 0;
+
+		// reset_xflags()
+		Fpscr reg_fpscr = FPSCR;
+		reg_fpscr.vxsnan = 0;
+		reg_fpscr.vximz  = 0;
+		reg_fpscr.vxidi  = 0;
+		reg_fpscr.vxisi  = 0;
+		reg_fpscr.vxzdz  = 0;
+		reg_fpscr.vxsqrt = 0;
+		reg_fpscr.vxcvi  = 0;
+		reg_fpscr.vxvc   = 0;
+		reg_fpscr.ox     = 0;
+		reg_fpscr.ux     = 0;
+		reg_fpscr.xx     = 0;
+		reg_fpscr.zx     = 0;
+		FPSCR = reg_fpscr;
+
+		// TODO
+		// std::cout << "fpscr.ve is " << reg_fpscr.ve << std::endl;
+
+		for (auto i = 0; i < 4; i++) {
+			uint32_t *pVal = reinterpret_cast<uint32_t *>(&vrt_val[i]);
+
+			if (isSnan(vra_val[i]) | isSnan(vrb_val[i])) {
+				vxsnan_flag = 1;
+				if (reg_fpscr.ve == 0)
+					vxvc_flag = 1;
+			}
+			else
+				vxvc_flag = (isQnan(vra_val[i]) | isQnan(vrb_val[i]));
+
+
+			if (vra_val[i] >= vrb_val[i]) {
+				// vrt_val[i] = 0xFFFFFFFF; 
+				*pVal = 0xFFFFFFFF; 
+				all_false = 0;
+			}
+			else {
+				// vrt_val[i] = 0x00000000; 
+				*pVal = 0x00000000; 
+				all_true = 0;
+			}
+
+			if (vxsnan_flag) {
+				reg_fpscr = FPSCR;
+				reg_fpscr.fx = 1;
+				reg_fpscr.vx = 1; // TODO ???
+				reg_fpscr.vxsnan = 1;
+				FPSCR = reg_fpscr;
+			}
+
+			if (vxvc_flag) {
+				reg_fpscr = FPSCR;
+				reg_fpscr.fx = 1;
+				reg_fpscr.vx = 1; // TODO ???
+				reg_fpscr.vxvc = 1;
+				FPSCR = reg_fpscr;
+			}
+
+			ex_flag = ex_flag | (reg_fpscr.ve & vxsnan_flag) | (reg_fpscr.ve & vxvc_flag);
+		}
+
+		if (RC21)
+			if (!ex_flag)
+				CR = insertCRField(CR, 6, ((all_true << 3) | (all_false << 1)));
+		tc->setVecReg(vrt_id, vrt_val);
+	}}); 
+
+	75:xvcmpgtsp({{
+		// TODO if (MSR.VEC == 0) ???
+		ThreadContext *tc = xc->tcBase();
+		RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
+        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
+        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
+		auto vra_reg = tc->readVecReg(vra_id); auto vra_val = vra_reg.as<float>();
+		auto vrb_reg = tc->readVecReg(vrb_id); auto vrb_val = vrb_reg.as<float>();
+		auto vrt_reg = tc->readVecReg(vrt_id); auto vrt_val = vrt_reg.as<float>();
+
+		uint32_t ex_flag = 0;
+		uint32_t all_true = 1;
+		uint32_t all_false = 1;
+		bool vxsnan_flag = 0;
+		bool vxvc_flag = 0;
+
+		// reset_xflags()
+		Fpscr reg_fpscr = FPSCR;
+		reg_fpscr.vxsnan = 0;
+		reg_fpscr.vximz  = 0;
+		reg_fpscr.vxidi  = 0;
+		reg_fpscr.vxisi  = 0;
+		reg_fpscr.vxzdz  = 0;
+		reg_fpscr.vxsqrt = 0;
+		reg_fpscr.vxcvi  = 0;
+		reg_fpscr.vxvc   = 0;
+		reg_fpscr.ox     = 0;
+		reg_fpscr.ux     = 0;
+		reg_fpscr.xx     = 0;
+		reg_fpscr.zx     = 0;
+		FPSCR = reg_fpscr;
+
+		// TODO
+		// std::cout << "fpscr.ve is " << reg_fpscr.ve << std::endl;
+
+		for (auto i = 0; i < 4; i++) {
+			uint32_t *pVal = reinterpret_cast<uint32_t *>(&vrt_val[i]);
+
+			if (isSnan(vra_val[i]) | isSnan(vrb_val[i])) {
+				vxsnan_flag = 1;
+				if (reg_fpscr.ve == 0)
+					vxvc_flag = 1;
+			}
+			else
+				vxvc_flag = (isQnan(vra_val[i]) | isQnan(vrb_val[i]));
+
+
+			if (vra_val[i] > vrb_val[i]) {
+				// vrt_val[i] = 0xFFFFFFFF; 
+				*pVal = 0xFFFFFFFF; 
+				all_false = 0;
+			}
+			else {
+				// vrt_val[i] = 0x00000000; 
+				*pVal = 0x00000000; 
+				all_true = 0;
+			}
+
+			if (vxsnan_flag) {
+				reg_fpscr = FPSCR;
+				reg_fpscr.fx = 1;
+				reg_fpscr.vx = 1; // TODO ???
+				reg_fpscr.vxsnan = 1;
+				FPSCR = reg_fpscr;
+			}
+
+			if (vxvc_flag) {
+				reg_fpscr = FPSCR;
+				reg_fpscr.fx = 1;
+				reg_fpscr.vx = 1; // TODO ???
+				reg_fpscr.vxvc = 1;
+				FPSCR = reg_fpscr;
+			}
+
+			ex_flag = ex_flag | (reg_fpscr.ve & vxsnan_flag) | (reg_fpscr.ve & vxvc_flag);
+		}
+
+		if (RC21)
+			if (!ex_flag)
+				CR = insertCRField(CR, 6, ((all_true << 3) | (all_false << 1)));
+		tc->setVecReg(vrt_id, vrt_val);
+	}}); 
+}

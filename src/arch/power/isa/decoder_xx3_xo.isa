@@ -1,0 +1,100 @@
+	61: xstdivdp({{
+		// TODO if (MSR.VEC == 0) ???
+		ThreadContext *tc = xc->tcBase();
+		RegId vra_id(VecRegClass, VRA + 32 * AX);
+		RegId vrb_id(VecRegClass, VRB + 32 * BX);
+		auto vra_reg = tc->readVecReg(vra_id); auto vra_val = vra_reg.as<double>();
+		auto vrb_reg = tc->readVecReg(vrb_id); auto vrb_val = vrb_reg.as<double>();
+
+		// uint32_t eq_flag = 0;
+		// uint32_t gt_flag = 0;
+		uint32_t fe_flag = 0;
+		uint32_t fg_flag = 0;
+		// uint32_t fl_flag = 0;
+
+		for (auto i = 0; i < 1; i++) {
+			uint64_t *pVala = reinterpret_cast<uint64_t *>(&vra_val[i]);
+			uint64_t *pValb = reinterpret_cast<uint64_t *>(&vrb_val[i]);
+			int16_t e_a = ((*pVala >> (64-12)) & 0x00000000000007FF) - 1023;
+			int16_t e_b = ((*pValb >> (64-12)) & 0x00000000000007FF) - 1023;
+			fe_flag = fe_flag | isNan(vra_val[i]) | isInfinity(vra_val[i]) |
+				isNan(vrb_val[i]) | isInfinity(vrb_val[i]) |
+				(e_b <= -1022) |
+				(e_b >=  1021) |
+				(!isZero(vra_val[i]) & ((e_a - e_b) >=	1023)) |
+				(!isZero(vra_val[i]) & ((e_a - e_b) <= -1021)) |
+				(!isZero(vra_val[i]) & (e_a <= -970));
+			fg_flag = fg_flag | isInfinity(vra_val[i]) | isInfinity(vrb_val[i]) |
+				isZero(vrb_val[i]) | isDenormalized(vrb_val[i]);
+		}
+
+		CR = insertCRField(CR, BF, ((1 << 3) | (fg_flag << 2) | (fe_flag << 1)));
+	}}); 
+
+	125: xvtdivdp({{
+		// TODO if (MSR.VEC == 0) ???
+		ThreadContext *tc = xc->tcBase();
+		RegId vra_id(VecRegClass, VRA + 32 * AX);
+		RegId vrb_id(VecRegClass, VRB + 32 * BX);
+		auto vra_reg = tc->readVecReg(vra_id); auto vra_val = vra_reg.as<double>();
+		auto vrb_reg = tc->readVecReg(vrb_id); auto vrb_val = vrb_reg.as<double>();
+
+		// uint32_t eq_flag = 0;
+		// uint32_t gt_flag = 0;
+		uint32_t fe_flag = 0;
+		uint32_t fg_flag = 0;
+		// uint32_t fl_flag = 0;
+
+		for (auto i = 0; i < 2; i++) {
+			uint64_t *pVala = reinterpret_cast<uint64_t *>(&vra_val[i]);
+			uint64_t *pValb = reinterpret_cast<uint64_t *>(&vrb_val[i]);
+			int16_t e_a = ((*pVala >> (64-12)) & 0x00000000000007FF) - 1023;
+			int16_t e_b = ((*pValb >> (64-12)) & 0x00000000000007FF) - 1023;
+			fe_flag = fe_flag | isNan(vra_val[i]) | isInfinity(vra_val[i]) |
+				isNan(vrb_val[i]) | isInfinity(vrb_val[i]) |
+				(e_b <= -1022) |
+				(e_b >=  1021) |
+				(!isZero(vra_val[i]) & ((e_a - e_b) >=	1023)) |
+				(!isZero(vra_val[i]) & ((e_a - e_b) <= -1021)) |
+				(!isZero(vra_val[i]) & (e_a <= -970));
+			fg_flag = fg_flag | isInfinity(vra_val[i]) | isInfinity(vrb_val[i]) |
+				isZero(vrb_val[i]) | isDenormalized(vrb_val[i]);
+		}
+
+		CR = insertCRField(CR, BF, ((1 << 3) | (fg_flag << 2) | (fe_flag << 1)));
+	}}); 
+
+	93: xvtdivsp({{
+		// TODO if (MSR.VEC == 0) ???
+		ThreadContext *tc = xc->tcBase();
+		RegId vra_id(VecRegClass, VRA + 32 * AX);
+		RegId vrb_id(VecRegClass, VRB + 32 * BX);
+		auto vra_reg = tc->readVecReg(vra_id); auto vra_val = vra_reg.as<float>();
+		auto vrb_reg = tc->readVecReg(vrb_id); auto vrb_val = vrb_reg.as<float>();
+
+		// uint32_t eq_flag = 0;
+		// uint32_t gt_flag = 0;
+		uint32_t fe_flag = 0;
+		uint32_t fg_flag = 0;
+		// uint32_t fl_flag = 0;
+
+		for (auto i = 0; i < 4; i++) {
+			uint32_t *pVala = reinterpret_cast<uint32_t *>(&vra_val[i]);
+			uint32_t *pValb = reinterpret_cast<uint32_t *>(&vrb_val[i]);
+			int8_t e_a = ((*pVala >> 24) & 0x0000007F) - 127;
+			int8_t e_b = ((*pValb >> 24) & 0x0000007F) - 127;
+			fe_flag = fe_flag | isNan(vra_val[i]) | isInfinity(vra_val[i]) |
+				isNan(vrb_val[i]) | isInfinity(vrb_val[i]) |
+				(e_b <= -126) |
+				(e_b >=  125) |
+				(!isZero(vra_val[i]) & ((e_a - e_b) >=	127)) |
+				(!isZero(vra_val[i]) & ((e_a - e_b) <= -125)) |
+				(!isZero(vra_val[i]) & (e_a <= -103));
+			fg_flag = fg_flag | isInfinity(vra_val[i]) | isInfinity(vrb_val[i]) |
+				isZero(vrb_val[i]) | isDenormalized(vrb_val[i]);
+		}
+
+		CR = insertCRField(CR, BF, ((1 << 3) | (fg_flag << 2) | (fe_flag << 1)));
+	}}); 
+
+

@@ -276,151 +276,77 @@ decode PO default Unknown::unknown() {
                 std::tie(res, std::ignore) = multiplyAdd(Ra_sd, Rb_sd, Rc_sd);
                 Rt = res;
             }});
-            // ###4: decode VA_XO IntArithOp###
         }
 
-        format FloatArithOp {
-            46: vmaddfp({{
-                ThreadContext *tc = xc->tcBase();
-                RegId src1_id(VecRegClass, VRA + 32);
-                RegId src2_id(VecRegClass, VRB + 32);
-                RegId src3_id(VecRegClass, VRC + 32);
-                RegId dst_id(VecRegClass, VRT + 32);
-                auto src1_reg = tc->readVecReg(src1_id);
-                auto src1_val = src1_reg.as<float>();
-                auto src2_reg = tc->readVecReg(src2_id);
-                auto src2_val = src2_reg.as<float>();
-                auto src3_reg = tc->readVecReg(src3_id);
-                auto src3_val = src3_reg.as<float>();
-                auto dst_reg = tc->readVecReg(dst_id);
-                auto dst_val = dst_reg.as<float>();
-
-                for (auto i = 0; i < 4; i++) {
-                    dst_val[i] = src1_val[i] * src3_val[i] + src2_val[i];
-                }
-
-                tc->setVecReg(dst_id, dst_reg);
-            }});
-            // ###4: decode VA_XO FloatArithOp###
-        }
+        ##include "vector/integer/integer_va_xo.isa"
+        ##include "vector/permute_formatting/perm_va_xo.isa"
+        ##include "vector/permute_formatting/shift_va_xo.isa"
+        ##include "vector/floating/fp_va_xo.isa"
 
         default: decode VX_XO {
-            format IntArithOp {
-                384: vaddcuw({{
-                    ThreadContext *tc = xc->tcBase();
-                    RegId src1_id(VecRegClass, VRA + 32);
-                    RegId src2_id(VecRegClass, VRB + 32);
-                    RegId dst_id(VecRegClass, VRT + 32);
-                    auto src1_reg = tc->readVecReg(src1_id);
-                    auto src1_val = src1_reg.as<uint32_t>();
-                    auto src2_reg = tc->readVecReg(src2_id);
-                    auto src2_val = src2_reg.as<uint32_t>();
-                    auto dst_reg = tc->readVecReg(dst_id);
-                    auto dst_val = dst_reg.as<uint32_t>();
+            ##include "vector/integer/integer_vx_xo.isa" 
+            ##include "vector/move/vector_regmove.isa"
+            ##include "vector/permute_formatting/pack_vx_xo.isa"
+            ##include "vector/permute_formatting/unpack_vx_xo.isa"
+            ##include "vector/permute_formatting/merge_vx_xo.isa"
+            ##include "vector/permute_formatting/splat_vx_xo.isa"
+            ##include "vector/permute_formatting/shift_vx_xo.isa"
+            ##include "vector/permute_formatting/extract_vx_xo.isa"
+            ##include "vector/bit_manipulation/bit_vx_xo.isa"
 
-                    for (auto i = 0; i < 4; i++) {
-                        dst_val[i] =
-                            ((uint64_t(src1_val[i]) + uint64_t(src2_val[i]))
-                            >> 32);
-                    }
+            ##include "vector/floating/fp_vx_xo.isa"
+            // ###4: decode VX_XO IntArithOp###
+            
+            default:decode VC_XO {
+                ##include "vector/integer/cmp_vc_xo.isa"
 
-                    tc->setVecReg(dst_id, dst_reg);
-                }});
-                // ###4: decode VX_XO IntArithOp###
-            }
+                // These instructions are of VX form and use bits 23 - 31 as XO.
+                default: decode VX_8XO {        
 
-            format FloatArithOp {
-                10: vaddfp({{
-                    ThreadContext *tc = xc->tcBase();
-                    RegId src1_id(VecRegClass, VRA + 32);
-                    RegId src2_id(VecRegClass, VRB + 32);
-                    RegId dst_id(VecRegClass, VRT + 32);
-                    auto src1_reg = tc->readVecReg(src1_id);
-                    auto src1_val = src1_reg.as<float>();
-                    auto src2_reg = tc->readVecReg(src2_id);
-                    auto src2_val = src2_reg.as<float>();
-                    auto dst_reg = tc->readVecReg(dst_id);
-                    auto dst_val = dst_reg.as<float>();
+                    ##include "vector/bcd/bcd_vx_8xo.isa"
+                    ##include "vector/bcd/bcd_num_385.isa"
 
-                    for (auto i = 0; i < 4; i++) {
-                        dst_val[i] = src1_val[i] + src2_val[i];
-                    }
-
-                    tc->setVecReg(dst_id, dst_reg);
-                }});
-                // ###4: decode VX_XO FloatArithOp###
-            }
+                }
+			}
         }
     }
 
     60: decode XX2_XO {
-        format FloatArithOp {
-            345:xsabsdp({{
-                ThreadContext *tc = xc->tcBase();
-                RegId src1_id(VecRegClass, XX_A + XX_BX * 32);
-                RegId src2_id(VecRegClass, XX_B + XX_BX * 32);
-                RegId dst_id(VecRegClass, XX_T + XX_TX * 32);
-                auto src1_reg = tc->readVecReg(src1_id);
-                auto src1_val = src1_reg.as<uint64_t>();
-                auto src2_reg = tc->readVecReg(src2_id);
-                auto src2_val = src2_reg.as<uint64_t>();
-                auto dst_reg = tc->readVecReg(dst_id);
-                auto dst_val = dst_reg.as<uint64_t>();
-                dst_val[0] = src2_val[0] & 0x7fffffffffffffffULL;
-                tc->setVecReg(dst_id, dst_reg);
-            }});
-            // ###60: decode XX2_XO FloatArithOp###
-        }
-        default: decode XX3_XO {
-            format FloatArithOp {
-                32:xsadddp({{
-                    ThreadContext *tc = xc->tcBase();
-                    RegId src1_id(VecRegClass, XX_A + XX_BX * 32);
-                    RegId src2_id(VecRegClass, XX_B + XX_BX * 32);
-                    RegId dst_id(VecRegClass, XX_T + XX_TX * 32);
-                    auto src1_reg = tc->readVecReg(src1_id);
-                    auto src1_val = src1_reg.as<double>();
-                    auto src2_reg = tc->readVecReg(src2_id);
-                    auto src2_val = src2_reg.as<double>();
-                    auto dst_reg = tc->readVecReg(dst_id);
-                    auto dst_val = dst_reg.as<double>();
-                    dst_val[0] = src1_val[0] + src2_val[0];
-                    dst_val[1] = 0;
-                    tc->setVecReg(dst_id, dst_reg);
-                }});
-                // ###60: decode XX3_XO FloatArithOp###
-            }
-            default: decode XX4_XO {
-                format FloatArithOp {
-                    3:xxsel({{
-                        ThreadContext *tc = xc->tcBase();
-                        RegId src1_id(VecRegClass, XX_A + XX_BX * 32);
-                        RegId src2_id(VecRegClass, XX_B + XX_BX * 32);
-                        RegId src3_id(VecRegClass, XX_C + XX_CX * 32);
-                        RegId dst_id(VecRegClass, XX_T + XX_TX * 32);
-                        auto src1_reg = tc->readVecReg(src1_id);
-                        auto src1_val = src1_reg.as<__uint128_t>();
-                        auto src2_reg = tc->readVecReg(src2_id);
-                        auto src2_val = src2_reg.as<__uint128_t>();
-                        auto src3_reg = tc->readVecReg(src2_id);
-                        auto src3_val = src2_reg.as<__uint128_t>();
-                        auto dst_reg = tc->readVecReg(dst_id);
-                        auto dst_val = dst_reg.as<__uint128_t>();
+        
+        ##include "vsx/fp_arith/fp_arith_xx2.isa"
+        ##include "vsx/convert/dp2int_xx2_xo.isa"
+        ##include "vsx/convert/dp2sp_xx2_xo.isa"
+        ##include "vsx/convert/int2fp_xx2_xo.isa"
+        ##include "vsx/convert/round_to_int_xx2_xo.isa"
+        ##include "vsx/convert/sp2dp_xx2_xo.isa"
 
-                        __uint128_t tmp = 0;
-                        for (auto i = 0; i < 128; i++) {
-                            __uint128_t mask = (1 << i);
-                            if ((src3_val[0] & mask) == 0) {
-                                tmp |= (src1_val[0] & mask);
-                            } else {
-                                tmp |= (src2_val[0] & mask);
-                            }
-                        }
-                        dst_val[0] = tmp;
-                        tc->setVecReg(dst_id, dst_reg);
-                    }});
+        default: decode XX3_XO {
+            
+            ##include "vsx/fp_arith/fp_arith_xx3.isa"
+            ##include "vsx/logical/logical_xx3_xo.isa"
+            //##include "decoder/cmp/xx3_xscmpodp.isa"
+            //##include "decoder/cmp/xx3_xscmpudp.isa"
+            ##include "vsx/permute/perm_xx3_xo.isa"
+
+            default: decode XX4_XO {
+                ##include "vsx/permute/sel_xx4_xo.isa"
                     // ###60: decode XX4_XO FloatArithOp###
-                }
+                    default: decode XX3_3_XO {                                               // wwf  [24, 28]
+					    ##include "vsx/permute/perm_xx3_3xo.isa"
+					    default:decode XX3RC_XO {
+							
+                            ##include "vsx/fp_comp/fp_comp_xx3rc_xo.isa"
+                            default:decode XX2_XO {
+                                format FloatArithOp {
+                                    170: xvtsqrtsp({{
+                                        std::cout << "Running xvtsqrtsp in XX2_XO" << std::endl;			
+                                    }});
+                                }
+                            }
+							
+						}
+					}
+                
             }
         }
     }
@@ -444,7 +370,7 @@ decode PO default Unknown::unknown() {
             if(FullSystem) {
               int64_t val1 = Ra_sd;
               int64_t val2 = simm;
-              //printf("Val 1 : 0x%016lx val2: 0x%016lx\n", val,val2);
+              ////printf("Val 1 : 0x%016lx val2: 0x%016lx\n", val,val2);
               if(((TO & 0x10) && (val1 < val2))                    ||
                 ((TO & 0x08) && (val1 > val2))                     ||
                 ((TO & 0x04) && (val1 == val2))                    ||
@@ -542,157 +468,11 @@ decode PO default Unknown::unknown() {
             21: ldx({{ Rt = Mem; }});
             84: ldarx({{ Rt = Mem_ud; }}, mem_flags = LLSC);
             532: ldbrx({{ Rt = swap_byte(Mem); }});
-            535: lfsx({{ Ft_sf = Mem_sf; }});
-            599: lfdx({{ Ft = Mem_df; }});
-            855: lfiwax({{ Ft_uw = Mem; }});
-            7: lvebx({{
-                         ThreadContext *tc = xc->tcBase();
-                         RegId id(VecRegClass, VRT + 32);
-                         auto reg = tc->readVecReg(id);
-                         auto val = reg.as<uint8_t>();
-
-                         Msr msr_v = tc->readIntReg(INTREG_MSR);
-                         if (msr_v.le) {
-                             val[0] = Mem_ub;
-                         } else {
-                             val[15] = Mem_ub;
-                         }
-
-                         tc->setVecReg(id, reg);
-                     }});
-            39: lvehx({{
-                         ThreadContext *tc = xc->tcBase();
-                         RegId id(VecRegClass, VRT + 32);
-                         auto reg = tc->readVecReg(id);
-                         auto val = reg.as<uint16_t>();
-
-                         Msr msr_v = tc->readIntReg(INTREG_MSR);
-                         if (msr_v.le) {
-                             val[0] = Mem_uw;
-                         } else {
-                             val[7] = Mem_uw;
-                         }
-
-                         tc->setVecReg(id, reg);
-                     }});
-            71: lvewx({{
-                         ThreadContext *tc = xc->tcBase();
-                         RegId id(VecRegClass, VRT + 32);
-                         auto reg = tc->readVecReg(id);
-                         auto val = reg.as<uint32_t>();
-
-                         Msr msr_v = tc->readIntReg(INTREG_MSR);
-                         if (msr_v.le) {
-                             val[0] = Mem_uw;
-                         } else {
-                             val[3] = Mem_uw;
-                         }
-
-                         tc->setVecReg(id, reg);
-                     }});
-            103: lvx({{
-                         ThreadContext *tc = xc->tcBase();
-                         RegId id(VecRegClass, VRT + 32);
-                         auto reg = tc->readVecReg(id);
-                         auto val = reg.as<__uint128_t>();
-                         val[0] = Mem_uq;
-                         tc->setVecReg(id, reg);
-                     }});
-            359: lvxl({{
-                         ThreadContext *tc = xc->tcBase();
-                         RegId id(VecRegClass, VRT + 32);
-                         auto reg = tc->readVecReg(id);
-                         auto val = reg.as<__uint128_t>();
-                         val[0] = Mem_uq;
-                         tc->setVecReg(id, reg);
-                     }});
-            6: lvsl({{
-                        uint8_t sh = bits(EA, 63, 60);
-                        ThreadContext *tc = xc->tcBase();
-                        RegId id(VecRegClass, VRT + 32);
-                        auto reg = tc->readVecReg(id);
-                        auto val = reg.as<uint8_t>();
-                        for(auto i = 0; i < 16; i++) {
-                             val[i] = ((uint8_t *)&Mem_uq)[(i + sh) % 16];
-                        }
-                        tc->setVecReg(id, reg);
-                     }});
-            38: lvsr({{
-                         uint8_t sh = bits(EA, 63, 60);
-                         ThreadContext *tc = xc->tcBase();
-                         RegId id(VecRegClass, VRT + 32);
-                         auto reg = tc->readVecReg(id);
-                         auto val = reg.as<uint8_t>();
-                         for(auto i = 0; i < 16; i++)
-                             val[(i + sh) % 16] = ((uint8_t *)&Mem_uq)[i];
-                         tc->setVecReg(id, reg);
-                     }});
-          588: lxsdx({{
-                         ThreadContext *tc = xc->tcBase();
-                         RegId id(VecRegClass, XX_T + XX_TX * 32);
-                         auto reg = tc->readVecReg(id);
-                         auto val = reg.as<uint64_t>();
-                         val[0] = Mem_ud;
-                         val[1] = 0;
-                         tc->setVecReg(id, reg);
-                     }});
-         76: lxsiwax({{
-                         ThreadContext *tc = xc->tcBase();
-                         RegId id(VecRegClass, XX_T + XX_TX * 32);
-                         auto reg = tc->readVecReg(id);
-                         auto val = reg.as<int64_t>();
-                         val[0] = Mem_sw;
-                         val[1] = 0;
-                         tc->setVecReg(id, reg);
-                     }});
-         12: lxsiwzx({{
-                         ThreadContext *tc = xc->tcBase();
-                         RegId id(VecRegClass, XX_T + XX_TX * 32);
-                         auto reg = tc->readVecReg(id);
-                         auto val = reg.as<uint64_t>();
-                         val[0] = Mem_uw;
-                         val[1] = 0;
-                         tc->setVecReg(id, reg);
-                     }});
-         524: lxsspx({{
-                         ThreadContext *tc = xc->tcBase();
-                         RegId id(VecRegClass, XX_T + XX_TX * 32);
-                         auto reg = tc->readVecReg(id);
-                         auto val = reg.as<double>();
-                         val[0] = Mem_uw;
-                         val[1] = 0;
-                         tc->setVecReg(id, reg);
-                     }});
-         844: lxvd2x({{
-                         ThreadContext *tc = xc->tcBase();
-                         RegId id(VecRegClass, XX_T + XX_TX * 32);
-                         auto reg = tc->readVecReg(id);
-                         auto val = reg.as<uint64_t>();
-                         val[0] = ((uint64_t *)&Mem_uq)[0];
-                         val[1] = ((uint64_t *)&Mem_uq)[1];
-                         tc->setVecReg(id, reg);
-                     }});
-         332: lxvdsx({{
-                         ThreadContext *tc = xc->tcBase();
-                         RegId id(VecRegClass, XX_T + XX_TX * 32);
-                         auto reg = tc->readVecReg(id);
-                         auto val = reg.as<uint64_t>();
-                         val[0] = ((uint64_t *)&Mem_uq)[0];
-                         val[1] = ((uint64_t *)&Mem_uq)[0];
-                         tc->setVecReg(id, reg);
-                     }});
-         780: lxvw4x({{
-                         ThreadContext *tc = xc->tcBase();
-                         RegId id(VecRegClass, XX_T + XX_TX * 32);
-                         auto reg = tc->readVecReg(id);
-                         auto val = reg.as<uint32_t>();
-                         val[0] = ((uint32_t *)&Mem_uq)[0];
-                         val[1] = ((uint32_t *)&Mem_uq)[1];
-                         val[2] = ((uint32_t *)&Mem_uq)[2];
-                         val[3] = ((uint32_t *)&Mem_uq)[3];
-                         tc->setVecReg(id, reg);
-                     }});
         }
+
+        ##include "fp/storage_access/fp_load.isa"
+        ##include "vector/storage_access/vector_load.isa"
+        ##include "vsx/storage_access/vsx_load.isa"
 
         format LoadIndexUpdateOp {
             119: lbzux({{ Rt = Mem_ub; }});
@@ -701,9 +481,9 @@ decode PO default Unknown::unknown() {
             55: lwzux({{ Rt = Mem_uw; }});
             373: lwaux({{ Rt = Mem_sw; }});
             53: ldux({{ Rt = Mem; }});
-            567: lfsux({{ Ft_sf = Mem_sf; }});
-            631: lfdux({{ Ft = Mem_df; }});
         }
+
+        ##include "fp/storage_access/fp_load_i_update.isa"
 
         format StoreIndexOp {
             215: stbx({{ Mem_ub = Rs_ub; }});
@@ -717,92 +497,11 @@ decode PO default Unknown::unknown() {
             149: stdx({{ Mem = Rs }});
             214: stdcx({{ Mem_ud = Rs; }}, mem_flags = LLSC);
             660: stdbrx({{ Mem = swap_byte(Rs); }});
-            135: stvebx({{
-                           ThreadContext *tc = xc->tcBase();
-                           RegId id(VecRegClass, VRS + 32);
-                           auto reg = tc->readVecReg(id);
-                           auto val = reg.as<uint8_t>();
-                           Msr msr_v = tc->readIntReg(INTREG_MSR);
-                           if (msr_v.le) {
-                               Mem_ub = val[0];
-                           } else {
-                               Mem_ub = val[15];
-                           }
-                       }});
-            167: stvehx({{
-                           ThreadContext *tc = xc->tcBase();
-                           RegId id(VecRegClass, VRS + 32);
-                           auto reg = tc->readVecReg(id);
-                           auto val = reg.as<uint16_t>();
-                           Msr msr_v = tc->readIntReg(INTREG_MSR);
-                           if (msr_v.le) {
-                               Mem_uh = val[0];
-                           } else {
-                               Mem_uh = val[7];
-                           }
-                       }});
-            199: stvewx({{
-                           ThreadContext *tc = xc->tcBase();
-                           RegId id(VecRegClass, VRS + 32);
-                           auto reg = tc->readVecReg(id);
-                           auto val = reg.as<uint32_t>();
-                           Msr msr_v = tc->readIntReg(INTREG_MSR);
-                           if (msr_v.le) {
-                               Mem_uw = val[0];
-                           } else {
-                               Mem_uw = val[3];
-                           }
-                       }});
-            231: stvx({{
-                           ThreadContext *tc = xc->tcBase();
-                           RegId id(VecRegClass, VRS + 32);
-                           auto reg = tc->readVecReg(id);
-                           auto val = reg.as<__uint128_t>();
-                           Mem_uq = val[0];
-                       }});
-            487: stvxl({{
-                           ThreadContext *tc = xc->tcBase();
-                           RegId id(VecRegClass, VRS + 32);
-                           auto reg = tc->readVecReg(id);
-                           auto val = reg.as<__uint128_t>();
-                           Mem_uq = val[0];
-                       }});
-           716: stxsdx({{
-                           ThreadContext *tc = xc->tcBase();
-                           RegId id(VecRegClass, XX_S + XX_SX * 32);
-                           auto reg = tc->readVecReg(id);
-                           auto val = reg.as<uint64_t>();
-                           Mem_ud = val[0];
-                       }});
-          140: stxsiwx({{
-                           ThreadContext *tc = xc->tcBase();
-                           RegId id(VecRegClass, XX_S + XX_SX * 32);
-                           auto reg = tc->readVecReg(id);
-                           auto val = reg.as<uint32_t>();
-                           Mem_ud = val[1];
-                       }});
-          652: stxsspx({{
-                           ThreadContext *tc = xc->tcBase();
-                           RegId id(VecRegClass, XX_S + XX_SX * 32);
-                           auto reg = tc->readVecReg(id);
-                           auto val = reg.as<double>();
-                           Mem_uw = (float)val[0];
-                       }});
-          972: stxvd2x({{
-                           ThreadContext *tc = xc->tcBase();
-                           RegId id(VecRegClass, XX_S + XX_SX * 32);
-                           auto reg = tc->readVecReg(id);
-                           auto val = reg.as<__uint128_t>();
-                           Mem_uq = val[0];
-                       }});
-          908: stxvw4x({{
-                           ThreadContext *tc = xc->tcBase();
-                           RegId id(VecRegClass, XX_S + XX_SX * 32);
-                           auto reg = tc->readVecReg(id);
-                           auto val = reg.as<__uint128_t>();
-                           Mem_uq = val[0];
-                       }});
         }
+
+        ##include "fp/storage_access/fp_store.isa"
+        ##include "vector/storage_access/vector_store.isa"
+        ##include "vsx/storage_access/vsx_store.isa"
 
         format StoreIndexUpdateOp {
             247: stbux({{ Mem_ub = Rs_ub; }});
@@ -890,6 +589,8 @@ decode PO default Unknown::unknown() {
                 }
             }});
         }
+
+        ##include "vsx/move/vsx_regmove.isa"
 
         format IntCompOp {
             0: cmp({{
@@ -1328,23 +1029,14 @@ decode PO default Unknown::unknown() {
             true);
         }
 
-        format StoreIndexOp {
-            663: stfsx({{ Mem_sf = Fs_sf; }});
-            727: stfdx({{ Mem_df = Fs; }});
-            983: stfiwx({{ Mem = Fs_uw; }});
-        }
-
-        format StoreIndexUpdateOp {
-            695: stfsux({{ Mem_sf = Fs_sf; }});
-            759: stfdux({{ Mem_df = Fs; }});
-        }
+        ##include "fp/storage_access/fp_store_i_update.isa"
 
         format MiscOp {
             238: msgclr({{
                 ThreadContext *tc = xc->tcBase();
                 ThreadID t = tc->threadId();
                 if(bits(Rb_ud, 31, 27) == 0x5) {
-                  printf("Get msgclr instr for threadid %d\n",(int)t);
+                  //printf("Get msgclr instr for threadid %d\n",(int)t);
                   tc->getCpuPtr()->clearInterrupt(t, 7, 0);
                 }
                 }});
@@ -1364,17 +1056,17 @@ decode PO default Unknown::unknown() {
                     {
 
                     ThreadContext *t = tc->getCpuPtr()->getContext(i);
-                    printf("Read register PIR value %d Thread Id %d\n",
-                        (int)t->readIntReg(INTREG_PIR),(int)i);
+                    //printf("Read register PIR value %d Thread Id %d\n",
+                    //    (int)t->readIntReg(INTREG_PIR),(int)i);
                     uint32_t val1 = t->readIntReg(INTREG_PIR);
-                    printf("Read second register\n");
-                    printf("Read register Rb_ud value 0x%016lxThread Id %d\n",
-                            Rb_ud,(int)tc->threadId());
+                    //printf("Read second register\n");
+                    //printf("Read register Rb_ud value 0x%016lxThread Id %d\n",
+                    //        Rb_ud,(int)tc->threadId());
                     uint64_t val2 = Rb_ud;
-                     printf("Reading done");
-                     printf("Msr value is 0x%016lx\n", MSR);
+                     //printf("Reading done");
+                     //printf("Msr value is 0x%016lx\n", MSR);
                     if(bits(val1, 19, 0) == bits(val2, 19, 0)){
-                      printf("Intterupt Happen\n");
+                      //printf("Intterupt Happen\n");
                       t->getCpuPtr()->postInterrupt(i, 7, 0);
                   }
                    }
@@ -1736,106 +1428,66 @@ decode PO default Unknown::unknown() {
         }
     }
 
-    format LoadDispOp {
-        48: lfs({{ Ft_sf = Mem_sf; }});
-        50: lfd({{ Ft = Mem_df; }});
-    }
+    ##include "fp/storage_access/fp_ldst_disp.isa"
 
-    format LoadDispUpdateOp {
-        49: lfsu({{ Ft_sf = Mem_sf; }});
-        51: lfdu({{ Ft = Mem_df; }});
-    }
-
-    format StoreDispOp {
-        52: stfs({{ Mem_sf = Fs_sf; }});
-        54: stfd({{ Mem_df = Fs; }});
-    }
-
-    format StoreDispUpdateOp {
-        53: stfsu({{ Mem_sf = Fs_sf; }});
-        55: stfdu({{ Mem_df = Fs; }});
-    }
-
-    format FloatArithOp {
-        59: decode A_XO {
-            21: fadds({{ Ft = Fa + Fb; }});
-            20: fsubs({{ Ft = Fa - Fb; }});
-            25: fmuls({{ Ft = Fa * Fc; }});
-            18: fdivs({{ Ft = Fa / Fb; }});
-            29: fmadds({{ Ft = (Fa * Fc) + Fb; }});
-            28: fmsubs({{ Ft = (Fa * Fc) - Fb; }});
-            31: fnmadds({{ Ft = -((Fa * Fc) + Fb); }});
-            30: fnmsubs({{ Ft = -((Fa * Fc) - Fb); }});
-        }
+			
+    
+    59: decode A_XO {
+		##include "fp/arith/sp_arith.isa"
+        
+        default: decode X_XO {
+            ##include "fp/convert/convert_sp.isa"
+		}
     }
 
     63: decode A_XO {
-        format FloatArithOp {
-            21: fadd({{ Ft = Fa + Fb; }});
-            20: fsub({{ Ft = Fa - Fb; }});
-            25: fmul({{ Ft = Fa * Fc; }});
-            18: fdiv({{ Ft = Fa / Fb; }});
-            29: fmadd({{ Ft = (Fa * Fc) + Fb; }});
-            28: fmsub({{ Ft = (Fa * Fc) - Fb; }});
-            31: fnmadd({{ Ft = -((Fa * Fc) + Fb); }});
-            30: fnmsub({{ Ft = -((Fa * Fc) - Fb); }});
-        }
+        ##include "fp/arith/dp_arith.isa"
 
         default: decode X_XO {
-            format FloatRCCheckOp {
-                72: fmr({{ Ft = Fb; }});
-                264: fabs({{
-                    Ft_ud = Fb_ud;
-                    Ft_ud = insertBits(Ft_ud, 63, 0); }});
-                136: fnabs({{
-                    Ft_ud = Fb_ud;
-                    Ft_ud = insertBits(Ft_ud, 63, 1); }});
-                40: fneg({{ Ft = -Fb; }});
-                8: fcpsgn({{
-                    Ft_ud = Fb_ud;
-                    Ft_ud = insertBits(Ft_ud, 63, Fa_ud<63:63>);
-                }});
+
+           ##include "fp/arith/misc.isa"
+
+            format CondMoveOp {
+				64: mcrfs({{
+					uint32_t crBfa = bits(FPSCR, 31 - bfa*4, 28 - bfa*4);
+					CR = insertBits(CR, 31 - bf*4, 28 - bf*4, crBfa);
+					Fpscr fpscr = FPSCR;
+					switch (bfa) {
+						case 0:
+							fpscr.fx = 0;
+							fpscr.ox = 0;
+							break;
+						case 1:
+							fpscr.ux = 0;
+							fpscr.zx = 0;
+							fpscr.xx = 0;
+							fpscr.vxsnan = 0;
+							break;
+						case 2:
+							fpscr.vxisi = 0;
+							fpscr.vxidi = 0;
+							fpscr.vxzdz = 0;
+							fpscr.vximz = 0;
+							break;
+						case 3:
+							fpscr.vxvc = 0;
+							break;
+						case 5:
+							fpscr.vxsoft = 0;
+							fpscr.vxsqrt = 0;
+							fpscr.vxcvi = 0;
+							break;
+						default:
+							break;
+					}
+					FPSCR = fpscr;
+				}});
             }
 
-            format FloatConvertOp {
-                12: frsp({{ Ft_sf = Fb; }});
-                15: fctiwz({{ Ft_sw = (int32_t)trunc(Fb); }});
-            }
-
-            format FloatOp {
-              0: fcmpu({{
-                  uint32_t c = makeCRField(Fa, Fb);
-                  Fpscr fpscr = FPSCR;
-                  fpscr.fprf.fpcc = c;
-                  FPSCR = fpscr;
-                  CR = insertCRField(CR, BF, c);
-              }});
-            }
-
-            format FloatRCCheckOp {
-                583: mffs({{ Ft_ud = FPSCR; }});
-                134: mtfsfi({{
-                    FPSCR = insertCRField(FPSCR, BF + (8 * (1 - W_FIELD)),
-                                          U_FIELD);
-                }});
-                70: mtfsb0({{ FPSCR = insertBits(FPSCR, 31 - BT, 0); }});
-                38: mtfsb1({{ FPSCR = insertBits(FPSCR, 31 - BT, 1); }});
-
-                default: decode XFL_XO {
-                    711: mtfsf({{
-                    if (L_FIELD == 1) { FPSCR = Fb_ud; }
-                        else {
-                            for (int i = 0; i < 8; ++i) {
-                                if (bits(FLM, i) == 1) {
-                                    int k = 4 * (i + (8 * (1 - W_FIELD)));
-                                    FPSCR = insertBits(FPSCR, k + 3, k,
-                                                   bits(Fb_ud, k + 3, k));
-                                }
-                            }
-                        }
-                    }});
-                }
-            }
+            ##include "fp/convert/convert_dp.isa"
+            ##include "fp/cmp/fp_cmp.isa"
+            ##include "fp/move/fp_regmove.isa"
+            
         }
     }
 }

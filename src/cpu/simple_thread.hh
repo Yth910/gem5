@@ -93,7 +93,7 @@ class SimpleThread : public ThreadState, public ThreadContext
     typedef ThreadContext::Status Status;
 
   protected:
-    std::array<RegVal, TheISA::NumFloatRegs> floatRegs;
+    std::array<RegVal *, TheISA::NumFloatRegs> floatRegs;
     std::array<RegVal, TheISA::NumIntRegs> intRegs;
     std::array<TheISA::VecRegContainer, TheISA::NumVecRegs> vecRegs;
     std::array<TheISA::VecPredRegContainer, TheISA::NumVecPredRegs>
@@ -585,12 +585,15 @@ class SimpleThread : public ThreadState, public ThreadContext
     RegVal
     readFloatRegFlat(RegIndex idx) const override
     {
-        return floatRegs[idx];
+        return readVecRegFlat(idx).as<uint64_t>()[1];
     }
     void
     setFloatRegFlat(RegIndex idx, RegVal val) override
     {
-        floatRegs[idx] = val;
+        auto vec_reg = readVecRegFlat(idx);
+        auto vec_val = vec_reg.as<uint64_t>();
+        vec_val[1] = val;
+        setVecRegFlat(idx, vec_reg);
     }
 
     const TheISA::VecRegContainer &

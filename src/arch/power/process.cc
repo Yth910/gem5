@@ -58,7 +58,7 @@ PowerProcess::PowerProcess(
     Addr brk_point = image.maxAddr();
     brk_point = roundUp(brk_point, PageBytes);
 
-    Addr stack_base = 0x3ffffb100000L;
+    Addr stack_base = 0x7FFFFFFFF000ULL;
 
     Addr max_stack_size = 8 * 1024 * 1024;
 
@@ -66,7 +66,7 @@ PowerProcess::PowerProcess(
     Addr next_thread_stack_base = stack_base - max_stack_size;
 
     // Set up region for mmaps. For now, start at bottom of kuseg space.
-    Addr mmap_end = 0x70000000L;
+    Addr mmap_end = 0x7FFFF7FFF000ULL;
 
     memState = std::make_shared<MemState>(
             this, brk_point, stack_base, max_stack_size,
@@ -164,33 +164,30 @@ PowerProcess::argsInit(int intSize, int pageSize)
         auxv.emplace_back(M5_AT_EUID, euid());
         auxv.emplace_back(M5_AT_GID, gid());
         auxv.emplace_back(M5_AT_EGID, egid());
-        //Whether to enable "secure mode" in the executable
+        // Whether to enable "secure mode" in the executable
         auxv.emplace_back(M5_AT_SECURE, 0);
-        //The filename of the program
-        auxv.emplace_back(M5_AT_EXECFN, 0);
-        //The string "v51" with unknown meaning
-        auxv.emplace_back(M5_AT_PLATFORM, 0);
-        //The address of 16 bytes in the data section containing a random
-        //value; it is required for stack protection using a canary value.
+        // The address of 16 "random" bytes.
         auxv.emplace_back(M5_AT_RANDOM, 0);
+        // The name of the program
+        auxv.emplace_back(M5_AT_EXECFN, 0);
+        // The platform string
+        auxv.emplace_back(M5_AT_PLATFORM, 0);
     }
 
     //Figure out how big the initial stack nedes to be
 
     // A sentry NULL void pointer at the top of the stack.
     int sentry_size = intSize;
-
-    std::string platform = "v51";
-    int platform_size = platform.size() + 1;
-
-    // The aux vectors are put on the stack in two groups. The first group are
-    // the vectors that are generated as the elf is loaded. The second group
-    // are the ones that were computed ahead of time and include the platform
-    // string.
-    int aux_data_size = filename.size() + 1;
-
+    
+    // This is the name of the file which is present on the initial stack
+    // It's purpose is to let the user space linker examine the original file.
+    int file_name_size = filename.size() + 1;
+    
     const int numRandomBytes = 16;
-    aux_data_size += numRandomBytes;
+    int aux_data_size = numRandomBytes;
+
+    std::string platform = "ppc64le";
+    int platform_size = platform.size() + 1;
 
     int env_data_size = 0;
     for (int i = 0; i < envp.size(); ++i) {
@@ -201,11 +198,18 @@ PowerProcess::argsInit(int intSize, int pageSize)
         arg_data_size += argv[i].size() + 1;
     }
 
-    int info_block_size =
-        sentry_size + env_data_size + arg_data_size +
-        aux_data_size + platform_size;
+    // The info_block needs to be padded so its size is a multiple of the
+    // alignment mask. Also, it appears that there needs to be at least some
+    // padding, so if the size is already a multiple, we need to increase it
+    // anyway.
+    int base_info_block_size =
+        sentry_size + file_name_size + env_data_size + arg_data_size;
 
-    //Each auxilliary vector is two 4 byte words
+    int info_block_size = roundUp(base_info_block_size, align);
+
+    int info_block_padding = info_block_size - base_info_block_size;
+
+    // Each auxiliary vector is two 8 byte words
     int aux_array_size = intSize * 2 * (auxv.size() + 1);
 
     int envp_array_size = intSize * (envp.size() + 1);
@@ -213,47 +217,56 @@ PowerProcess::argsInit(int intSize, int pageSize)
 
     int argc_size = intSize;
 
-    //Figure out the size of the contents of the actual initial frame
+    // Figure out the size of the contents of the actual initial frame
     int frame_size =
-        info_block_size +
         aux_array_size +
         envp_array_size +
         argv_array_size +
         argc_size;
 
-    //There needs to be padding after the auxiliary vector data so that the
-    //very bottom of the stack is aligned properly.
-    int partial_size = frame_size;
+    // There needs to be padding after the auxiliary vector data so that the
+    // very bottom of the stack is aligned properly.
+    int partial_size = frame_size + aux_data_size;
     int aligned_partial_size = roundUp(partial_size, align);
     int aux_padding = aligned_partial_size - partial_size;
 
-    int space_needed = frame_size + aux_padding;
+    int space_needed =
+        info_block_size +
+        aux_data_size +
+        aux_padding +
+        frame_size;
+        
+    Addr stack_base = memState->getStackBase();
 
     Addr stack_min = memState->getStackBase() - space_needed;
     stack_min = roundDown(stack_min, align);
 
-    memState->setStackSize(memState->getStackBase() - stack_min);
+    unsigned stack_size = stack_base - stack_min;
+    stack_size = roundUp(stack_size, pageSize);
+    memState->setStackSize(stack_size);
 
     // map memory
-    memState->mapRegion(roundDown(stack_min, pageSize),
-                        roundUp(memState->getStackSize(), pageSize), "stack");
+    Addr stack_end = roundDown(stack_base - stack_size, pageSize);
+
+    DPRINTF(Stack, "Mapping the stack: 0x%x %dB\n", stack_end, stack_size);
+    memState->mapRegion(stack_end, stack_size, "stack");
 
     // map out initial stack contents
-    uint64_t sentry_base = memState->getStackBase() - sentry_size;
-    uint64_t aux_data_base = sentry_base - aux_data_size;
-    uint64_t env_data_base = aux_data_base - env_data_size;
+    uint64_t sentry_base = stack_base - sentry_size;
+    uint64_t file_name_base = sentry_base - file_name_size;
+    uint64_t env_data_base = file_name_base - env_data_size;
     uint64_t arg_data_base = env_data_base - arg_data_size;
-    uint64_t platform_base = arg_data_base - platform_size;
-    uint64_t auxv_array_base = platform_base - aux_array_size - aux_padding;
+    uint64_t aux_data_base = arg_data_base - info_block_padding - aux_data_size;
+    uint64_t auxv_array_base = aux_data_base - aux_array_size - aux_padding;
     uint64_t envp_array_base = auxv_array_base - envp_array_size;
     uint64_t argv_array_base = envp_array_base - argv_array_size;
     uint64_t argc_base = argv_array_base - argc_size;
 
     DPRINTF(Stack, "The addresses of items on the initial stack:\n");
-    DPRINTF(Stack, "0x%x - aux data\n", aux_data_base);
+    DPRINTF(Stack, "0x%x - file name\n", file_name_base);
     DPRINTF(Stack, "0x%x - env data\n", env_data_base);
     DPRINTF(Stack, "0x%x - arg data\n", arg_data_base);
-    DPRINTF(Stack, "0x%x - platform base\n", platform_base);
+    DPRINTF(Stack, "0x%x - aux data\n", aux_data_base);
     DPRINTF(Stack, "0x%x - auxv array\n", auxv_array_base);
     DPRINTF(Stack, "0x%x - envp array\n", envp_array_base);
     DPRINTF(Stack, "0x%x - argv array\n", argv_array_base);
@@ -261,32 +274,11 @@ PowerProcess::argsInit(int intSize, int pageSize)
     DPRINTF(Stack, "0x%x - stack min\n", stack_min);
 
     // write contents to stack
-    //uint64_t data = 1;
-    //initVirtMem->writeBlob(memState->getStackBase(), &data, 8);
 
     // figure out argc
     uint64_t argc = argv.size();
     ThreadContext *tc = system->threads[contextIds[0]];
-    uint64_t guestArgc = htog<uint64_t>(argc, byteOrder(tc));
-
-    //Write out the sentry void *
-    uint64_t sentry_NULL = 0;
-    initVirtMem->writeBlob(sentry_base,
-            (uint8_t*)&sentry_NULL, sentry_size);
-
-    //Fix up the aux vectors which point to other data
-    for (int i = auxv.size() - 1; i >= 0; i--) {
-        if (auxv[i].type == M5_AT_PLATFORM) {
-            auxv[i].val = platform_base;
-            initVirtMem->writeString(platform_base, platform.c_str());
-        } else if (auxv[i].type == M5_AT_EXECFN) {
-            auxv[i].val = aux_data_base + numRandomBytes;
-            initVirtMem->writeString(aux_data_base, filename.c_str());
-        } else if (auxv[i].type == M5_AT_RANDOM) {
-            auxv[i].val = aux_data_base;
-        }
-    }
-
+    
     Msr msr = tc->readIntReg(INTREG_MSR);
 
     if (elfObject->elf_endian() == ByteOrder::little) {
@@ -296,6 +288,26 @@ PowerProcess::argsInit(int intSize, int pageSize)
     }
     tc->getDecoderPtr()->fetchByteOrder(elfObject->elf_endian());
     tc->setIntReg(INTREG_MSR, msr);
+
+    uint64_t guestArgc = htog<uint64_t>(argc, byteOrder(tc));
+
+    //Write out the sentry void *
+    uint64_t sentry_NULL = 0;
+    initVirtMem->writeBlob(sentry_base,
+            (uint8_t*)&sentry_NULL, sentry_size);
+            
+    // Write the file name
+    initVirtMem->writeString(file_name_base, filename.c_str());
+
+    //Fix up the aux vectors which point to other data
+    // Fix up the aux vectors which point to data
+    assert(auxv[auxv.size() - 3].type == M5_AT_RANDOM);
+    auxv[auxv.size() - 3].val = aux_data_base;
+    assert(auxv[auxv.size() - 2].type == M5_AT_EXECFN);
+    auxv[auxv.size() - 2].val = argv_array_base;
+    assert(auxv[auxv.size() - 1].type == M5_AT_PLATFORM);
+    auxv[auxv.size() - 1].val = aux_data_base + numRandomBytes;
+
 
     //Copy the aux stuff
     Addr auxv_array_end = auxv_array_base;
@@ -307,6 +319,8 @@ PowerProcess::argsInit(int intSize, int pageSize)
     const AuxVector<uint64_t> zero(0, 0);
     initVirtMem->write(auxv_array_end, zero);
     auxv_array_end += sizeof(zero);
+    
+    initVirtMem->writeString(aux_data_base, platform.c_str());
 
     copyStringArray(envp, envp_array_base, env_data_base,
                     byteOrder(tc), *initVirtMem);
@@ -335,8 +349,13 @@ PowerProcess::argsInit(int intSize, int pageSize)
 
     //Align the "stack_min" to a page boundary.
     memState->setStackMin(roundDown(stack_min, pageSize));
+    
+    //tc->setIntReg(3, argc);
+    //tc->setIntReg(4, argv_array_base);
+    //tc->setIntReg(5, envp_array_base);
+    //tc->setIntReg(6, auxv_array_base);
 
     // write contents to stack
-    uint64_t data = 1;
-    initVirtMem->writeBlob(stack_min, &data, 8);
+    //uint64_t data = 1;
+    //initVirtMem->writeBlob(stack_min, &data, 8);
 }

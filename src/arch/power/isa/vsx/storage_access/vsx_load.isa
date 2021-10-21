@@ -1,0 +1,73 @@
+format LoadIndexOp {
+    588: lxsdx({{
+        ThreadContext *tc = xc->tcBase();
+        RegId id(VecRegClass, XX_T + XX_TX * 32);
+        auto reg = tc->readVecReg(id);
+        auto val = reg.as<uint64_t>();
+        val[0] = Mem_ud;
+        val[1] = 0;
+        tc->setVecReg(id, reg);
+    }});
+
+    76: lxsiwax({{
+        ThreadContext *tc = xc->tcBase();
+        RegId id(VecRegClass, XX_T + XX_TX * 32);
+        auto reg = tc->readVecReg(id);
+        auto val = reg.as<int64_t>();
+        val[0] = Mem_sw;
+        val[1] = 0;
+        tc->setVecReg(id, reg);
+    }});
+
+    12: lxsiwzx({{
+        ThreadContext *tc = xc->tcBase();
+        RegId id(VecRegClass, XX_T + XX_TX * 32);
+        auto reg = tc->readVecReg(id);
+        auto val = reg.as<uint64_t>();
+        val[0] = Mem_uw;
+        val[1] = 0;
+        tc->setVecReg(id, reg);
+    }});
+
+    524: lxsspx({{
+        ThreadContext *tc = xc->tcBase();
+        RegId id(VecRegClass, XX_T + XX_TX * 32);
+        auto reg = tc->readVecReg(id);
+        auto val = reg.as<double>();
+        val[0] = Mem_uw;
+        val[1] = 0;
+        tc->setVecReg(id, reg);
+    }});
+
+    844: lxvd2x({{
+        ThreadContext *tc = xc->tcBase();
+        RegId id(VecRegClass, XX_T + XX_TX * 32);
+        auto reg = tc->readVecReg(id);
+        auto val = reg.as<uint64_t>();
+        val[0] = ((uint64_t *)&Mem_uq)[0];
+        val[1] = ((uint64_t *)&Mem_uq)[1];
+        tc->setVecReg(id, reg);
+    }});
+
+    332: lxvdsx({{
+        ThreadContext *tc = xc->tcBase();
+        RegId id(VecRegClass, XX_T + XX_TX * 32);
+        auto reg = tc->readVecReg(id);
+        auto val = reg.as<uint64_t>();
+        val[0] = ((uint64_t *)&Mem_uq)[0];
+        val[1] = ((uint64_t *)&Mem_uq)[0];
+        tc->setVecReg(id, reg);
+    }});
+
+    780: lxvw4x({{
+        ThreadContext *tc = xc->tcBase();
+        RegId id(VecRegClass, XX_T + XX_TX * 32);
+        auto reg = tc->readVecReg(id);
+        auto val = reg.as<uint32_t>();
+        val[0] = ((uint32_t *)&Mem_uq)[0];
+        val[1] = ((uint32_t *)&Mem_uq)[1];
+        val[2] = ((uint32_t *)&Mem_uq)[2];
+        val[3] = ((uint32_t *)&Mem_uq)[3];
+        tc->setVecReg(id, reg);
+    }});
+}

@@ -30,6 +30,7 @@
 
 #include <fcntl.h>
 #include <sys/syscall.h>
+#include <sys/xattr.h>
 #include <unistd.h>
 
 #include <csignal>
@@ -1648,4 +1649,20 @@ getcpuFunc(SyscallDesc *desc, ThreadContext *tc,
         *node = 0;
 
     return 0;
+}
+
+
+SyscallReturn
+listxattrFunc(SyscallDesc *desc, ThreadContext *tc,
+           VPtr<> path_ptr, VPtr<> list_ptr, unsigned long size)
+{
+    BufferArg buf_in(path_ptr, 1024);
+    BufferArg buf_out(list_ptr, size);
+    ssize_t ret = 0;
+
+    ret = listxattr((char *)buf_in.bufferPtr(), (char *)buf_out.bufferPtr(), size);
+
+    //buf_out.copyOut(tc->getVirtProxy());
+
+    return ret;
 }

@@ -33,6 +33,45 @@
 #include "base/bitfield.hh"
 #include "base/cprintf.hh"
 
+extern bool inv_flag, lt_flag, gt_flag, eq_flag, ox_flag, sat_flag;              // wwf
+extern bool vxsnan_flag, vximz_flag, vxidi_flag, vxisi_flag, vxzdz_flag, vxsqrt_flag, vxcvi_flag, vxvc_flag;
+extern bool inc_flag, ux_flag, xx_flag, zx_flag;
+
+void bcd_ADD(uint8_t *p_t, uint8_t *p_a, uint8_t *p_b, bool PS);      //  wwf
+void bcd_SUBTRACT(uint8_t *p_t, uint8_t *p_a, uint8_t *p_b, bool PS);      //  wwf
+void bcd_CONVERT_FROM_SI128(uint8_t *p_t, __int128_t x, bool y);
+void print128(__int128_t x);
+void assign_128(__int128 &x, char num[]);
+void si128_CONVERT_FROM_BCD(uint8_t *p_t, uint8_t *p8);
+void reset_xflags();
+uint64_t ConvertDPtoSD(uint64_t x);
+uint32_t ConvertDPtoSW(uint64_t x);
+uint64_t ConvertDPtoUD(uint64_t x);
+uint32_t ConvertDPtoUW(uint64_t x);
+double ConvertSPtoSP64(float ff32);
+uint64_t ConvertSPtoSD(uint32_t x);
+uint32_t ConvertSPtoSW(uint32_t x);
+uint64_t ConvertSPtoUD(uint32_t x);
+uint32_t ConvertSPtoUW(uint32_t x);
+uint64_t RoundToDPIntegerNearAway(uint64_t x);
+uint64_t RoundToDPIntegerNearEven(uint64_t x);
+uint64_t RoundToDPIntegerTrunc(uint64_t x);
+uint64_t RoundToDPIntegerCeil(uint64_t x);
+uint64_t RoundToDPIntegerFloor(uint64_t x);
+uint32_t RoundToSPIntegerNearAway(uint32_t x);
+uint32_t RoundToSPIntegerNearEven(uint32_t x);
+uint32_t RoundToSPIntegerTrunc(uint32_t x);
+uint32_t RoundToSPIntegerCeil(uint32_t x);
+uint32_t RoundToSPIntegerFloor(uint32_t x);
+bool isNan(uint64_t val_bits);
+bool isSnan(uint64_t val_bits);
+bool isQnan(uint64_t val_bits);
+bool isNan32(uint32_t val_bits);
+bool isSnan32(uint32_t val_bits);
+bool isQnan32(uint32_t val_bits);
+bool isInfinity(uint64_t val_bits);
+bool isInfinity32(uint32_t val_bits);
+
 namespace PowerISA
 {
 
@@ -451,7 +490,7 @@ class IntArithOp : public IntOp
     {
         uint32_t ret;
         bool sat_flag = false;
-        if (x > 0xffffffffULL) {
+        if (x > 0xffffffffLL) {
             ret = 0xffffffff;
             sat_flag = true;
         } else if (x < 0) {

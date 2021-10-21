@@ -368,6 +368,10 @@ SyscallReturn getcpuFunc(SyscallDesc *desc, ThreadContext *tc,
 SyscallReturn getsocknameFunc(SyscallDesc *desc, ThreadContext *tc,
                               int tgt_fd, VPtr<> addrPtr, VPtr<> lenPtr);
 
+// Target listxattr() handler.                             
+SyscallReturn listxattrFunc(SyscallDesc *desc, ThreadContext *tc,
+           VPtr<> path_ptr, VPtr<> list_ptr, unsigned long size);
+
 /// Futex system call
 /// Implemented by Daniel Sanchez
 /// Used by printf's in multi-threaded apps

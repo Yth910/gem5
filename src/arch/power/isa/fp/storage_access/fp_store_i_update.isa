@@ -1,0 +1,10 @@
+format StoreIndexOp {
+    663: stfsx({{ Mem_sf = Fs_sf; }});
+    727: stfdx({{ Mem_df = Fs; }});
+    983: stfiwx({{ Mem = Fs_uw; }});
+}
+
+format StoreIndexUpdateOp {
+    695: stfsux({{ Mem_sf = Fs_sf; }});
+    759: stfdux({{ Mem_df = Fs; }});
+}

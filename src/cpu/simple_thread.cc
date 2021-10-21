@@ -87,7 +87,6 @@ SimpleThread::SimpleThread(BaseCPU *_cpu, int _thread_num, System *_sys,
       htmTransactionStarts(0), htmTransactionStops(0)
 {
     assert(isa);
-
     clearArchRegs();
 }
 
