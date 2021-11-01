@@ -18,24 +18,28 @@ format IntArithOp {
         auto vrb_reg = tc->readVecReg(vrb_id);
         auto vrb = vrb_reg.as<uint64_t>();
         auto vrc_reg = tc->readVecReg(vrc_id);
-        auto vrc = vrb_reg.as<uint8_t>();
+        auto vrc = vrc_reg.as<uint8_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt = vrt_reg.as<uint8_t>(); 
+        auto vrt = vrt_reg.as<uint8_t>();
+
+        /*
+        ALL PASSED.
+        */
         
         uint64_t vsrc[4];               
-        uint8_t *ppp = (uint8_t *)vsrc, index;
-        vsrc[0] = vra[0];
-        vsrc[1] = vra[1];
-        vsrc[2] = vrb[0];
-        vsrc[3] = vrb[1];  
+        uint8_t *ppp = (uint8_t *)vsrc;
+        uint16_t index;
+        vsrc[0] = vrb[0];
+        vsrc[1] = vrb[1];
+        vsrc[2] = vra[0];
+        vsrc[3] = vra[1];
         
-        for(int i=0; i < 16; i++)
-        {
+        for(int i=0; i < 16; i++) {
             index = bits(vrc[i], 4, 0);
-            vrt[i] = ppp[index]; 
+            vrt[i] = ppp[31 - index];
             
-            ////printf("vector: %d  vrc[i]= %x  index= %d  data= %x\n", i, vrc[i], index, ppp[index]); 
-            //printf("vector: %d  Vt = %x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x\n", \
+            //printf("####output vector: %d  vrc[i]= %x  index= %d  data= %x\n", i, vrc[i], index, ppp[index]); 
+            //printf("####output vector: %d  Vt = %x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x\n", \
                                     i,vrt[0],vrt[1],vrt[2],vrt[3],vrt[4],vrt[5],vrt[6],vrt[7], \
                                     vrt[8],vrt[9],vrt[10],vrt[11],vrt[12],vrt[13],vrt[14],vrt[15]);
         }
@@ -62,19 +66,23 @@ format IntArithOp {
         auto vrb_reg = tc->readVecReg(vrb_id);
         auto vrb = vrb_reg.as<uint64_t>();
         auto vrc_reg = tc->readVecReg(vrc_id);
-        auto vrc = vrb_reg.as<uint8_t>();
+        auto vrc = vrc_reg.as<uint8_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt = vrt_reg.as<uint8_t>(); 
+        auto vrt = vrt_reg.as<uint8_t>();
+
+        /*
+        ISA 3.1
+        */
         
         uint64_t vsrc[4];               
-        uint8_t *ppp = (uint8_t *)vsrc, index;
-        vsrc[0] = vra[0];
-        vsrc[1] = vra[1];
-        vsrc[2] = vrb[0];
-        vsrc[3] = vrb[1];  
+        uint8_t *ppp = (uint8_t *)vsrc;
+        uint16_t index;
+        vsrc[0] = vrb[0];
+        vsrc[1] = vrb[1];
+        vsrc[2] = vra[0];
+        vsrc[3] = vra[1];  
         
-        for(int i=0; i < 16; i++)
-        {
+        for(int i=0; i < 16; i++) {
             index = bits(vrc[i], 4, 0);
             vrt[i] = ppp[31 - index]; 
             
@@ -104,9 +112,13 @@ format IntArithOp {
         auto vrb_reg = tc->readVecReg(vrb_id);
         auto vrb = vrb_reg.as<uint64_t>();
         auto vrc_reg = tc->readVecReg(vrc_id);
-        auto vrc = vrb_reg.as<uint64_t>();
+        auto vrc = vrc_reg.as<uint64_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt = vrt_reg.as<uint64_t>(); 
+        auto vrt = vrt_reg.as<uint64_t>();
+
+        /*
+        ALL PASSED.
+        */
         
         uint64_t *src1, *src2, *mask;
         src1 = &vra[0];

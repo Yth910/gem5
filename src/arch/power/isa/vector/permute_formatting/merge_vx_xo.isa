@@ -15,12 +15,16 @@ format IntArithOp {
         auto vrb_reg = tc->readVecReg(vrb_id);
         auto vrb = vrb_reg.as<uint8_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt = vrt_reg.as<uint8_t>();      
+        auto vrt = vrt_reg.as<uint8_t>();
+
+        /*
+        ALL PASSED.
+        */
         
-        for(int i=0; i < 8; i++)
+        for(int i = 0; i < 8; i++)
         {
-            vrt[i*2] = vra[i];
-            vrt[i*2 + 1] = vrb[i];
+            vrt[i * 2] = vrb[8 + i];
+            vrt[i * 2 + 1] = vra[8 + i];
             
             //printf("vector: %d  a= %x  b= %x\n", i, vra[i], vrb[i]); 
             //printf("vector:  Vt = %x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x\n", \
@@ -47,12 +51,16 @@ format IntArithOp {
         auto vrb_reg = tc->readVecReg(vrb_id);
         auto vrb = vrb_reg.as<uint8_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt = vrt_reg.as<uint8_t>();      
+        auto vrt = vrt_reg.as<uint8_t>();
+
+        /*
+        ALL PASSED.
+        */ 
         
-        for(int i=0; i < 8; i++)
+        for(int i = 0; i < 8; i++)
         {
-            vrt[i*2] = vra[i+8];
-            vrt[i*2 + 1] = vrb[i+8];
+            vrt[i * 2] = vrb[i];
+            vrt[i * 2 + 1] = vra[i];
             
             //printf("vector: %d  a= %x  b= %x\n", i, vra[i+8], vrb[i+8]); 
             //printf("vector:  Vt = %x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x\n", \
@@ -79,12 +87,16 @@ format IntArithOp {
         auto vrb_reg = tc->readVecReg(vrb_id);
         auto vrb = vrb_reg.as<uint16_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt = vrt_reg.as<uint16_t>();             
+        auto vrt = vrt_reg.as<uint16_t>();
+
+        /*
+        ALL PASSED.
+        */
                         
-        for(int i=0; i < 4; i++)
+        for(int i = 0; i < 4; i++)
         {
-            vrt[i*2] = vra[i];
-            vrt[i*2 + 1] = vrb[i];
+            vrt[i * 2] = vrb[i + 4];
+            vrt[i * 2 + 1] = vra[i + 4];
             
             //printf("vector: %d  a= %x  b= %x\n", i, vra[i], vrb[i]); 
             //printf("vector: %d  Vt = %x%x%x%x%x%x%x%x\n", \
@@ -110,12 +122,16 @@ format IntArithOp {
         auto vrb_reg = tc->readVecReg(vrb_id);
         auto vrb = vrb_reg.as<uint16_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt = vrt_reg.as<uint16_t>();            
+        auto vrt = vrt_reg.as<uint16_t>();
+
+        /*
+        ALL PASSED.
+        */
                         
-        for(int i=0; i < 4; i++)
+        for(int i = 0; i < 4; i++)
         {
-            vrt[i*2] = vra[i+4];
-            vrt[i*2 + 1] = vrb[i+4];
+            vrt[i * 2] = vrb[i];
+            vrt[i * 2 + 1] = vra[i];
             
             //printf("vector: %d  a= %x  b= %x\n", i, vra[i+4], vrb[i+4]); 
             //printf("vector: %d  Vt = %x%x%x%x%x%x%x%x\n", \
@@ -141,12 +157,16 @@ format IntArithOp {
         auto vrb_reg = tc->readVecReg(vrb_id);
         auto vrb = vrb_reg.as<uint32_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt = vrt_reg.as<uint32_t>();            
+        auto vrt = vrt_reg.as<uint32_t>();
+
+        /*
+        ALL PASSED.
+        */
                         
-        vrt[0] = vra[0];
-        vrt[1] = vrb[0];
-        vrt[2] = vra[1];
-        vrt[3] = vrb[1];
+        vrt[0] = vrb[2];
+        vrt[1] = vra[2];
+        vrt[2] = vrb[3];
+        vrt[3] = vra[3];
             
         //printf("vector:  1= %lx  2= %lx  3= %lx  4= %lx\n", vra[0], vrb[0], vra[1], vrb[1]); 
         //printf("vector:  Vt = %lx%lx%lx%lx\n", \
@@ -171,12 +191,16 @@ format IntArithOp {
         auto vrb_reg = tc->readVecReg(vrb_id);
         auto vrb = vrb_reg.as<uint32_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt = vrt_reg.as<uint32_t>();            
+        auto vrt = vrt_reg.as<uint32_t>();
+
+        /*
+        ALL PASSED.
+        */
                         
-        vrt[0] = vra[2];
-        vrt[1] = vrb[2];
-        vrt[2] = vra[3];
-        vrt[3] = vrb[3];
+        vrt[0] = vrb[0];
+        vrt[1] = vra[0];
+        vrt[2] = vrb[1];
+        vrt[3] = vra[1];
             
         //printf("vector:  1= %lx  2= %lx  3= %lx  4= %lx\n", vra[2], vrb[2], vra[3], vrb[3]); 
         //printf("vector:  Vt = %lx%lx%lx%lx\n", \
@@ -201,12 +225,16 @@ format IntArithOp {
         auto vrb_reg = tc->readVecReg(vrb_id);
         auto vrb = vrb_reg.as<uint32_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt = vrt_reg.as<uint32_t>();            
+        auto vrt = vrt_reg.as<uint32_t>();
+
+        /*
+        ALL PASSED.
+        */
                         
-        vrt[0] = vra[0];
-        vrt[1] = vrb[0];
-        vrt[2] = vra[2];
-        vrt[3] = vrb[2];
+        vrt[0] = vrb[1];
+        vrt[1] = vra[1];
+        vrt[2] = vrb[3];
+        vrt[3] = vra[3];
             
         //printf("vector:  1= %lx  2= %lx  3= %lx  4= %lx\n", vra[0], vrb[0], vra[2], vrb[2]); 
         //printf("vector:  Vt = %lx%lx%lx%lx\n", \
@@ -231,12 +259,16 @@ format IntArithOp {
         auto vrb_reg = tc->readVecReg(vrb_id);
         auto vrb = vrb_reg.as<uint32_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt = vrt_reg.as<uint32_t>();            
+        auto vrt = vrt_reg.as<uint32_t>();
+
+        /*
+        ALL PASSED.
+        */
                         
-        vrt[0] = vra[1];
-        vrt[1] = vrb[1];
-        vrt[2] = vra[3];
-        vrt[3] = vrb[3];
+        vrt[0] = vrb[0];
+        vrt[1] = vra[0];
+        vrt[2] = vrb[2];
+        vrt[3] = vra[2];
             
         //printf("vector:  1= %lx  2= %lx  3= %lx  3= %lx\n", vra[1], vrb[1], vra[3], vrb[3]); 
         //printf("vector:  Vt = %lx%lx%lx%lx\n", \

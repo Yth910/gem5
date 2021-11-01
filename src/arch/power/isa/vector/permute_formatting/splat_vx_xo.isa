@@ -12,11 +12,15 @@ format IntArithOp {
         auto vrb_reg = tc->readVecReg(vrb_id);
         auto vrb = vrb_reg.as<uint8_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt = vrt_reg.as<uint8_t>();            
+        auto vrt = vrt_reg.as<uint8_t>();
+
+        /*
+        ALL PASSED.
+        */   
                         
         uint8_t n = (UIM12_15 << 3) & 0xF8;
         for(int i = 0; i < 16; i++)
-            vrt[i] = vrb[UIM12_15];
+            vrt[i] = vrb[15 - UIM12_15];
             
         //printf("vector:  UIM= %d  n= %d  vrb[n]= %x\n", UIM12_15, n, vrb[UIM12_15]); 
         //printf("vector:  Vt = %x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x\n", \
@@ -39,11 +43,15 @@ format IntArithOp {
         auto vrb_reg = tc->readVecReg(vrb_id);
         auto vrb = vrb_reg.as<uint16_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt = vrt_reg.as<uint16_t>();            
+        auto vrt = vrt_reg.as<uint16_t>();
+
+        /*
+        ALL PASSED.
+        */
                         
         uint8_t n = (UIM13_15 << 4) & 0xF0;
         for(int i = 0; i < 8; i++)
-            vrt[i] = vrb[UIM13_15];
+            vrt[i] = vrb[7 - UIM13_15];
             
         //printf("vector:  UIM= %d  n= %d  vrb[n]= %x\n", UIM13_15, n, vrb[UIM13_15]); 
         //printf("vector:  Vt = %x%x%x%x%x%x%x%x\n", \
@@ -65,11 +73,16 @@ format IntArithOp {
         auto vrb_reg = tc->readVecReg(vrb_id);
         auto vrb = vrb_reg.as<uint32_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt = vrt_reg.as<uint32_t>();            
+        auto vrt = vrt_reg.as<uint32_t>();
+
+
+        /*
+        ALL PASSED.
+        */           
                         
         uint8_t n = (UIM14_15 << 5) & 0xF0;
         for(int i = 0; i < 4; i++)
-            vrt[i] = vrb[UIM14_15];
+            vrt[i] = vrb[3 - UIM14_15];
             
         //printf("vector:  UIM= %d  n= %d  vrb[n]= %x\n", UIM14_15, n, vrb[UIM14_15]); 
         //printf("vector:  Vt = %x%x%x%x\n", \
@@ -87,7 +100,11 @@ format IntArithOp {
         ThreadContext *tc = xc->tcBase();
         RegId vrt_id(VecRegClass, VRT + 32);                
         auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt = vrt_reg.as<uint8_t>();            
+        auto vrt = vrt_reg.as<uint8_t>();
+
+        /*
+        ALL PASSED.
+        */
                         
         uint64_t n = sext<5>(SIM);
         n = n & 0xFF;
@@ -111,7 +128,11 @@ format IntArithOp {
         ThreadContext *tc = xc->tcBase();
         RegId vrt_id(VecRegClass, VRT + 32);                
         auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt = vrt_reg.as<uint16_t>();            
+        auto vrt = vrt_reg.as<uint16_t>();
+
+        /*
+        ALL PASSED.
+        */
                         
         uint64_t n = sext<5>(SIM);
         unsigned char *p_c, uch;
@@ -119,8 +140,8 @@ format IntArithOp {
         for(int i = 0; i < 8; i++)
         {
             vrt[i] = n;
-            p_c = (unsigned char*)&vrt[i];
-            uch = p_c[0];  p_c[0] = p_c[1]; p_c[1] = uch;
+            //p_c = (unsigned char*)&vrt[i];
+            //uch = p_c[0];  p_c[0] = p_c[1]; p_c[1] = uch;
         }
             
         //printf("vector:  SIM= %x  n= %lx \n", SIM, n); 
@@ -139,7 +160,11 @@ format IntArithOp {
         ThreadContext *tc = xc->tcBase();
         RegId vrt_id(VecRegClass, VRT + 32);                
         auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt = vrt_reg.as<uint32_t>();            
+        auto vrt = vrt_reg.as<uint32_t>();
+
+        /*
+        ALL PASSED.
+        */
                         
         uint64_t n = sext<5>(SIM);
         unsigned char *p_c, uch;
@@ -147,9 +172,9 @@ format IntArithOp {
         for(int i = 0; i < 4; i++)
         {
             vrt[i] = n;
-            p_c = (unsigned char*)&vrt[i];
-            uch = p_c[0];  p_c[0] = p_c[3]; p_c[3] = uch;
-            uch = p_c[1];  p_c[1] = p_c[2]; p_c[2] = uch;
+            //p_c = (unsigned char*)&vrt[i];
+            //uch = p_c[0];  p_c[0] = p_c[3]; p_c[3] = uch;
+            //uch = p_c[1];  p_c[1] = p_c[2]; p_c[2] = uch;
         }
             
         //printf("vector:  SIM= %x  n= %lx \n", SIM, n); 

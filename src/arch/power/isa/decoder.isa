@@ -330,23 +330,20 @@ decode PO default Unknown::unknown() {
 
             default: decode XX4_XO {
                 ##include "vsx/permute/sel_xx4_xo.isa"
-                    // ###60: decode XX4_XO FloatArithOp###
-                    default: decode XX3_3_XO {                                               // wwf  [24, 28]
-					    ##include "vsx/permute/perm_xx3_3xo.isa"
-					    default:decode XX3RC_XO {
-							
-                            ##include "vsx/fp_comp/fp_comp_xx3rc_xo.isa"
-                            default:decode XX2_XO {
-                                format FloatArithOp {
-                                    170: xvtsqrtsp({{
-                                        std::cout << "Running xvtsqrtsp in XX2_XO" << std::endl;			
-                                    }});
-                                }
+                // ###60: decode XX4_XO FloatArithOp###
+                default: decode XX3_3_XO {                                               // wwf  [24, 28]
+                    ##include "vsx/permute/perm_xx3_3xo.isa"
+                    default:decode XX3RC_XO {
+                        ##include "vsx/fp_comp/fp_comp_xx3rc_xo.isa"
+                        default:decode XX2_XO {
+                            format FloatArithOp {
+                                170: xvtsqrtsp({{
+                                    std::cout << "Running xvtsqrtsp in XX2_XO" << std::endl;			
+                                }});
                             }
-							
-						}
-					}
-                
+                        }
+                    }
+                }
             }
         }
     }

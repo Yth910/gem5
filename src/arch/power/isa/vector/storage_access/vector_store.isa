@@ -5,10 +5,11 @@ format StoreIndexOp {
         auto reg = tc->readVecReg(id);
         auto val = reg.as<uint8_t>();
         Msr msr_v = tc->readIntReg(INTREG_MSR);
+        uint8_t eb = bits(EA, 3, 0);
         if (msr_v.le) {
-            Mem_ub = val[0];
+            Mem_ub = val[eb];
         } else {
-            Mem_ub = val[15];
+            Mem_ub = val[15 - eb];
         }
     }});
 
@@ -18,10 +19,12 @@ format StoreIndexOp {
         auto reg = tc->readVecReg(id);
         auto val = reg.as<uint16_t>();
         Msr msr_v = tc->readIntReg(INTREG_MSR);
+        uint8_t eb = bits(EA, 3, 0);
+        EA &= (~0x1ULL);
         if (msr_v.le) {
-            Mem_uh = val[0];
+            Mem_uh = val[eb];
         } else {
-            Mem_uh = val[7];
+            Mem_uh = val[7 - eb];
         }
     }});
 
@@ -31,10 +34,12 @@ format StoreIndexOp {
         auto reg = tc->readVecReg(id);
         auto val = reg.as<uint32_t>();
         Msr msr_v = tc->readIntReg(INTREG_MSR);
+        uint8_t eb = bits(EA, 3, 0);
+        EA &= (~0x3ULL);
         if (msr_v.le) {
-            Mem_uw = val[0];
+            Mem_uw = val[eb];
         } else {
-            Mem_uw = val[3];
+            Mem_uw = val[3 - eb];
         }
     }});
 
@@ -43,6 +48,7 @@ format StoreIndexOp {
         RegId id(VecRegClass, VRS + 32);
         auto reg = tc->readVecReg(id);
         auto val = reg.as<__uint128_t>();
+        EA &= (~0x7ULL);
         Mem_uq = val[0];
     }});
 
@@ -51,6 +57,7 @@ format StoreIndexOp {
         RegId id(VecRegClass, VRS + 32);
         auto reg = tc->readVecReg(id);
         auto val = reg.as<__uint128_t>();
+        EA &= (~0x7ULL);
         Mem_uq = val[0];
     }});
 }

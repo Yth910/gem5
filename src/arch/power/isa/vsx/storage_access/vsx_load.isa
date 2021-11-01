@@ -34,7 +34,7 @@ format LoadIndexOp {
         RegId id(VecRegClass, XX_T + XX_TX * 32);
         auto reg = tc->readVecReg(id);
         auto val = reg.as<double>();
-        val[0] = Mem_uw;
+        val[0] = Mem_sf;
         val[1] = 0;
         tc->setVecReg(id, reg);
     }});

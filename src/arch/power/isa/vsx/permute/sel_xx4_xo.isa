@@ -2,29 +2,25 @@
 format FloatArithOp {
     3:xxsel({{
         ThreadContext *tc = xc->tcBase();
-        RegId src1_id(VecRegClass, XX_A + XX_AX * 32);
-        RegId src2_id(VecRegClass, XX_B + XX_BX * 32);
-        RegId src3_id(VecRegClass, XX_C + XX_CX * 32);
-        RegId dst_id(VecRegClass, XX_T + XX_TX * 32);
-        auto src1_reg = tc->readVecReg(src1_id);
-        auto src1_val = src1_reg.as<__uint128_t>();
-        auto src2_reg = tc->readVecReg(src2_id);
-        auto src2_val = src2_reg.as<__uint128_t>();
-        auto src3_reg = tc->readVecReg(src2_id);
-        auto src3_val = src2_reg.as<__uint128_t>();
-        auto dst_reg = tc->readVecReg(dst_id);
-        auto dst_val = dst_reg.as<__uint128_t>();
+        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
+        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
+        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
+        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
+        auto vra_reg = tc->readVecReg(vra_id);
+        auto vra_val = vra_reg.as<__uint128_t>();
+        auto vrb_reg = tc->readVecReg(vrb_id);
+        auto vrb_val = vrb_reg.as<__uint128_t>();
+        auto vrc_reg = tc->readVecReg(vrc_id);
+        auto vrc_val = vrc_reg.as<__uint128_t>();
+        auto vrt_reg = tc->readVecReg(vrt_id);
+        auto vrt_val = vrt_reg.as<__uint128_t>();
 
-        __uint128_t tmp = 0;
-        for (auto i = 0; i < 128; i++) {
-            __uint128_t mask = (1 << i);
-            if ((src3_val[0] & mask) == 0) {
-                tmp |= (src1_val[0] & mask);
-            } else {
-                tmp |= (src2_val[0] & mask);
-            }
-        }
-        dst_val[0] = tmp;
-        tc->setVecReg(dst_id, dst_reg);
+        /*
+        ALL PASSED.
+        */
+
+        __uint128_t mask = vrc_val[0];
+        vrt_val[0] = (vra_val[0] & ~mask) | (vrb_val[0] & mask);
+        tc->setVecReg(vrt_id, vrt_val);
     }});
 }

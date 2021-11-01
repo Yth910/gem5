@@ -1116,6 +1116,46 @@ class FloatOp : public PowerStaticInst
 		fpscr = update_fpscr(fpscr, fpscr_flag);
 		return std::make_tuple(ret, fpscr);
 	}
+
+    std::tuple<Fpscr, uint32_t> bfp64_COMPARE_ORDER(double x, double y, Fpscr fpscr) const
+    {
+		Fpscr fpscr_flag = 0;
+        uint32_t c;
+
+        c = makeCRField(x, y);
+        fpscr.fprf.fpcc = c;
+
+		if (isSnan(x) || isSnan(y)) {
+			fpscr_flag.vxsnan = 1;
+            fpscr_flag.vxvc = 1;
+			fpscr_flag.vx = 1;
+			fpscr_flag.fx = 1;
+		} else if (isQnan(x) || isQnan(y)) {
+			fpscr_flag.vxvc = 1;
+			fpscr_flag.fx = 1;
+		}
+
+		fpscr = update_fpscr(fpscr, fpscr_flag);
+		return std::make_tuple(fpscr, c);
+	}
+
+    std::tuple<Fpscr, uint32_t> bfp64_COMPARE_UNORDER(double x, double y, Fpscr fpscr) const
+    {
+		Fpscr fpscr_flag = 0;
+        uint32_t c;
+
+        c = makeCRField(x, y);
+        fpscr.fprf.fpcc = c;
+
+		if (isSnan(x) || isSnan(y)) {
+			fpscr_flag.vxsnan = 1;
+			fpscr_flag.vx = 1;
+			fpscr_flag.fx = 1;
+		}
+
+		fpscr = update_fpscr(fpscr, fpscr_flag);
+		return std::make_tuple(fpscr, c);
+	}
 	
 	std::tuple<float, Fpscr> bfp32_MAX(float x, float y, Fpscr fpscr) const
     {

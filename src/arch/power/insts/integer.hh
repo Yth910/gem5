@@ -502,6 +502,45 @@ class IntArithOp : public IntOp
         return std::make_tuple(ret, sat_flag);
     }
 
+    inline std::tuple<uint8_t, bool> ui8u_CLAMP(uint16_t x) const
+    {
+        uint8_t ret;
+        bool sat_flag = false;
+        if (x > 0xff) {
+            ret = 0xff;
+            sat_flag = true;
+        } else {
+            ret = x;
+        }
+        return std::make_tuple(ret, sat_flag);
+    }
+
+    inline std::tuple<uint16_t, bool> ui16u_CLAMP(uint32_t x) const
+    {
+        int16_t ret;
+        bool sat_flag = false;
+        if (x > 0xffff) {
+            ret = 0xffff;
+            sat_flag = true;
+        } else {
+            ret = x;
+        }
+        return std::make_tuple(ret, sat_flag);
+    }
+
+    inline std::tuple<uint32_t, bool> ui32u_CLAMP(uint64_t x) const
+    {
+        uint32_t ret;
+        bool sat_flag = false;
+        if (x > 0xffffffffLL) {
+            ret = 0xffffffff;
+            sat_flag = true;
+        } else {
+            ret = x;
+        }
+        return std::make_tuple(ret, sat_flag);
+    }
+
     std::string generateDisassembly(
             Addr pc, const Loader::SymbolTable *symtab) const override;
 };

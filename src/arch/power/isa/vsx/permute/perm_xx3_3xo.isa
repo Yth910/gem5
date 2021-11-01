@@ -8,13 +8,17 @@ format IntArithOp {
         RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
         RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
         RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
-        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);  
+        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
         auto vra_reg = tc->readVecReg(vra_id);
         auto vra = vra_reg.as<uint64_t>();
         auto vrb_reg = tc->readVecReg(vrb_id);
         auto vrb = vrb_reg.as<uint64_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt = vrt_reg.as<uint64_t>();            
+        auto vrt = vrt_reg.as<uint64_t>();
+
+        /*
+        ALL PASSED.
+        */
         
         int t1 = (DM >> 1) & 0x1;
         int t2 = DM & 0x1;
@@ -41,7 +45,11 @@ format IntArithOp {
         auto vrb_reg = tc->readVecReg(vrb_id);
         auto vrb = vrb_reg.as<uint32_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt = vrt_reg.as<uint32_t>();            
+        auto vrt = vrt_reg.as<uint32_t>();
+
+        /*
+        ALL PASSED.
+        */
         
         uint32_t source[8];
         int i;

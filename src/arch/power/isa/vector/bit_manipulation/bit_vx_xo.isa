@@ -8,6 +8,10 @@ format IntArithOp {
         auto dst_reg = tc->readVecReg(dst_id);
         auto dst_val = dst_reg.as<uint8_t>();
 
+        /*
+        ALL PASSED.
+        */
+
         for (int i = 0; i < 2; ++i) {
             uint8_t mask = 1 << 7;
             for (int j = 0; j < 8; ++j) {
@@ -34,6 +38,10 @@ format IntArithOp {
         auto src_val = src_reg.as<uint8_t>();
         auto dst_val = dst_reg.as<uint8_t>();
 
+        /*
+        ALL PASSED.
+        */
+
         for (int i = 0; i < 16; ++i) {
             uint8_t val = src_val[15-i];
             uint8_t n;
@@ -57,6 +65,10 @@ format IntArithOp {
         auto dst_reg = tc->readVecReg(dst_id);
         auto src_val = src_reg.as<uint16_t>();
         auto dst_val = dst_reg.as<uint16_t>();
+
+        /*
+        ALL PASSED.
+        */
 
         for (int i = 0; i < 8; ++i) {
             uint16_t val = src_val[7-i];
@@ -82,6 +94,10 @@ format IntArithOp {
         auto src_val = src_reg.as<uint32_t>();
         auto dst_val = dst_reg.as<uint32_t>();
 
+        /*
+        ALL PASSED.
+        */
+
         for (int i = 0; i < 4; ++i) {
             uint32_t val = src_val[3-i];
             uint32_t n;
@@ -105,6 +121,10 @@ format IntArithOp {
         auto dst_reg = tc->readVecReg(dst_id);
         auto src_val = src_reg.as<uint64_t>();
         auto dst_val = dst_reg.as<uint64_t>();
+
+        /*
+        ALL PASSED.
+        */
 
         for (int i = 0; i < 2; ++i) {
             uint64_t val = src_val[1-i];
@@ -130,6 +150,10 @@ format IntArithOp {
         auto src_val = src_reg.as<uint8_t>();
         auto dst_val = dst_reg.as<uint8_t>();
 
+        /*
+        ALL PASSED.
+        */
+
         for (int i = 0; i < 16; ++i) {
             uint8_t val = src_val[15-i];
             uint8_t n = 0;
@@ -151,6 +175,10 @@ format IntArithOp {
         auto dst_reg = tc->readVecReg(dst_id);
         auto src_val = src_reg.as<uint16_t>();
         auto dst_val = dst_reg.as<uint16_t>();
+
+        /*
+        ALL PASSED.
+        */
 
         for (int i = 0; i < 8; ++i) {
             uint16_t val = src_val[7-i];
@@ -174,6 +202,10 @@ format IntArithOp {
         auto src_val = src_reg.as<uint32_t>();
         auto dst_val = dst_reg.as<uint32_t>();
 
+        /*
+        ALL PASSED.
+        */
+
         for (int i = 0; i < 4; ++i) {
             uint32_t val = src_val[3-i];
             uint32_t n = 0;
@@ -195,6 +227,10 @@ format IntArithOp {
         auto dst_reg = tc->readVecReg(dst_id);
         auto src_val = src_reg.as<uint64_t>();
         auto dst_val = dst_reg.as<uint64_t>();
+
+        /*
+        ALL PASSED.
+        */
 
         for (int i = 0; i < 2; ++i) {
             uint64_t val = src_val[1-i];
@@ -220,6 +256,10 @@ format IntArithOp {
         auto src1_val = src1_reg.as<uint8_t>();
         auto src2_val = src2_reg.as<uint8_t>();
         auto dst_val = dst_reg.as<uint64_t>();
+
+        /*
+        ALL PASSED.
+        */
 
         uint64_t perm = 0;
         for (int i = 15; i >= 0; --i) {

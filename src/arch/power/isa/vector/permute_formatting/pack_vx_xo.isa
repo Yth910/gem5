@@ -20,32 +20,28 @@ format IntArithOp {
         auto vrb = vrb_reg.as<uint64_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
         auto vrt = vrt_reg.as<uint16_t>();
+
+        /*
+        ALL PASSED.
+        */
         
         uint64_t vsrc[4];
-        vsrc[0] = vra[0];
-        vsrc[1] = vra[1];
-        vsrc[2] = vrb[0];
-        vsrc[3] = vrb[1];
+        vsrc[3] = vra[1];
+        vsrc[2] = vra[0];
+        vsrc[1] = vrb[1];
+        vsrc[0] = vrb[0];
         uint32_t *ppp = (uint32_t *)vsrc, tmp;
         unsigned char uch, *p_c; 
         
-        for(int i=0; i < 8; i++)
+        for(int i = 0; i < 8; i++)
         {
             tmp = ppp[i];
-            // 0xddccbbaa to 0xaabbccdd  to use insertBits and bits functions.
-            p_c = (unsigned char*)&tmp;
-            uch = p_c[0];  p_c[0] = p_c[3]; p_c[3] = uch;
-            uch = p_c[1];  p_c[1] = p_c[2]; p_c[2] = uch;
-            
+
             vrt[i] = insertBits(vrt[i], 15, bits(tmp, 24));                  
             vrt[i] = insertBits(vrt[i], 14, 10, bits(tmp, 23, 19));                    
             vrt[i] = insertBits(vrt[i], 9, 5, bits(tmp, 15, 11));                  
             vrt[i] = insertBits(vrt[i], 4, 0, bits(tmp, 7, 3)); 
-            
-            // 0xbbaa to 0xaabb  adjust the order of data.
-            p_c = (unsigned char*)&vrt[i];
-            uch = p_c[0];  p_c[0] = p_c[1]; p_c[1] = uch;
-            
+
             //printf("vector  num= %lx     32-bits   bit[7]=%x bit[8:12]=%x bit[16:20]=%x bit[24:28]=%x\n", tmp, bits(tmp, 24), bits(tmp, 23, 19), bits(tmp, 15, 11), bits(tmp, 7, 3));              
             //printf("vector: %d  Vt = %lx%lx%lx%lx%lx%lx%lx%lx   ppp=%llx\n",i,vrt[0],vrt[1],vrt[2],vrt[3],vrt[4],vrt[5],vrt[6],vrt[7], ppp[i]);
         }
@@ -70,41 +66,34 @@ format IntArithOp {
         auto vrb_reg = tc->readVecReg(vrb_id);
         auto vrb = vrb_reg.as<uint64_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt = vrt_reg.as<uint8_t>();
+        auto vrt = vrt_reg.as<int8_t>();
+
+        /*
+        ALL PASSED.
+        */
         
         uint64_t vsrc[4];
-        vsrc[0] = vra[0];
-        vsrc[1] = vra[1];
-        vsrc[2] = vrb[0];
-        vsrc[3] = vrb[1];
-        uint16_t *ppp = (uint16_t *)vsrc;
-        unsigned char uch, *p_c; 
+        vsrc[3] = vra[1];
+        vsrc[2] = vra[0];
+        vsrc[1] = vrb[1];
+        vsrc[0] = vrb[0];
+        int16_t *ppp = (int16_t *)vsrc;
         int64_t val;
-        int16_t up_number, down_number;
-        up_number = pow(2, 7) - 1;
-        down_number = -pow(2, 7);
         
-        for(int i=0; i < 16; i++)
+        for(int i = 0; i < 16; i++)
         {
             val = ppp[i];
-            // 0xbbaa to 0xaabb  adjust the order of data.
-            p_c = (unsigned char*)&val;
-            uch = p_c[0];  p_c[0] = p_c[1]; p_c[1] = uch;
+
+            // EXTS(vsrc.hword[i])
+            // si8_CLAMP(val)
+            bool sat;
+            std::tie(val, sat) = si8_CLAMP(val);
+            uint64_t vscr = tc->readIntReg(INTREG_VSCR);
+            vscr |= (sat & 0x10001);
+            tc->setIntReg(INTREG_VSCR, vscr);
             
-            val = sext<16>(val);                         // EXTS(vsrc.hword[i])
-            if( val > up_number )                        // si8_CLAMP(val)
-            {
-                sat_flag = 1;
-                uch = up_number;
-            }
-            else if(val < down_number)
-            {
-                sat_flag = 1;
-                uch = down_number;
-            }
-            else  uch = val & 0xFF;
-            
-            vrt[i] = uch;                   
+            vrt[i] = val;
+
             
             //printf("vector: %d  hword[i]= %x  EXTS= %llx  si8_CLAMP= %x\n", i, ppp[i], val, uch); 
             //printf("vector: %d  Vt = %x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x\n", \
@@ -133,40 +122,33 @@ format IntArithOp {
         auto vrb = vrb_reg.as<uint64_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
         auto vrt = vrt_reg.as<uint8_t>();
+
+        /*
+        ALL PASSED.
+        */
         
         uint64_t vsrc[4];
-        vsrc[0] = vra[0];
-        vsrc[1] = vra[1];
-        vsrc[2] = vrb[0];
-        vsrc[3] = vrb[1];
-        uint16_t *ppp = (uint16_t *)vsrc;
+        vsrc[3] = vra[1];
+        vsrc[2] = vra[0];
+        vsrc[1] = vrb[1];
+        vsrc[0] = vrb[0];
+        int16_t *ppp = (int16_t *)vsrc;
         unsigned char uch, *p_c; 
-        int64_t val;
-        int16_t up_number, down_number;
-        up_number = pow(2, 8) - 1;
-        down_number = 0;
+        uint64_t val;
         
-        for(int i=0; i < 16; i++)
+        for(int i = 0; i < 16; i++)
         {
             val = ppp[i];
-            // 0xbbaa to 0xaabb  adjust the order of data.
-            p_c = (unsigned char*)&val;
-            uch = p_c[0];  p_c[0] = p_c[1]; p_c[1] = uch;
             
-            val = sext<16>(val);                         // EXTS(vsrc.hword[i])
-            if( val > up_number )                        // ui8_CLAMP(val)
-            {
-                //SAT = 1;
-                uch = up_number;
-            }
-            else if(val < down_number)
-            {
-                //SAT = 1;
-                uch = down_number;
-            }
-            else  uch = val & 0xFF;
+            // EXTS(vsrc.hword[i])
+            // ui8_CLAMP(val)
+            bool sat;
+            std::tie(val, sat) = ui8_CLAMP(val);
+            uint64_t vscr = tc->readIntReg(INTREG_VSCR);
+            vscr |= (sat & 0x10001);
+            tc->setIntReg(INTREG_VSCR, vscr);
             
-            vrt[i] = uch;                   
+            vrt[i] = val;                   
             
             //printf("vector: %d  hword[i]= %x  EXTS= %llx = %d  ui8_CLAMP= %x\n", i, ppp[i], val, val, uch); 
             //printf("vector: %d  Vt = %x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x\n", \
@@ -194,47 +176,35 @@ format IntArithOp {
         auto vrb_reg = tc->readVecReg(vrb_id);
         auto vrb = vrb_reg.as<uint64_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt = vrt_reg.as<uint16_t>();
+        auto vrt = vrt_reg.as<int16_t>();
+
+        /*
+        ALL PASSED.
+        */
         
         uint64_t vsrc[4];
-        vsrc[0] = vra[0];
-        vsrc[1] = vra[1];
-        vsrc[2] = vrb[0];
-        vsrc[3] = vrb[1];
-        uint32_t *ppp = (uint32_t *)vsrc;
+        vsrc[3] = vra[1];
+        vsrc[2] = vra[0];
+        vsrc[1] = vrb[1];
+        vsrc[0] = vrb[0];
+        int32_t *ppp = (int32_t *)vsrc;
         unsigned char uch, *p_c; 
         int64_t val;
-        int32_t up_number, down_number;
-        uint16_t num;
-        up_number = pow(2, 15) - 1;
-        down_number = -pow(2, 15);
         
-        for(int i=0; i < 8; i++)
+        for(int i = 0; i < 8; i++)
         {
             val = ppp[i];
-            // 0xddccbbaa to 0xaabbccdd  adjust the order of data.
-            p_c = (unsigned char*)&val;
-            uch = p_c[0];  p_c[0] = p_c[3]; p_c[3] = uch;
-            uch = p_c[1];  p_c[1] = p_c[2]; p_c[2] = uch;
             
-            val = sext<32>(val);                         // EXTS(vsrc.word[i])
-            if( val > up_number )                        // si16_CLAMP(val)
-            {
-                //SAT = 1;
-                num = up_number;
-            }
-            else if(val < down_number)
-            {
-                //SAT = 1;
-                num = down_number;
-            }
-            else  num = val & 0xFFFF;
+            // EXTS(vsrc.word[i])
+            // si16_CLAMP(val)
+            bool sat;
+            std::tie(val, sat) = si16_CLAMP(val);
+            uint64_t vscr = tc->readIntReg(INTREG_VSCR);
+            vscr |= (sat & 0x10001);
+            tc->setIntReg(INTREG_VSCR, vscr);
             
-            vrt[i] = num; 
-            // 0xddccbbaa to 0xaabbccdd  adjust the order of data.
-            p_c = (unsigned char*)&vrt[i];
-            uch = p_c[0];  p_c[0] = p_c[1]; p_c[1] = uch;                  
-            
+            vrt[i] = val; 
+
             //printf("vector: %d  hword[i]= %x  EXTS= %llx = %d  ui8_CLAMP= %x\n", i, ppp[i], val, val, num); 
             //printf("vector: %d  Vt_h = %x%x%x%x%x%x%x%x\n", \
                                     i,vrt[0],vrt[1],vrt[2],vrt[3],vrt[4],vrt[5],vrt[6],vrt[7]);
@@ -261,46 +231,33 @@ format IntArithOp {
         auto vrb = vrb_reg.as<uint64_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
         auto vrt = vrt_reg.as<uint16_t>();
+
+        /*
+        ALL PASSED.
+        */
         
         uint64_t vsrc[4];
-        vsrc[0] = vra[0];
-        vsrc[1] = vra[1];
-        vsrc[2] = vrb[0];
-        vsrc[3] = vrb[1];
-        uint32_t *ppp = (uint32_t *)vsrc;
-        unsigned char uch, *p_c; 
-        int64_t val;
-        int32_t up_number, down_number;
-        uint16_t num;
-        up_number = pow(2, 16) - 1;
-        down_number = 0;
+        vsrc[3] = vra[1];
+        vsrc[2] = vra[0];
+        vsrc[1] = vrb[1];
+        vsrc[0] = vrb[0];
+        int32_t *ppp = (int32_t *)vsrc;
+        uint64_t val;
         
         for(int i=0; i < 8; i++)
         {
             val = ppp[i];
-            // 0xddccbbaa to 0xaabbccdd  adjust the order of data.
-            p_c = (unsigned char*)&val;
-            uch = p_c[0];  p_c[0] = p_c[3]; p_c[3] = uch;
-            uch = p_c[1];  p_c[1] = p_c[2]; p_c[2] = uch;
             
-            val = sext<32>(val);                         // EXTS(vsrc.word[i])
-            if( val > up_number )                        // ui16_CLAMP(val)
-            {
-                //SAT = 1;
-                num = up_number;
-            }
-            else if(val < down_number)
-            {
-                //SAT = 1;
-                num = down_number;
-            }
-            else  num = val & 0xFFFF;
+            // EXTS(vsrc.word[i])
+            // ui16_CLAMP(val)
+            bool sat;
+            std::tie(val, sat) = ui16_CLAMP(val);
+            uint64_t vscr = tc->readIntReg(INTREG_VSCR);
+            vscr |= (sat & 0x10001);
+            tc->setIntReg(INTREG_VSCR, vscr);
             
-            vrt[i] = num;
-            // 0xddccbbaa to 0xaabbccdd  adjust the order of data.
-            p_c = (unsigned char*)&vrt[i];
-            uch = p_c[0];  p_c[0] = p_c[1]; p_c[1] = uch;
-            
+            vrt[i] = val;
+
             //printf("vector: %d  hword[i]= %x  EXTS= %llx = %d  ui8_CLAMP= %x\n", i, ppp[i], val, val, num); 
             //printf("vector: %d  Vt_h = %x%x%x%x%x%x%x%x\n", \
                                     i,vrt[0],vrt[1],vrt[2],vrt[3],vrt[4],vrt[5],vrt[6],vrt[7]);
@@ -326,49 +283,34 @@ format IntArithOp {
         auto vrb_reg = tc->readVecReg(vrb_id);
         auto vrb = vrb_reg.as<uint64_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt = vrt_reg.as<uint32_t>();
+        auto vrt = vrt_reg.as<int32_t>();
+
+        /*
+        ALL PASSED.
+        */
         
         uint64_t vsrc[4];
-        vsrc[0] = vra[0];
-        vsrc[1] = vra[1];
-        vsrc[2] = vrb[0];
-        vsrc[3] = vrb[1];
-        uint64_t *ppp = (uint64_t *)vsrc;
+        vsrc[3] = vra[1];
+        vsrc[2] = vra[0];
+        vsrc[1] = vrb[1];
+        vsrc[0] = vrb[0];
+        int64_t *ppp = (int64_t *)vsrc;
         unsigned char uch, *p_c; 
         int64_t val;
-        int64_t up_number, down_number;
-        uint32_t num;
-        up_number = pow(2, 31) - 1;
-        down_number = -pow(2, 31);
         
         for(int i=0; i < 4; i++)
         {
             val = ppp[i];
-            // 0xddccbbaa to 0xaabbccdd  adjust the order of data.
-            p_c = (unsigned char*)&val;
-            uch = p_c[0];  p_c[0] = p_c[7]; p_c[7] = uch;
-            uch = p_c[1];  p_c[1] = p_c[6]; p_c[6] = uch;
-            uch = p_c[2];  p_c[2] = p_c[5]; p_c[5] = uch;
-            uch = p_c[3];  p_c[3] = p_c[4]; p_c[4] = uch;
             
-            val = sext<64>(val);                         // EXTS(vsrc.dword[i])
-            if( val > up_number )                        // si32_CLAMP(val)
-            {
-                //SAT = 1;
-                num = up_number;
-            }
-            else if(val < down_number)
-            {
-                //SAT = 1;
-                num = down_number;
-            }
-            else  num = val & 0xFFFFFFFF;
+            //EXTS(vsrc.dword[i])
+            //si32_CLAMP(val)
+            bool sat;
+            std::tie(val, sat) = si32_CLAMP(val);
+            uint64_t vscr = tc->readIntReg(INTREG_VSCR);
+            vscr |= (sat & 0x10001);
+            tc->setIntReg(INTREG_VSCR, vscr);
             
-            vrt[i] = num;  
-            // 0xddccbbaa to 0xaabbccdd  adjust the order of data.
-            p_c = (unsigned char*)&vrt[i];
-            uch = p_c[0];  p_c[0] = p_c[3]; p_c[3] = uch;
-            uch = p_c[1];  p_c[1] = p_c[2]; p_c[2] = uch;
+            vrt[i] = val;
             
             //printf("vector: %d  hword[i]= %lx  EXTS= %llx = %ld  ui8_CLAMP= %lx\n", i, ppp[i], val, val, num); 
             //printf("vector: %d  Vt_w = %x%x%x%x\n", \
@@ -396,49 +338,34 @@ format IntArithOp {
         auto vrb = vrb_reg.as<uint64_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
         auto vrt = vrt_reg.as<uint32_t>();
+
+        /*
+        ALL PASSED.
+        */
         
         uint64_t vsrc[4];
-        vsrc[0] = vra[0];
-        vsrc[1] = vra[1];
-        vsrc[2] = vrb[0];
-        vsrc[3] = vrb[1];
-        uint64_t *ppp = (uint64_t *)vsrc;
+        vsrc[3] = vra[1];
+        vsrc[2] = vra[0];
+        vsrc[1] = vrb[1];
+        vsrc[0] = vrb[0];
+        int64_t *ppp = (int64_t *)vsrc;
         unsigned char uch, *p_c; 
-        int64_t val;
-        int64_t up_number, down_number;
-        uint32_t num;
-        up_number = pow(2, 32) - 1;
-        down_number = 0;
+        uint64_t val;
         
         for(int i=0; i < 4; i++)
         {
             val = ppp[i];
-            // 0xddccbbaa to 0xaabbccdd  adjust the order of data.
-            p_c = (unsigned char*)&val;
-            uch = p_c[0];  p_c[0] = p_c[7]; p_c[7] = uch;
-            uch = p_c[1];  p_c[1] = p_c[6]; p_c[6] = uch;
-            uch = p_c[2];  p_c[2] = p_c[5]; p_c[5] = uch;
-            uch = p_c[3];  p_c[3] = p_c[4]; p_c[4] = uch;
             
-            val = sext<64>(val);                         // EXTS(vsrc.dword[i])
-            if( val > up_number )                        // ui32_CLAMP(val)
-            {
-                //SAT = 1;
-                num = up_number;
-            }
-            else if(val < down_number)
-            {
-                //SAT = 1;
-                num = down_number;
-            }
-            else  num = val & 0xFFFFFFFF;
+            // EXTS(vsrc.dword[i])
+            // ui32_CLAMP(val)
+            bool sat;
+            std::tie(val, sat) = ui32_CLAMP(val);
+            uint64_t vscr = tc->readIntReg(INTREG_VSCR);
+            vscr |= (sat & 0x10001);
+            tc->setIntReg(INTREG_VSCR, vscr);
             
-            vrt[i] = num;  
-            // 0xddccbbaa to 0xaabbccdd  adjust the order of data.
-            p_c = (unsigned char*)&vrt[i];
-            uch = p_c[0];  p_c[0] = p_c[3]; p_c[3] = uch;
-            uch = p_c[1];  p_c[1] = p_c[2]; p_c[2] = uch;
-            
+            vrt[i] = val;  
+
             //printf("vector: %d  hword[i]= %lx  EXTS= %llx = %ld  ui8_CLAMP= %lx\n", i, ppp[i], val, val, num); 
             //printf("vector: %d  Vt_w = %x%x%x%x\n", \
                                     i,vrt[0],vrt[1],vrt[2],vrt[3]);
@@ -465,22 +392,22 @@ format IntArithOp {
         auto vrb = vrb_reg.as<uint64_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
         auto vrt = vrt_reg.as<uint8_t>();
+
+        /*
+        ALL PASSED.
+        */
         
         uint64_t vsrc[4];
-        vsrc[0] = vra[0];
-        vsrc[1] = vra[1];
-        vsrc[2] = vrb[0];
-        vsrc[3] = vrb[1];
+        vsrc[3] = vra[1];
+        vsrc[2] = vra[0];
+        vsrc[1] = vrb[1];
+        vsrc[0] = vrb[0];
         uint16_t *ppp = (uint16_t *)vsrc, tmp;
         unsigned char uch, *p_c; 
         
         for(int i=0; i < 16; i++)
         {
             tmp = ppp[i];
-            // 0xbbaa to 0xaabb  to use insertBits and bits functions.
-            p_c = (unsigned char*)&tmp;
-            uch = p_c[0];  p_c[0] = p_c[1]; p_c[1] = uch;
-            
             vrt[i] = bits(tmp, 7, 0);
             
             //printf("vector: %d  num= %lx  bits   %x   \n", i, tmp, bits(tmp, 15, 8)); 
@@ -510,40 +437,32 @@ format IntArithOp {
         auto vrb = vrb_reg.as<uint64_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
         auto vrt = vrt_reg.as<uint8_t>();
+
+        /*
+        ALL PASSED.
+        */
         
         uint64_t vsrc[4];
-        vsrc[0] = vra[0];
-        vsrc[1] = vra[1];
-        vsrc[2] = vrb[0];
-        vsrc[3] = vrb[1];
+        vsrc[3] = vra[1];
+        vsrc[2] = vra[0];
+        vsrc[1] = vrb[1];
+        vsrc[0] = vrb[0];
         uint16_t *ppp = (uint16_t *)vsrc, tmp;
         unsigned char uch, *p_c; 
-        int64_t val;
-        int16_t up_number, down_number;
-        up_number = pow(2, 8) - 1;
-        down_number = 0;
+        uint16_t val;
         
-        for(int i=0; i < 16; i++)
+        for(int i = 0; i < 16; i++)
         {
             val = ppp[i];
-            // 0xbbaa to 0xaabb  adjust the order of data.
-            p_c = (unsigned char*)&val;
-            uch = p_c[0];  p_c[0] = p_c[1]; p_c[1] = uch;
+            // EXTZ(vsrc.hword[i])
+            // ui8_CLAMP(val)
+            bool sat;
+            std::tie(val, sat) = ui8u_CLAMP(val);
+            uint64_t vscr = tc->readIntReg(INTREG_VSCR);
+            vscr |= (sat & 0x10001);
+            tc->setIntReg(INTREG_VSCR, vscr);
             
-            val = zext<16>(val);                         // EXTZ(vsrc.hword[i])
-            if( val > up_number )                        // ui8_CLAMP(val)
-            {
-                //SAT = 1;
-                uch = up_number;
-            }
-            else if(val < down_number)
-            {
-                //SAT = 1;
-                uch = down_number;
-            }
-            else  uch = val & 0xFF;
-            
-            vrt[i] = uch;
+            vrt[i] = val;
             
             //printf("vector: %d  hword[i]= %x  EXTS= %llx = %d  ui8_CLAMP= %x\n", i, ppp[i], val, val, uch); 
             //printf("vector: %d  Vt = %x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x\n", \
@@ -572,29 +491,24 @@ format IntArithOp {
         auto vrb = vrb_reg.as<uint64_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
         auto vrt = vrt_reg.as<uint16_t>();
+
+        /*
+        ALL PASSED.
+        */
         
         uint64_t vsrc[4];
-        vsrc[0] = vra[0];
-        vsrc[1] = vra[1];
-        vsrc[2] = vrb[0];
-        vsrc[3] = vrb[1];
+        vsrc[3] = vra[1];
+        vsrc[2] = vra[0];
+        vsrc[1] = vrb[1];
+        vsrc[0] = vrb[0];
         uint32_t *ppp = (uint32_t *)vsrc, tmp;
         unsigned char uch, *p_c; 
         
         for(int i=0; i < 8; i++)
         {
-            tmp = ppp[i];
-            // 0xddccbbaa to 0xaabbccdd  to use insertBits and bits functions.
-            p_c = (unsigned char*)&tmp;
-            uch = p_c[0];  p_c[0] = p_c[3]; p_c[3] = uch;
-            uch = p_c[1];  p_c[1] = p_c[2]; p_c[2] = uch;
-            
+            tmp = ppp[i];            
             vrt[i] = bits(tmp, 15, 0);
-            
-            // 0xbbaa to 0xaabb  data adjust.
-            p_c = (unsigned char*)&vrt[i];
-            uch = p_c[0];  p_c[0] = p_c[1]; p_c[1] = uch;
-            
+
             //printf("vector: %d  num= %lx  bits   %x   \n", i, tmp, bits(tmp, 15, 0)); 
             //printf("vector: %d  Vt_h = %x%x%x%x%x%x%x%x\n", \
                                     i,vrt[0],vrt[1],vrt[2],vrt[3],vrt[4],vrt[5],vrt[6],vrt[7]);
@@ -621,45 +535,32 @@ format IntArithOp {
         auto vrb = vrb_reg.as<uint64_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
         auto vrt = vrt_reg.as<uint16_t>();
+
+        /*
+        ALL PASSED.
+        */
         
         uint64_t vsrc[4];
-        vsrc[0] = vra[0];
-        vsrc[1] = vra[1];
-        vsrc[2] = vrb[0];
-        vsrc[3] = vrb[1];
+        vsrc[3] = vra[1];
+        vsrc[2] = vra[0];
+        vsrc[1] = vrb[1];
+        vsrc[0] = vrb[0];
         uint32_t *ppp = (uint32_t *)vsrc, tmp;
-        unsigned char uch, *p_c; 
-        int64_t val;
-        int32_t up_number, down_number;
-        uint16_t num;
-        up_number = pow(2, 16) - 1;
-        down_number = 0;
+        uint64_t val;
         
         for(int i=0; i < 8; i++)
         {
             val = ppp[i];
-            // 0xddccbbaa to 0xaabbccdd  adjust the order of data.
-            p_c = (unsigned char*)&val;
-            uch = p_c[0];  p_c[0] = p_c[3]; p_c[3] = uch;
-            uch = p_c[1];  p_c[1] = p_c[2]; p_c[2] = uch;
+
+            // EXTZ(vsrc.word[i])
+            // ui16_CLAMP(val)
+            bool sat;
+            std::tie(val, sat) = ui16u_CLAMP(val);
+            uint64_t vscr = tc->readIntReg(INTREG_VSCR);
+            vscr |= (sat & 0x10001);
+            tc->setIntReg(INTREG_VSCR, vscr);
             
-            val = zext<32>(val);                         // EXTZ(vsrc.word[i])
-            if( val > up_number )                        // ui16_CLAMP(val)
-            {
-                //SAT = 1;
-                num = up_number;
-            }
-            else if(val < down_number)
-            {
-                //SAT = 1;
-                num = down_number;
-            }
-            else  num = val & 0xFFFF;
-            
-            vrt[i] = num;
-            // 0xbbaa to 0xaabb  data adjust.
-            p_c = (unsigned char*)&vrt[i];
-            uch = p_c[0];  p_c[0] = p_c[1]; p_c[1] = uch;
+            vrt[i] = val;
             
             //printf("vector: %d  hword[i]= %x  EXTS= %llx = %ld  ui16_CLAMP= %x\n", i, ppp[i], val, val, num);  
             //printf("vector: %d  Vt_h = %x%x%x%x%x%x%x%x\n", \
@@ -687,32 +588,24 @@ format IntArithOp {
         auto vrb = vrb_reg.as<uint64_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
         auto vrt = vrt_reg.as<uint32_t>();
+
+        /*
+        ALL PASSED.
+        */
         
         uint64_t vsrc[4];
-        vsrc[0] = vra[0];
-        vsrc[1] = vra[1];
-        vsrc[2] = vrb[0];
-        vsrc[3] = vrb[1];
+        vsrc[3] = vra[1];
+        vsrc[2] = vra[0];
+        vsrc[1] = vrb[1];
+        vsrc[0] = vrb[0];
         uint64_t *ppp = (uint64_t *)vsrc, tmp;
         unsigned char uch, *p_c; 
         
         for(int i=0; i < 4; i++)
         {
             tmp = ppp[i];
-            // 0xddccbbaa to 0xaabbccdd  to use insertBits and bits functions.
-            p_c = (unsigned char*)&tmp;
-            uch = p_c[0];  p_c[0] = p_c[7]; p_c[7] = uch;
-            uch = p_c[1];  p_c[1] = p_c[6]; p_c[6] = uch;
-            uch = p_c[2];  p_c[2] = p_c[5]; p_c[5] = uch;
-            uch = p_c[3];  p_c[3] = p_c[4]; p_c[4] = uch;
-            
             vrt[i] = bits(tmp, 31, 0);
-            
-            // 0xbbaa to 0xaabb  data adjust.
-            p_c = (unsigned char*)&vrt[i];
-            uch = p_c[0];  p_c[0] = p_c[3]; p_c[3] = uch;
-            uch = p_c[1];  p_c[1] = p_c[2]; p_c[2] = uch;
-            
+
             //printf("vector: %d  num= %lx  bits   %x   \n", i, tmp, bits(tmp, 31, 0)); 
             //printf("vector: %d  Vt_w = %x%x%x%x\n", \
                                     i,vrt[0],vrt[1],vrt[2],vrt[3]);
@@ -739,48 +632,31 @@ format IntArithOp {
         auto vrb = vrb_reg.as<uint64_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
         auto vrt = vrt_reg.as<uint32_t>();
+
+        /*
+        ALL PASSED.
+        */
         
         uint64_t vsrc[4];
-        vsrc[0] = vra[0];
-        vsrc[1] = vra[1];
-        vsrc[2] = vrb[0];
-        vsrc[3] = vrb[1];
+        vsrc[3] = vra[1];
+        vsrc[2] = vra[0];
+        vsrc[1] = vrb[1];
+        vsrc[0] = vrb[0];
         uint64_t *ppp = (uint64_t *)vsrc, tmp;
-        unsigned char uch, *p_c; 
         uint64_t val;
-        int64_t up_number, down_number;
-        uint32_t num;
-        up_number = pow(2, 32) - 1;
-        down_number = 0;
         
         for(int i=0; i < 4; i++)
         {
             val = ppp[i];
-            // 0xddccbbaa to 0xaabbccdd  adjust the order of data.
-            p_c = (unsigned char*)&val;
-            uch = p_c[0];  p_c[0] = p_c[7]; p_c[7] = uch;
-            uch = p_c[1];  p_c[1] = p_c[6]; p_c[6] = uch;
-            uch = p_c[2];  p_c[2] = p_c[5]; p_c[5] = uch;
-            uch = p_c[3];  p_c[3] = p_c[4]; p_c[4] = uch;
+            // EXTZ(vsrc.dword[i])
+            // ui32_CLAMP(val)
+            bool sat;
+            std::tie(val, sat) = ui32u_CLAMP(val);
+            uint64_t vscr = tc->readIntReg(INTREG_VSCR);
+            vscr |= (sat & 0x10001);
+            tc->setIntReg(INTREG_VSCR, vscr);
             
-            val = zext<64>(val);                         // EXTZ(vsrc.dword[i])
-            if( val > up_number )                        // ui32_CLAMP(val)
-            {
-                //SAT = 1;
-                num = up_number;
-            }
-            else if(val < down_number)
-            {
-                //SAT = 1;
-                num = down_number;
-            }
-            else  num = val & 0xFFFFFFFF;
-            
-            vrt[i] = num;
-            // 0xbbaa to 0xaabb  data adjust.
-            p_c = (unsigned char*)&vrt[i];
-            uch = p_c[0];  p_c[0] = p_c[3]; p_c[3] = uch;
-            uch = p_c[1];  p_c[1] = p_c[2]; p_c[2] = uch;
+            vrt[i] = val;
             
             //printf("vector: %d  hword[i]= %llx  EXTS= %llx = %ld  ui32_CLAMP= %lx\n", i, ppp[i], val, val, num);  
             //printf("vector: %d  Vt_w = %x%x%x%x\n", \

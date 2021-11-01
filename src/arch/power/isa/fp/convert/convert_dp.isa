@@ -5,7 +5,7 @@ format FloatConvertOpRc {
         fp_before_cal(fpscr_0);
         fpscr_0.fr = 0;
         fpscr_0.fi = 0;
-        std::tie(tmp, fpscr_0) = get_floating_exception((float)tmp, (float)tmp, fpscr_0, (float)tmp);
+        //std::tie(tmp, fpscr_0) = get_floating_exception((float)tmp, (float)tmp, fpscr_0, (float)tmp);
         fpscr_0.xx = 0;
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
         FPSCR = fpscr_0;
@@ -20,11 +20,12 @@ format FloatConvertOpRc {
         fpscr_0.fr = 0;
         fpscr_0.fi = 0;
         tmp = bfp64_ROUND_TO_INTEGER_TRUNC(Fb_df);
-        std::tie(tmp, fpscr_0) = get_floating_exception(tmp, tmp, fpscr_0, tmp);
+        //std::tie(tmp, fpscr_0) = get_floating_exception(tmp, tmp, fpscr_0, tmp);
         fpscr_0.xx = 0;
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
         FPSCR = fpscr_0;
-        Ft_sw = tmp;
+        int32_t i_tmp = tmp;
+        Ft_sw = (i_tmp << 32) | i_tmp;
     }});
 
     814: fctid({{ 
@@ -33,7 +34,7 @@ format FloatConvertOpRc {
         fp_before_cal(fpscr_0);
         fpscr_0.fr = 0;
         fpscr_0.fi = 0;
-        std::tie(tmp, fpscr_0) = get_floating_exception(tmp, tmp, fpscr_0, tmp);
+        //std::tie(tmp, fpscr_0) = get_floating_exception(tmp, tmp, fpscr_0, tmp);
         fpscr_0.xx = 0;
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
         FPSCR = fpscr_0;
@@ -48,7 +49,7 @@ format FloatConvertOpRc {
         fpscr_0.fr = 0;
         fpscr_0.fi = 0;
         tmp = bfp64_ROUND_TO_INTEGER_TRUNC(Fb_df); 
-        std::tie(tmp, fpscr_0) = get_floating_exception(tmp, tmp, fpscr_0, tmp);
+        //std::tie(tmp, fpscr_0) = get_floating_exception(tmp, tmp, fpscr_0, tmp);
         fpscr_0.xx = 0;
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
         FPSCR = fpscr_0;
@@ -61,7 +62,7 @@ format FloatConvertOpRc {
         fp_before_cal(fpscr_0);
         fpscr_0.fr = 0;
         fpscr_0.fi = 0;
-        std::tie(tmp, fpscr_0) = get_floating_exception(tmp, tmp, fpscr_0, tmp);
+        //std::tie(tmp, fpscr_0) = get_floating_exception(tmp, tmp, fpscr_0, tmp);
         fpscr_0.xx = 0;
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
         FPSCR = fpscr_0;
@@ -76,7 +77,7 @@ format FloatConvertOpRc {
         fpscr_0.fr = 0;
         fpscr_0.fi = 0;
         tmp = bfp64_ROUND_TO_INTEGER_TRUNC(Fb_df); 
-        std::tie(tmp, fpscr_0) = get_floating_exception(tmp, tmp, fpscr_0, tmp);
+        //std::tie(tmp, fpscr_0) = get_floating_exception(tmp, tmp, fpscr_0, tmp);
         fpscr_0.xx = 0;
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
         FPSCR = fpscr_0;
@@ -90,11 +91,20 @@ format FloatConvertOpRc {
         fpscr_0.fr = 0;
         fpscr_0.fi = 0;
         
-        Ft_sw = Fb_df; 
+        int32_t i_tmp = tmp;
+        Ft_sw = (i_tmp << 32) | i_tmp; 
     }});
 
-    142: fctiwu({{ Ft_uw = Fb_df; }});
-    143: fctiwuz({{ Ft_uw = bfp64_ROUND_TO_INTEGER_TRUNC(Fb_df); }});
+    142: fctiwu({{ 
+        uint32_t i_tmp = Fb_df;
+        Ft_uw = (i_tmp << 32) | i_tmp; 
+    }});
+
+    143: fctiwuz({{ 
+        uint32_t i_tmp = bfp64_ROUND_TO_INTEGER_TRUNC(Fb_df);
+        Ft_uw = (i_tmp << 32) | i_tmp; 
+    }});
+
     846: fcfid({{ 
         Ft_df = Fb_sd;
     }});

@@ -12,22 +12,22 @@ format IntArithOp {
         auto vrb = vrb_reg.as<uint8_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
         auto vrt = vrt_reg.as<uint16_t>();
+
+        /*
+        ALL PASSED.
+        */
         
         uint64_t val;
         int16_t num;
         unsigned char uch, *p_c; 
         
-        for(int i=0; i < 8; i++)
-        {
-            val = vrb[i];                  
+        for(int i = 0; i < 8; i++) {
+            val = vrb[i + 8];                  
             val = sext<8>(val); 
             num = val & 0xFFFF;
             
             vrt[i] = num;    
-            
-            p_c = (unsigned char*)&vrt[i];
-            uch = p_c[0];  p_c[0] = p_c[1]; p_c[1] = uch;               
-            
+
             //printf("vector: %d  data= %x  EXTS= %llx  dest_data= %x\n", i, vrb[i], val, num); 
             //printf("vector: %d  Vt = %x%x%x%x%x%x%x%x\n", \
                                     i,vrt[0],vrt[1],vrt[2],vrt[3],vrt[4],vrt[5],vrt[6],vrt[7]);
@@ -49,22 +49,22 @@ format IntArithOp {
         auto vrb = vrb_reg.as<uint8_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
         auto vrt = vrt_reg.as<uint16_t>();
+
+        /*
+        ALL PASSED.
+        */
         
         uint64_t val;
         int16_t num;
         unsigned char uch, *p_c; 
         
-        for(int i=0; i < 8; i++)
-        {
-            val = vrb[i+8];                  
+        for(int i = 0; i < 8; i++) {
+            val = vrb[i];                  
             val = sext<8>(val); 
             num = val & 0xFFFF;
             
             vrt[i] = num;    
-            
-            p_c = (unsigned char*)&vrt[i];
-            uch = p_c[0];  p_c[0] = p_c[1]; p_c[1] = uch;               
-            
+
             //printf("vector: %d  data= %x  EXTS= %llx  dest_data= %x\n", i, vrb[i+8], val, num); 
             //printf("vector: %d  Vt = %x%x%x%x%x%x%x%x\n", \
                                     i,vrt[0],vrt[1],vrt[2],vrt[3],vrt[4],vrt[5],vrt[6],vrt[7]);
@@ -86,27 +86,23 @@ format IntArithOp {
         auto vrb = vrb_reg.as<uint16_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
         auto vrt = vrt_reg.as<uint32_t>();
+
+        /*
+        ALL PASSED.
+        */
         
         uint64_t val;
         int32_t num;
         unsigned char uch, *p_c; 
         
-        for(int i=0; i < 4; i++)
-        {
-            val = vrb[i];    
-            
-            p_c = (unsigned char*)&val;
-            uch = p_c[0];  p_c[0] = p_c[1]; p_c[1] = uch; 
-                        
+        for(int i = 0; i < 4; i++) {
+            val = vrb[i + 4];    
+
             val = sext<16>(val); 
             num = val & 0xFFFFFFFF;
             
             vrt[i] = num;    
-            
-            p_c = (unsigned char*)&vrt[i];
-            uch = p_c[0];  p_c[0] = p_c[3]; p_c[3] = uch; 
-            uch = p_c[1];  p_c[1] = p_c[2]; p_c[2] = uch;               
-            
+
             //printf("vector: %d  data= %x  EXTS= %llx  dest_data= %x\n", i, vrb[i], val, num); 
             //printf("vector: %d  Vt = %x%x%x%x\n", \
                                     i,vrt[0],vrt[1],vrt[2],vrt[3]);
@@ -128,26 +124,22 @@ format IntArithOp {
         auto vrb = vrb_reg.as<uint16_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
         auto vrt = vrt_reg.as<uint32_t>();
+
+        /*
+        ALL PASSED.
+        */
         
         uint64_t val;
         int32_t num;
         unsigned char uch, *p_c; 
         
-        for(int i=0; i < 4; i++)
-        {
-            val = vrb[i+4];       
-            
-            p_c = (unsigned char*)&val;
-            uch = p_c[0];  p_c[0] = p_c[1]; p_c[1] = uch; 
-                        
+        for(int i = 0; i < 4; i++) {
+            val = vrb[i];       
+
             val = sext<16>(val); 
             num = val & 0xFFFFFFFF;
             
-            vrt[i] = num;    
-            
-            p_c = (unsigned char*)&vrt[i];
-            uch = p_c[0];  p_c[0] = p_c[3]; p_c[3] = uch; 
-            uch = p_c[1];  p_c[1] = p_c[2]; p_c[2] = uch;               
+            vrt[i] = num;           
             
             //printf("vector: %d  data= %x  EXTS= %llx  dest_data= %x\n", i, vrb[i+4], val, num); 
             //printf("vector: %d  Vt = %x%x%x%x\n", \
@@ -170,30 +162,22 @@ format IntArithOp {
         auto vrb = vrb_reg.as<uint32_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
         auto vrt = vrt_reg.as<uint64_t>();
+
+        /*
+        ALL PASSED.
+        */
         
         uint64_t val;
         int64_t num;
         unsigned char uch, *p_c; 
         
-        for(int i=0; i < 2; i++)
-        {
-            val = vrb[i];    
-            
-            p_c = (unsigned char*)&val;
-            uch = p_c[0];  p_c[0] = p_c[3]; p_c[3] = uch; 
-            uch = p_c[1];  p_c[1] = p_c[2]; p_c[2] = uch;
-                        
+        for(int i = 0; i < 2; i++) {
+            val = vrb[i + 2];    
             val = sext<32>(val); 
             num = val & 0xFFFFFFFFFFFFFFFF;
             
             vrt[i] = num;    
-            
-            p_c = (unsigned char*)&vrt[i];
-            uch = p_c[0];  p_c[0] = p_c[7]; p_c[7] = uch; 
-            uch = p_c[1];  p_c[1] = p_c[6]; p_c[6] = uch;
-            uch = p_c[2];  p_c[2] = p_c[5]; p_c[5] = uch; 
-            uch = p_c[3];  p_c[3] = p_c[4]; p_c[4] = uch;               
-            
+
             //printf("vector: %d  data= %x  EXTS= %llx  dest_data= %llx\n", i, vrb[i], val, num); 
             //printf("vector: %d  Vt = %lx%lx\n", \
                                     i,vrt[0],vrt[1]);
@@ -215,30 +199,23 @@ format IntArithOp {
         auto vrb = vrb_reg.as<uint32_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
         auto vrt = vrt_reg.as<uint64_t>();
+
+        /*
+        ALL PASSED.
+        */
         
         uint64_t val;
         int64_t num;
         unsigned char uch, *p_c; 
         
-        for(int i=0; i < 2; i++)
-        {
-            val = vrb[i+2];    
-            
-            p_c = (unsigned char*)&val;
-            uch = p_c[0];  p_c[0] = p_c[3]; p_c[3] = uch; 
-            uch = p_c[1];  p_c[1] = p_c[2]; p_c[2] = uch;
-                        
+        for(int i = 0; i < 2; i++) {
+            val = vrb[i];    
+
             val = sext<32>(val); 
             num = val & 0xFFFFFFFFFFFFFFFF;
             
             vrt[i] = num;    
-            
-            p_c = (unsigned char*)&vrt[i];
-            uch = p_c[0];  p_c[0] = p_c[7]; p_c[7] = uch; 
-            uch = p_c[1];  p_c[1] = p_c[6]; p_c[6] = uch;
-            uch = p_c[2];  p_c[2] = p_c[5]; p_c[5] = uch; 
-            uch = p_c[3];  p_c[3] = p_c[4]; p_c[4] = uch;               
-            
+
             //printf("vector: %d  data= %x  EXTS= %llx  dest_data= %llx\n", i, vrb[i+2], val, num); 
             //printf("vector: %d  Vt = %lx%lx\n", \
                                     i,vrt[0],vrt[1]);
@@ -264,25 +241,21 @@ format IntArithOp {
         auto vrb = vrb_reg.as<uint16_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
         auto vrt = vrt_reg.as<uint32_t>();
+
+        /*
+        ALL PASSED.
+        */
         
         uint16_t tmp;
         unsigned char uch, *p_c;                 
-        for(int i=0; i < 4; i++)
-        {
-            tmp = vrb[i];
-            p_c = (unsigned char*)&tmp;
-            uch = p_c[0];  p_c[0] = p_c[1]; p_c[1] = uch;
-            
+        for(int i = 0; i < 4; i++) {
+            tmp = vrb[i + 4];
+
             vrt[i] = insertBits(vrt[i], 31, 24, sext<1>(bits(tmp, 15, 15)) & 0xFF);
             vrt[i] = insertBits(vrt[i], 23, 16, zext<5>(bits(tmp, 14, 10)) & 0xFF);
             vrt[i] = insertBits(vrt[i], 15,  8, zext<5>(bits(tmp,  9,  5)) & 0xFF);
             vrt[i] = insertBits(vrt[i],  7,  0, zext<5>(bits(tmp,  4,  0)) & 0xFF);
-            
-            // 0xbbaa to 0xaabb  data adjust.
-            p_c = (unsigned char*)&vrt[i];
-            uch = p_c[0];  p_c[0] = p_c[3]; p_c[3] = uch; 
-            uch = p_c[1];  p_c[1] = p_c[2]; p_c[2] = uch;               
-            
+
             //printf("vector: %d  data= %x  order= %lx  bits= %x %x %x %x\n", i, vrb[i], tmp, bits(tmp, 15, 15), bits(tmp, 14, 10), bits(tmp,  9,  5), bits(tmp,  4,  0)); 
             //printf("vector: %d  Vt = %x%x%x%x\n", \
                                     i,vrt[0],vrt[1],vrt[2],vrt[3]);
@@ -308,25 +281,21 @@ format IntArithOp {
         auto vrb = vrb_reg.as<uint16_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
         auto vrt = vrt_reg.as<uint32_t>();
+
+        /*
+        ALL PASSED.
+        */
         
         uint16_t tmp;
         unsigned char uch, *p_c;                 
-        for(int i=0; i < 4; i++)
-        {
-            tmp = vrb[i+4];
-            p_c = (unsigned char*)&tmp;
-            uch = p_c[0];  p_c[0] = p_c[1]; p_c[1] = uch;
-            
+        for(int i = 0; i < 4; i++) {
+            tmp = vrb[i];
+
             vrt[i] = insertBits(vrt[i], 31, 24, sext<1>(bits(tmp, 15, 15)) & 0xFF);
             vrt[i] = insertBits(vrt[i], 23, 16, zext<5>(bits(tmp, 14, 10)) & 0xFF);
             vrt[i] = insertBits(vrt[i], 15,  8, zext<5>(bits(tmp,  9,  5)) & 0xFF);
             vrt[i] = insertBits(vrt[i],  7,  0, zext<5>(bits(tmp,  4,  0)) & 0xFF);
-            
-            // 0xbbaa to 0xaabb  data adjust.
-            p_c = (unsigned char*)&vrt[i];
-            uch = p_c[0];  p_c[0] = p_c[3]; p_c[3] = uch; 
-            uch = p_c[1];  p_c[1] = p_c[2]; p_c[2] = uch;               
-            
+
             //printf("vector: %d  data= %x  order= %lx  bits= %x %x %x %x\n", i, vrb[i+4], tmp, bits(tmp, 15, 15), bits(tmp, 14, 10), bits(tmp,  9,  5), bits(tmp,  4,  0)); 
             //printf("vector: %d  Vt = %x%x%x%x\n", \
                                     i,vrt[0],vrt[1],vrt[2],vrt[3]);
