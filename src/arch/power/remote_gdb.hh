@@ -51,7 +51,7 @@ class RemoteGDB : public BaseRemoteGDB
       private:
         struct {
             uint64_t gpr[NumIntArchRegs];
-            uint64_t fpr[NumFloatArchRegs];
+
             uint64_t pc;
             uint64_t msr;
             uint32_t cr;
@@ -59,10 +59,16 @@ class RemoteGDB : public BaseRemoteGDB
             uint64_t ctr;
             uint32_t xer;
 
+            uint64_t fpr[NumFloatArchRegs];
+            __uint128_t vpr[NumVecRegs];
+            uint32_t fpscr;
+            uint32_t vscr;
+
+
             /* Remote target is expected to have 174 registers in the 'g'
                packet with a total size of 1076 bytes */
-            uint8_t __padding[524];
-        } M5_ATTR_PACKED r;
+            //uint8_t __padding[524];
+        } __attribute__((packed)) r;
       public:
         char *data() const { return (char *)&r; }
         size_t size() const { return sizeof(r); }

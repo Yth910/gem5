@@ -138,6 +138,8 @@
 
 #include "arch/power/utility.hh"
 #include "blobs/gdb_xml_power.hh"
+#include "blobs/gdb_xml_power64_core.hh"
+#include "blobs/gdb_xml_power_fpu.hh"
 #include "cpu/thread_state.hh"
 #include "debug/GDBAcc.hh"
 #include "debug/GDBMisc.hh"
@@ -184,12 +186,19 @@ RemoteGDB::PowerGdbRegCache::getRegs(ThreadContext *context)
     for (int i = 0; i < NumFloatArchRegs; i++)
         r.fpr[i] = context->readFloatReg(i);
 
+    for (int i = 0; i < NumVecRegs; i++)
+        r.vpr[i] = context->readVecRegFlat(i).as<__uint128_t>()[0];
+
     r.pc = htog(context->pcState().pc(), byteOrder(context));
     r.msr = 0; // Is MSR modeled?
     r.cr = htog((uint32_t)context->readIntReg(INTREG_CR), byteOrder(context));
     r.lr = htog(context->readIntReg(INTREG_LR), byteOrder(context));
     r.ctr = htog(context->readIntReg(INTREG_CTR), byteOrder(context));
     r.xer = htog((uint32_t)context->readIntReg(INTREG_XER),
+                byteOrder(context));
+    r.fpscr = htog((uint32_t)context->readIntReg(INTREG_FPSCR),
+                byteOrder(context));
+    r.vscr = htog((uint32_t)context->readIntReg(INTREG_VSCR),
                 byteOrder(context));
 }
 
@@ -204,12 +213,20 @@ RemoteGDB::PowerGdbRegCache::setRegs(ThreadContext *context) const
     for (int i = 0; i < NumFloatArchRegs; i++)
         context->setFloatReg(i, r.fpr[i]);
 
+    for (int i = 0; i < NumVecRegs; i++) {
+        auto vec_reg = context->readVecRegFlat(i);
+        vec_reg.as<__uint128_t>()[0] = r.vpr[i];
+        context->setVecRegFlat(i, vec_reg);
+    }
+
     context->pcState(gtoh(r.pc, byteOrder(context)));
     // Is MSR modeled?
     context->setIntReg(INTREG_CR, gtoh(r.cr, byteOrder(context)));
     context->setIntReg(INTREG_LR, gtoh(r.lr, byteOrder(context)));
     context->setIntReg(INTREG_CTR, gtoh(r.ctr, byteOrder(context)));
     context->setIntReg(INTREG_XER, gtoh(r.xer, byteOrder(context)));
+    context->setIntReg(INTREG_FPSCR, gtoh(r.fpscr, byteOrder(context)));
+    context->setIntReg(INTREG_VSCR, gtoh(r.vscr, byteOrder(context)));
 }
 
 BaseGdbRegCache*
@@ -226,6 +243,8 @@ RemoteGDB::getXferFeaturesRead(const std::string &annex, std::string &output)
         Blobs::s ## _len) }
     static const std::map<std::string, std::string> annexMap {
         GDB_XML("target.xml", gdb_xml_power),
+        GDB_XML("power64-core.xml", gdb_xml_power64_core),
+        GDB_XML("power-fpu.xml", gdb_xml_power_fpu)
     };
 #undef GDB_XML
     auto it = annexMap.find(annex);

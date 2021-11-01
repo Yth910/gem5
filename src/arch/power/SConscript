@@ -70,4 +70,6 @@ if env['TARGET_ISA'] == 'power':
 
     ISADesc('isa/main.isa')
 
+    GdbXml('power64-core.xml', 'gdb_xml_power64_core')
+    GdbXml('power-fpu.xml', 'gdb_xml_power_fpu')
     GdbXml('power.xml', 'gdb_xml_power')
