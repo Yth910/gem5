@@ -53,8 +53,8 @@ ISA::ISA(const Params &p) : BaseISA(p)
 {
     _regClasses.emplace_back(NumIntRegs, NumIntRegs - 1);
     _regClasses.emplace_back(NumFloatRegs);
-    _regClasses.emplace_back(1);
-    _regClasses.emplace_back(2);
+    _regClasses.emplace_back(NumVecRegs);
+    _regClasses.emplace_back(NumVecRegs * TheISA::NumVecElemPerVecReg);
     _regClasses.emplace_back(1);
     _regClasses.emplace_back(0);
     _regClasses.emplace_back(NUM_MISCREGS);
