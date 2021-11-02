@@ -43,6 +43,27 @@ def bitfield MD_XO         <4:2>;
 def bitfield MDS_XO        <4:1>;
 def bitfield VA_XO         <5:0>;
 def bitfield X_XO          <10:1>;
+def bitfield VX_XO         <10:0>;
+def bitfield VC_XO         <9:0>;
+def bitfield VX_8XO         <8:0>;                 // wwf
+def bitfield BF            <25:23>;
+def bitfield EO            <20:16>;
+def bitfield VX_UIM        <20:16>;
+def bitfield VX_SIM        <20:16>;
+
+def bitfield XX_XO         <10:1>;
+
+def bitfield XX2_XO        <10:2>;
+def bitfield XX2_DCMX      <22:16>;
+
+def bitfield XX3_XO        <10:3>;
+def bitfield XX3_3_XO      <7:3>;                  // wwf
+def bitfield XX4_XO        <5:4>;
+def bitfield XX3RC_XO      <9:3>;
+
+def bitfield Z22_XO         <9:1>;
+def bitfield Z23_XO         <8:1>;
+
 def bitfield XFL_XO        <10:1>;
 def bitfield XFX_XO        <10:1>;
 def bitfield XL_XO         <10:1>;
@@ -60,6 +81,22 @@ def bitfield FRB           <15:11>;
 def bitfield FRC           <10:6>;
 def bitfield FRS           <25:21>;
 def bitfield FRT           <25:21>;
+def bitfield VRA           <20:16>;
+def bitfield VRB           <15:11>;
+def bitfield VRC           <10:6>;
+def bitfield VRS           <25:21>;
+def bitfield VRT           <25:21>;
+def bitfield XX_A          <20:16>;
+def bitfield XX_B          <15:11>;
+def bitfield XX_C          <10:6>;
+def bitfield XX_S          <25:21>;
+def bitfield XX_T          <25:21>;
+
+def bitfield XX_CX         <3>;
+def bitfield XX_AX         <2>;
+def bitfield XX_BX         <1>;
+def bitfield XX_SX         <0>;
+def bitfield XX_TX         <0>;
 
 // The record bit can be in two positions
 // Used to enable setting of the condition register
@@ -95,3 +132,23 @@ def bitfield U_FIELD       <15:12>;
 
 // Field for specifying a bit in CR or FPSCR
 def bitfield BT            <25:21>;
+
+// UIM field                                       // wwf
+def bitfield UIM11_15      <20:16>; 
+def bitfield UIM12_15      <19:16>; 
+def bitfield UIM13_15      <18:16>;
+def bitfield UIM14_15      <17:16>;
+
+// xo_385 num                                      // wwf
+def bitfield NUM_385       <20:16>;
+
+// SIM field                                       // wwf
+def bitfield SIM           <20:16>;
+
+// SH or SHB field for shifting instruction        // wwf
+def bitfield SH            <8:6>;
+def bitfield SHB           <9:6>;
+def bitfield PS            <9>;
+
+def bitfield DM            <9:8>;
+def bitfield SHW           <9:8>;

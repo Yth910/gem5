@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2009 The University of Edinburgh
- * Copyright (c) 2021 IBM Corporation
+ * Copyright (c) 2007-2008 The Florida State University
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,9 +26,43 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __ARCH_POWER_VECREGS_HH__
-#define __ARCH_POWER_VECREGS_HH__
+#ifndef __ARCH_ARM_REGS_VEC_HH__
+#define __ARCH_ARM_REGS_VEC_HH__
 
-#include "arch/power/regs/vec.hh"
+#include "arch/power/types.hh"
+#include "arch/generic/vec_pred_reg.hh"
+#include "arch/generic/vec_reg.hh"
 
-#endif // __ARCH_POWER_VECREGS_HH__
+namespace gem5
+{
+
+namespace PowerISA
+{
+
+// Number of VecElem per Vector Register considering only pre-SVE
+// Number of VecElem per Vector Register, computed based on the vector length
+constexpr unsigned NumVecElemPerVecReg = 4;
+
+using VecElem = uint32_t;
+using VecRegContainer =
+    gem5::VecRegContainer<NumVecElemPerVecReg * sizeof(VecElem)>;
+
+using VecPredReg =
+    gem5::VecPredRegT<VecElem, NumVecElemPerVecReg, false, false>;
+using ConstVecPredReg =
+    gem5::VecPredRegT<VecElem, NumVecElemPerVecReg, false, true>;
+using VecPredRegContainer = VecPredReg::Container;
+
+// Vec, PredVec
+// NumFloatV7ArchRegs: This in theory should be 32.
+// However in A32 gem5 is splitting double register accesses in two
+// subsequent single register ones. This means we would use a index
+// bigger than 31 when accessing D16-D31.
+
+const int NumVecRegs = 64;
+const int NumVecPredRegs = 64;  // P0-P15, FFR, UREG0
+
+} // namespace PowerISA
+} // namespace gem5
+
+#endif

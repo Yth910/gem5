@@ -1,0 +1,91 @@
+format IntArithOp {
+    1:bcdadd({{                                            // wwf
+        /*
+            VSR[VRT+32] ← bcd_ADD(VSR[VRA+32],VSR[VRB+32],PS)
+            CR.bit[56] ← inv_flag ? 0b0 : lt_flag
+            CR.bit[57] ← inv_flag ? 0b0 : gt_flag
+            CR.bit[58] ← inv_flag ? 0b0 : eq_flag
+            CR.bit[59] ← ox_flag | inv_flag
+        */
+        ThreadContext *tc = xc->tcBase();
+        RegId vra_id(VecRegClass, VRA + 32);
+        RegId vrb_id(VecRegClass, VRB + 32);
+        RegId vrt_id(VecRegClass, VRT + 32);                          
+        auto vra_reg = tc->readVecReg(vra_id);
+        auto vra = vra_reg.as<uint8_t>();      
+        auto vrb_reg = tc->readVecReg(vrb_id);
+        auto vrb = vrb_reg.as<uint8_t>();
+        auto vrt_reg = tc->readVecReg(vrt_id);
+        auto vrt = vrt_reg.as<uint8_t>();            
+                        
+        uint8_t *p_a, *p_b, *p_t;                
+        p_a = &vra[0];                
+        p_b = &vrb[0];                
+        p_t = &vrt[0];
+        bcd_ADD(p_t, p_a, p_b, PS);
+        
+        if(inv_flag)
+        {
+            CR = insertBits(CR,  7, 5, 0b000);
+        }
+        else
+        {
+            CR = insertBits(CR,  7, lt_flag);
+            CR = insertBits(CR,  6, gt_flag);
+            CR = insertBits(CR,  5, eq_flag);
+        }
+        CR = insertBits(CR,  4, inv_flag | ox_flag);
+            
+        //printf("vector:  CR=%lx   lt_flag= %d  gt_flag=%x  eq_flag=%d  inv_flag=%d  ox_flag=%d PS=%d\n", CR, lt_flag,  gt_flag, eq_flag, inv_flag, ox_flag, PS);
+        //printf("vector:  Vt = %x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x\n", \
+                                    vrt[0],vrt[1],vrt[2],vrt[3],vrt[4],vrt[5],vrt[6],vrt[7], \
+                                    vrt[8],vrt[9],vrt[10],vrt[11],vrt[12],vrt[13],vrt[14],vrt[15]);
+        
+        tc->setVecReg(vrt_id, vrt_reg);
+    }});
+
+    65:bcdsub({{                                            // wwf
+        /*
+            VSR[VRT+32] ← bcd_SUBTRACT(VSR[VRA+32],VSR[VRB+32],PS)
+            CR.bit[56] ← inv_flag ? 0b0 : lt_flag
+            CR.bit[57] ← inv_flag ? 0b0 : gt_flag
+            CR.bit[58] ← inv_flag ? 0b0 : eq_flag
+            CR.bit[59] ← ox_flag | inv_flag
+        */
+        ThreadContext *tc = xc->tcBase();
+        RegId vra_id(VecRegClass, VRA + 32);
+        RegId vrb_id(VecRegClass, VRB + 32);
+        RegId vrt_id(VecRegClass, VRT + 32);                          
+        auto vra_reg = tc->readVecReg(vra_id);
+        auto vra = vra_reg.as<uint8_t>();      
+        auto vrb_reg = tc->readVecReg(vrb_id);
+        auto vrb = vrb_reg.as<uint8_t>();
+        auto vrt_reg = tc->readVecReg(vrt_id);
+        auto vrt = vrt_reg.as<uint8_t>();            
+                        
+        uint8_t *p_a, *p_b, *p_t;                
+        p_a = &vra[0];                
+        p_b = &vrb[0];                
+        p_t = &vrt[0];
+        bcd_SUBTRACT(p_t, p_a, p_b, PS);
+        
+        if(inv_flag)
+        {
+            CR = insertBits(CR,  7, 5, 0b000);
+        }
+        else
+        {
+            CR = insertBits(CR,  7, lt_flag);
+            CR = insertBits(CR,  6, gt_flag);
+            CR = insertBits(CR,  5, eq_flag);
+        }
+        CR = insertBits(CR,  4, inv_flag | ox_flag);
+            
+        //printf("vector:  CR=%lx   lt_flag= %d  gt_flag=%x  eq_flag=%d  inv_flag=%d  ox_flag=%d PS=%d\n", CR, lt_flag,  gt_flag, eq_flag, inv_flag, ox_flag, PS);
+        //printf("vector:  Vt = %x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x\n", \
+                                    vrt[0],vrt[1],vrt[2],vrt[3],vrt[4],vrt[5],vrt[6],vrt[7], \
+                                    vrt[8],vrt[9],vrt[10],vrt[11],vrt[12],vrt[13],vrt[14],vrt[15]);
+        
+        tc->setVecReg(vrt_id, vrt_reg);
+    }});
+}

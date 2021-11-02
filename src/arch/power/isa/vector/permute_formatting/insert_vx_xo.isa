@@ -1,0 +1,110 @@
+format IntArithOp {
+    781: vinsertb({{                                            // wwf
+        /*
+            VSR[VRT+32].byte[UIM] ← VSR[VRB+32].byte[7]
+        */
+        ThreadContext *tc = xc->tcBase();
+        RegId vrb_id(VecRegClass, VRB + 32);
+        RegId vrt_id(VecRegClass, VRT + 32);                
+        auto vrb_reg = tc->readVecReg(vrb_id);
+        auto vrb = vrb_reg.as<uint8_t>();
+        auto vrt_reg = tc->readVecReg(vrt_id);
+        auto vrt = vrt_reg.as<uint8_t>();            
+                        
+        vrt[UIM12_15] = vrb[7];
+            
+        //printf("vector:  UIM= %d  vrb[7]= %x\n", UIM12_15, vrb[7]); 
+        //printf("vector:  Vt = %x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x\n", \
+                                    vrt[0],vrt[1],vrt[2],vrt[3],vrt[4],vrt[5],vrt[6],vrt[7], \
+                                    vrt[8],vrt[9],vrt[10],vrt[11],vrt[12],vrt[13],vrt[14],vrt[15]);
+        
+        tc->setVecReg(vrt_id, vrt_reg);
+    }});
+
+    845: vinserth({{                                            // wwf
+        /*
+            VSR[VRT+32].byte[UIM:UIM+1] ← VSR[VRB+32].hword[3]
+        */
+        ThreadContext *tc = xc->tcBase();
+        RegId vrb_id(VecRegClass, VRB + 32);
+        RegId vrt_id(VecRegClass, VRT + 32);                
+        auto vrb_reg = tc->readVecReg(vrb_id);
+        auto vrb = vrb_reg.as<uint16_t>();
+        auto vrt_reg = tc->readVecReg(vrt_id);
+        auto vrt = vrt_reg.as<uint8_t>();            
+                        
+        uint16_t *ppp = (uint16_t *)&vrt[UIM12_15];                
+        if(UIM12_15 < 15)
+            *ppp = vrb[3];
+        else
+        {
+            inv_flag = 1;
+            //printf("vector:  undefined!!!\n");
+        }
+            
+        //printf("vector:  UIM= %d  vrb[3]= %x\n", UIM12_15, vrb[3]); 
+        //printf("vector:  Vt = %x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x\n", \
+                                    vrt[0],vrt[1],vrt[2],vrt[3],vrt[4],vrt[5],vrt[6],vrt[7], \
+                                    vrt[8],vrt[9],vrt[10],vrt[11],vrt[12],vrt[13],vrt[14],vrt[15]);
+        
+        tc->setVecReg(vrt_id, vrt_reg);
+    }});
+
+    909: vinsertw({{                                            // wwf
+        /*
+            VSR[VRT+32].byte[UIM:UIM+3] ← VSR[VRB+32].word[1]
+        */
+        ThreadContext *tc = xc->tcBase();
+        RegId vrb_id(VecRegClass, VRB + 32);
+        RegId vrt_id(VecRegClass, VRT + 32);                
+        auto vrb_reg = tc->readVecReg(vrb_id);
+        auto vrb = vrb_reg.as<uint32_t>();
+        auto vrt_reg = tc->readVecReg(vrt_id);
+        auto vrt = vrt_reg.as<uint8_t>();            
+                        
+        uint32_t *ppp = (uint32_t *)&vrt[UIM12_15];                
+        if(UIM12_15 < 13)
+            *ppp = vrb[1];
+        else
+        {
+            inv_flag = 1;
+            //printf("vector:  undefined!!!\n");
+        }
+            
+        //printf("vector:  UIM= %d  vrb[1]= %x\n", UIM12_15, vrb[1]); 
+        //printf("vector:  Vt = %x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x\n", \
+                                    vrt[0],vrt[1],vrt[2],vrt[3],vrt[4],vrt[5],vrt[6],vrt[7], \
+                                    vrt[8],vrt[9],vrt[10],vrt[11],vrt[12],vrt[13],vrt[14],vrt[15]);
+        
+        tc->setVecReg(vrt_id, vrt_reg);
+    }});
+
+    973: vinsertd({{                                            // wwf
+        /*
+            VSR[VRT+32].byte[UIM:UIM+7] ← VSR[VRB+32].dword[0]
+        */
+        ThreadContext *tc = xc->tcBase();
+        RegId vrb_id(VecRegClass, VRB + 32);
+        RegId vrt_id(VecRegClass, VRT + 32);                
+        auto vrb_reg = tc->readVecReg(vrb_id);
+        auto vrb = vrb_reg.as<uint64_t>();
+        auto vrt_reg = tc->readVecReg(vrt_id);
+        auto vrt = vrt_reg.as<uint8_t>();            
+                        
+        uint64_t *ppp = (uint64_t *)&vrt[UIM12_15];                
+        if(UIM12_15 < 9)
+            *ppp = vrb[0];
+        else
+        {
+            inv_flag = 1;
+            //printf("vector:  undefined!!!\n");
+        }
+            
+        //printf("vector:  UIM= %d  vrb[0]= %lx\n", UIM12_15, vrb[0]); 
+        //printf("vector:  Vt = %x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x\n", \
+                                    vrt[0],vrt[1],vrt[2],vrt[3],vrt[4],vrt[5],vrt[6],vrt[7], \
+                                    vrt[8],vrt[9],vrt[10],vrt[11],vrt[12],vrt[13],vrt[14],vrt[15]);
+        
+        tc->setVecReg(vrt_id, vrt_reg);
+    }});
+}

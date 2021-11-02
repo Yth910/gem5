@@ -1,0 +1,132 @@
+format IntArithOp {
+    43: vperm({{                                            // wwf
+        /*
+            vsrc.qword[0] ← VSR[VRA+32]
+            vsrc.qword[1] ← VSR[VRB+32]
+            do i = 0 to 15
+            index ← VSR[VRC+32].byte[i].bit[3:7]
+            VSR[VRT+32].byte[i] ← src.byte[index]
+            end
+        */
+        ThreadContext *tc = xc->tcBase();
+        RegId vra_id(VecRegClass, VRA + 32);                
+        RegId vrb_id(VecRegClass, VRB + 32);                
+        RegId vrc_id(VecRegClass, VRC + 32);
+        RegId vrt_id(VecRegClass, VRT + 32);                
+        auto vra_reg = tc->readVecReg(vra_id);
+        auto vra = vra_reg.as<uint64_t>();
+        auto vrb_reg = tc->readVecReg(vrb_id);
+        auto vrb = vrb_reg.as<uint64_t>();
+        auto vrc_reg = tc->readVecReg(vrc_id);
+        auto vrc = vrc_reg.as<uint8_t>();
+        auto vrt_reg = tc->readVecReg(vrt_id);
+        auto vrt = vrt_reg.as<uint8_t>();
+
+        /*
+        ALL PASSED.
+        */
+        
+        uint64_t vsrc[4];               
+        uint8_t *ppp = (uint8_t *)vsrc;
+        uint16_t index;
+        vsrc[0] = vrb[0];
+        vsrc[1] = vrb[1];
+        vsrc[2] = vra[0];
+        vsrc[3] = vra[1];
+        
+        for(int i=0; i < 16; i++) {
+            index = bits(vrc[i], 4, 0);
+            vrt[i] = ppp[31 - index];
+            
+            //printf("####output vector: %d  vrc[i]= %x  index= %d  data= %x\n", i, vrc[i], index, ppp[index]); 
+            //printf("####output vector: %d  Vt = %x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x\n", \
+                                    i,vrt[0],vrt[1],vrt[2],vrt[3],vrt[4],vrt[5],vrt[6],vrt[7], \
+                                    vrt[8],vrt[9],vrt[10],vrt[11],vrt[12],vrt[13],vrt[14],vrt[15]);
+        }
+        
+        tc->setVecReg(vrt_id, vrt_reg);
+    }});
+
+    59: vpermr({{                                            // wwf
+        /*
+            vsrc.qword[0] ← VSR[VRA+32]
+            vsrc.qword[1] ← VSR[VRB+32]
+            do i = 0 to 15
+            index ← VSR[VRC+32].byte[i].bit[3:7]
+            VSR[VRT+32].byte[i] ← src.byte[31-index]
+            end
+        */
+        ThreadContext *tc = xc->tcBase();
+        RegId vra_id(VecRegClass, VRA + 32);                
+        RegId vrb_id(VecRegClass, VRB + 32);                
+        RegId vrc_id(VecRegClass, VRC + 32);
+        RegId vrt_id(VecRegClass, VRT + 32);                
+        auto vra_reg = tc->readVecReg(vra_id);
+        auto vra = vra_reg.as<uint64_t>();
+        auto vrb_reg = tc->readVecReg(vrb_id);
+        auto vrb = vrb_reg.as<uint64_t>();
+        auto vrc_reg = tc->readVecReg(vrc_id);
+        auto vrc = vrc_reg.as<uint8_t>();
+        auto vrt_reg = tc->readVecReg(vrt_id);
+        auto vrt = vrt_reg.as<uint8_t>();
+
+        /*
+        ISA 3.1
+        */
+        
+        uint64_t vsrc[4];               
+        uint8_t *ppp = (uint8_t *)vsrc;
+        uint16_t index;
+        vsrc[0] = vrb[0];
+        vsrc[1] = vrb[1];
+        vsrc[2] = vra[0];
+        vsrc[3] = vra[1];  
+        
+        for(int i=0; i < 16; i++) {
+            index = bits(vrc[i], 4, 0);
+            vrt[i] = ppp[31 - index]; 
+            
+            //printf("vector: %d  vrc[i]= %x  index= %d  ppp[31-index]= %x\n", i, vrc[i], index, ppp[31-index]); 
+            //printf("vector: %d  Vt = %x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x\n", \
+                                    i,vrt[0],vrt[1],vrt[2],vrt[3],vrt[4],vrt[5],vrt[6],vrt[7], \
+                                    vrt[8],vrt[9],vrt[10],vrt[11],vrt[12],vrt[13],vrt[14],vrt[15]);
+        }
+        
+        tc->setVecReg(vrt_id, vrt_reg);
+    }});
+
+    42: vsel({{                                            // wwf
+        /*
+            src1 ← VSR[VRA+32]
+            src2 ← VSR[VRB+32]
+            mask ← VSR[VRC+32]
+            VSR[VRT+32] ← (src1 & ~mask) | (src2 & mask)
+        */
+        ThreadContext *tc = xc->tcBase();
+        RegId vra_id(VecRegClass, VRA + 32);                
+        RegId vrb_id(VecRegClass, VRB + 32);                
+        RegId vrc_id(VecRegClass, VRC + 32);
+        RegId vrt_id(VecRegClass, VRT + 32);                
+        auto vra_reg = tc->readVecReg(vra_id);
+        auto vra = vra_reg.as<uint64_t>();
+        auto vrb_reg = tc->readVecReg(vrb_id);
+        auto vrb = vrb_reg.as<uint64_t>();
+        auto vrc_reg = tc->readVecReg(vrc_id);
+        auto vrc = vrc_reg.as<uint64_t>();
+        auto vrt_reg = tc->readVecReg(vrt_id);
+        auto vrt = vrt_reg.as<uint64_t>();
+
+        /*
+        ALL PASSED.
+        */
+        
+        uint64_t *src1, *src2, *mask;
+        src1 = &vra[0];
+        src2 = &vrb[0];
+        mask = &vrc[0]; 
+        vrt[0] = (src1[0] & ~(mask[0])) | (src2[0] & (mask[0]));
+        vrt[1] = (src1[1] & ~(mask[1])) | (src2[1] & (mask[1]));
+                            
+        tc->setVecReg(vrt_id, vrt_reg);
+    }});
+}

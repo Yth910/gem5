@@ -35,6 +35,19 @@
 #include "base/bitfield.hh"
 #include "base/cprintf.hh"
 
+extern bool inv_flag, lt_flag, gt_flag, eq_flag, ox_flag, sat_flag;              // wwf
+extern bool vxsnan_flag, vximz_flag, vxidi_flag, vxisi_flag, vxzdz_flag, vxsqrt_flag, vxcvi_flag, vxvc_flag;
+extern bool inc_flag, ux_flag, xx_flag, zx_flag;
+
+void bcd_ADD(uint8_t *p_t, uint8_t *p_a, uint8_t *p_b, bool PS);      //  wwf
+void bcd_SUBTRACT(uint8_t *p_t, uint8_t *p_a, uint8_t *p_b, bool PS);      //  wwf
+void bcd_CONVERT_FROM_SI128(uint8_t *p_t, __int128_t x, bool y);
+void print128(__int128_t x);
+void assign_128(__int128 &x, char num[]);
+void si128_CONVERT_FROM_BCD(uint8_t *p_t, uint8_t *p8);
+void reset_xflags();
+
+
 namespace gem5
 {
 
@@ -47,6 +60,7 @@ namespace PowerISA
  * values and also rotate instructions. We also need to have versions that
  * consider the Rc and OE bits.
  */
+
 
 /**
  * Base class for integer operations.
@@ -361,6 +375,141 @@ class IntArithOp : public IntOp
         if (!ov) ov = ((q < 0) ^ (raneg ^ rbneg));
     #endif
         return std::make_tuple(ov, q, r);
+    }
+
+    inline std::tuple<int8_t, bool> si8_CLAMP(int16_t x) const
+    {
+        int8_t ret;
+        bool sat_flag = false;
+        if (x > 0x7f) {
+            ret = 0x7f;
+            sat_flag = true;
+        } else if (x < -0x80) {
+            ret = -0x80;
+            sat_flag = true;
+        } else {
+            ret = x;
+        }
+        return std::make_tuple(ret, sat_flag);
+    }
+
+    inline std::tuple<int16_t, bool> si16_CLAMP(int32_t x) const
+    {
+        int16_t ret;
+        bool sat_flag = false;
+        if (x > 0x7fff) {
+            ret = 0x7fff;
+            sat_flag = true;
+        } else if (x < -0x8000) {
+            ret = -0x8000;
+            sat_flag = true;
+        } else {
+            ret = x;
+        }
+        return std::make_tuple(ret, sat_flag);
+    }
+
+    inline std::tuple<int32_t, bool> si32_CLAMP(int64_t x) const
+    {
+        int32_t ret;
+        bool sat_flag = false;
+        if (x > 0x7fffffff) {
+            ret = 0x7fffffff;
+            sat_flag = true;
+        } else if (x < -0x80000000LL) {
+            ret = 0x80000000;
+            sat_flag = true;
+        } else {
+            ret = x;
+        }
+        return std::make_tuple(ret, sat_flag);
+    }
+
+    inline std::tuple<uint8_t, bool> ui8_CLAMP(int16_t x) const
+    {
+        uint8_t ret;
+        bool sat_flag = false;
+        if (x > 0xff) {
+            ret = 0xff;
+            sat_flag = true;
+        } else if (x < 0) {
+            ret = 0;
+            sat_flag = true;
+        } else {
+            ret = x;
+        }
+        return std::make_tuple(ret, sat_flag);
+    }
+
+    inline std::tuple<uint16_t, bool> ui16_CLAMP(int32_t x) const
+    {
+        int16_t ret;
+        bool sat_flag = false;
+        if (x > 0xffff) {
+            ret = 0xffff;
+            sat_flag = true;
+        } else if (x < 0) {
+            ret = 0;
+            sat_flag = true;
+        } else {
+            ret = x;
+        }
+        return std::make_tuple(ret, sat_flag);
+    }
+
+    inline std::tuple<uint32_t, bool> ui32_CLAMP(int64_t x) const
+    {
+        uint32_t ret;
+        bool sat_flag = false;
+        if (x > 0xffffffffLL) {
+            ret = 0xffffffff;
+            sat_flag = true;
+        } else if (x < 0) {
+            ret = 0;
+            sat_flag = true;
+        } else {
+            ret = x;
+        }
+        return std::make_tuple(ret, sat_flag);
+    }
+
+    inline std::tuple<uint8_t, bool> ui8u_CLAMP(uint16_t x) const
+    {
+        uint8_t ret;
+        bool sat_flag = false;
+        if (x > 0xff) {
+            ret = 0xff;
+            sat_flag = true;
+        } else {
+            ret = x;
+        }
+        return std::make_tuple(ret, sat_flag);
+    }
+
+    inline std::tuple<uint16_t, bool> ui16u_CLAMP(uint32_t x) const
+    {
+        int16_t ret;
+        bool sat_flag = false;
+        if (x > 0xffff) {
+            ret = 0xffff;
+            sat_flag = true;
+        } else {
+            ret = x;
+        }
+        return std::make_tuple(ret, sat_flag);
+    }
+
+    inline std::tuple<uint32_t, bool> ui32u_CLAMP(uint64_t x) const
+    {
+        uint32_t ret;
+        bool sat_flag = false;
+        if (x > 0xffffffffLL) {
+            ret = 0xffffffff;
+            sat_flag = true;
+        } else {
+            ret = x;
+        }
+        return std::make_tuple(ret, sat_flag);
     }
 
     std::string generateDisassembly(

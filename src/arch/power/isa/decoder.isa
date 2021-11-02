@@ -65,6 +65,38 @@ decode PO default Unknown::unknown() {
                 Rt = res;
             }});
         }
+
+        ##include "vector/integer/integer_va_xo.isa"
+        ##include "vector/permute_formatting/perm_va_xo.isa"
+        ##include "vector/permute_formatting/shift_va_xo.isa"
+        ##include "vector/floating/fp_va_xo.isa"
+
+        default: decode VX_XO {
+            ##include "vector/integer/integer_vx_xo.isa" 
+            ##include "vector/move/vector_regmove.isa"
+            ##include "vector/permute_formatting/pack_vx_xo.isa"
+            ##include "vector/permute_formatting/unpack_vx_xo.isa"
+            ##include "vector/permute_formatting/merge_vx_xo.isa"
+            ##include "vector/permute_formatting/splat_vx_xo.isa"
+            ##include "vector/permute_formatting/shift_vx_xo.isa"
+            ##include "vector/permute_formatting/extract_vx_xo.isa"
+            ##include "vector/bit_manipulation/bit_vx_xo.isa"
+
+            ##include "vector/floating/fp_vx_xo.isa"
+            // ###4: decode VX_XO IntArithOp###
+            
+            default:decode VC_XO {
+                ##include "vector/integer/cmp_vc_xo.isa"
+
+                // These instructions are of VX form and use bits 23 - 31 as XO.
+                default: decode VX_8XO {        
+
+                    ##include "vector/bcd/bcd_vx_8xo.isa"
+                    ##include "vector/bcd/bcd_num_385.isa"
+
+                }
+			}
+        }
     }
 
     format IntImmArithOp {
@@ -606,7 +638,7 @@ decode PO default Unknown::unknown() {
         format LoadIndexOp {
             532: ldbrx({{ Rt = swap_byte(Mem); }});
             534: lwbrx({{ Rt = swap_byte(Mem_uw); }});
-            535: lfsx({{ Ft_sf = Mem_sf; }});
+            //535: lfsx({{ Ft_sf = Mem_sf; }});
         }
 
         536: IntShiftOp::srw({{
@@ -631,7 +663,7 @@ decode PO default Unknown::unknown() {
             Ra = res;
         }});
 
-        567: LoadIndexUpdateOp::lfsux({{ Ft_sf = Mem_sf; }});
+        //567: LoadIndexUpdateOp::lfsux({{ Ft_sf = Mem_sf; }});
         570: IntLogicOp::cnttzd({{ Ra = findTrailingZeros(Rs); }}, true);
 
         576: IntOp::mcrxrx({{
@@ -642,13 +674,13 @@ decode PO default Unknown::unknown() {
         }});
 
         598: MiscOp::sync({{ }}, [ IsReadBarrier, IsWriteBarrier ]);
-        599: LoadIndexOp::lfdx({{ Ft = Mem_df; }});
-        631: LoadIndexUpdateOp::lfdux({{ Ft = Mem_df; }});
+        //599: LoadIndexOp::lfdx({{ Ft = Mem_df; }});
+        //631: LoadIndexUpdateOp::lfdux({{ Ft = Mem_df; }});
 
         format StoreIndexOp {
             660: stdbrx({{ Mem = swap_byte(Rs); }});
             662: stwbrx({{ Mem_uw = swap_byte(Rs_uw); }});
-            663: stfsx({{ Mem_sf = Fs_sf; }});
+            //663: stfsx({{ Mem_sf = Fs_sf; }});
 
             694: stbcx({{
                 Mem_ub = Rs_ub;
@@ -669,7 +701,7 @@ decode PO default Unknown::unknown() {
             }});
         }
 
-        695: StoreIndexUpdateOp::stfsux({{ Mem_sf = Fs_sf; }});
+        //695: StoreIndexUpdateOp::stfsux({{ Mem_sf = Fs_sf; }});
 
         format StoreIndexOp {
             726: sthcx({{
@@ -690,10 +722,10 @@ decode PO default Unknown::unknown() {
                 Rsv = 0;
             }});
 
-            727: stfdx({{ Mem_df = Fs; }});
+            //727: stfdx({{ Mem_df = Fs; }});
         }
 
-        759: StoreIndexUpdateOp::stfdux({{ Mem_df = Fs; }});
+        //759: StoreIndexUpdateOp::stfdux({{ Mem_df = Fs; }});
 
         format IntArithOp {
             777: modsd({{
@@ -772,7 +804,7 @@ decode PO default Unknown::unknown() {
         }}, true);
 
         854: MiscOp::eieio({{ }}, [ IsReadBarrier, IsWriteBarrier ]);
-        855: LoadIndexOp::lfiwax({{ Ft_uw = Mem; }});
+        //855: LoadIndexOp::lfiwax({{ Ft_uw = Mem; }});
         918: StoreIndexOp::sthbrx({{ Mem_uh = swap_byte(Rs_uh); }});
 
         format IntLogicOp {
@@ -780,7 +812,7 @@ decode PO default Unknown::unknown() {
             954: extsb({{ Ra = sext<8>(Rs); }}, true);
         }
 
-        983: StoreIndexOp::stfiwx({{ Mem = Fs_uw; }});
+        //983: StoreIndexOp::stfiwx({{ Mem = Fs_uw; }});
         986: IntLogicOp::extsw({{ Ra = sext<32>(Rs); }}, true);
 
         // These instructions are of XO form with bit 21 as the OE bit.
@@ -1039,6 +1071,18 @@ decode PO default Unknown::unknown() {
                 }
             }
         }
+
+        ##include "fp/storage_access/fp_load.isa"
+        ##include "fp/storage_access/fp_load_i_update.isa"
+        ##include "vector/storage_access/vector_load.isa"
+        ##include "vsx/storage_access/vsx_load.isa"
+
+        ##include "fp/storage_access/fp_store.isa"
+        ##include "fp/storage_access/fp_store_i_update.isa"
+        ##include "vector/storage_access/vector_store.isa"
+        ##include "vsx/storage_access/vsx_store.isa"
+
+        ##include "vsx/move/vsx_regmove.isa"
     }
 
     32: LoadDispOp::lwz({{ Rt = Mem_uw; }});
@@ -1055,14 +1099,16 @@ decode PO default Unknown::unknown() {
     43: LoadDispUpdateOp::lhau({{ Rt = Mem_sh; }});
     44: StoreDispOp::sth({{ Mem_uh = Rs_uh; }});
     45: StoreDispUpdateOp::sthu({{ Mem_uh = Rs_uh; }});
-    48: LoadDispOp::lfs({{ Ft_sf = Mem_sf; }});
-    49: LoadDispUpdateOp::lfsu({{ Ft_sf = Mem_sf; }});
-    50: LoadDispOp::lfd({{ Ft = Mem_df; }});
-    51: LoadDispUpdateOp::lfdu({{ Ft = Mem_df; }});
-    52: StoreDispOp::stfs({{ Mem_sf = Fs_sf; }});
-    53: StoreDispUpdateOp::stfsu({{ Mem_sf = Fs_sf; }});
-    54: StoreDispOp::stfd({{ Mem_df = Fs; }});
-    55: StoreDispUpdateOp::stfdu({{ Mem_df = Fs; }});
+    //48: LoadDispOp::lfs({{ Ft_sf = Mem_sf; }});
+    //49: LoadDispUpdateOp::lfsu({{ Ft_sf = Mem_sf; }});
+    //50: LoadDispOp::lfd({{ Ft = Mem_df; }});
+    //51: LoadDispUpdateOp::lfdu({{ Ft = Mem_df; }});
+    //52: StoreDispOp::stfs({{ Mem_sf = Fs_sf; }});
+    //53: StoreDispUpdateOp::stfsu({{ Mem_sf = Fs_sf; }});
+    //54: StoreDispOp::stfd({{ Mem_df = Fs; }});
+    //55: StoreDispUpdateOp::stfdu({{ Mem_df = Fs; }});
+
+    ##include "fp/storage_access/fp_ldst_disp.isa"
 
     58: decode DS_XO {
         0: LoadDispShiftOp::ld({{ Rt = Mem; }});
@@ -1070,16 +1116,48 @@ decode PO default Unknown::unknown() {
         2: LoadDispShiftOp::lwa({{ Rt = Mem_sw; }});
     }
 
-    format FloatArithOp {
-        59: decode A_XO {
-            18: fdivs({{ Ft = Fa / Fb; }});
-            20: fsubs({{ Ft = Fa - Fb; }});
-            21: fadds({{ Ft = Fa + Fb; }});
-            25: fmuls({{ Ft = Fa * Fc; }});
-            28: fmsubs({{ Ft = (Fa * Fc) - Fb; }});
-            29: fmadds({{ Ft = (Fa * Fc) + Fb; }});
-            30: fnmsubs({{ Ft = -((Fa * Fc) - Fb); }});
-            31: fnmadds({{ Ft = -((Fa * Fc) + Fb); }});
+    59: decode A_XO {
+        format FloatArithOp {
+            ##include "fp/arith/sp_arith.isa"
+            
+            default: decode X_XO {
+                ##include "fp/convert/convert_sp.isa"
+            }
+        }
+    }
+
+    60: decode XX2_XO {
+        
+        ##include "vsx/fp_arith/fp_arith_xx2.isa"
+        ##include "vsx/convert/dp2int_xx2_xo.isa"
+        ##include "vsx/convert/dp2sp_xx2_xo.isa"
+        ##include "vsx/convert/int2fp_xx2_xo.isa"
+        ##include "vsx/convert/round_to_int_xx2_xo.isa"
+        ##include "vsx/convert/sp2dp_xx2_xo.isa"
+
+        default: decode XX3_XO {
+            
+            ##include "vsx/fp_arith/fp_arith_xx3.isa"
+            ##include "vsx/logical/logical_xx3_xo.isa"
+            ##include "vsx/permute/perm_xx3_xo.isa"
+
+            default: decode XX4_XO {
+                ##include "vsx/permute/sel_xx4_xo.isa"
+                // ###60: decode XX4_XO FloatArithOp###
+                default: decode XX3_3_XO {                                               // wwf  [24, 28]
+                    ##include "vsx/permute/perm_xx3_3xo.isa"
+                    default:decode XX3RC_XO {
+                        ##include "vsx/fp_comp/fp_comp_xx3rc_xo.isa"
+                        default:decode XX2_XO {
+                            format FloatArithOp {
+                                170: xvtsqrtsp({{
+                                    std::cout << "Running xvtsqrtsp in XX2_XO" << std::endl;			
+                                }});
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -1089,74 +1167,13 @@ decode PO default Unknown::unknown() {
     }
 
     63: decode A_XO {
-        format FloatArithOp {
-            20: fsub({{ Ft = Fa - Fb; }});
-            21: fadd({{ Ft = Fa + Fb; }});
-            25: fmul({{ Ft = Fa * Fc; }});
-            18: fdiv({{ Ft = Fa / Fb; }});
-            29: fmadd({{ Ft = (Fa * Fc) + Fb; }});
-            28: fmsub({{ Ft = (Fa * Fc) - Fb; }});
-            31: fnmadd({{ Ft = -((Fa * Fc) + Fb); }});
-            30: fnmsub({{ Ft = -((Fa * Fc) - Fb); }});
-        }
+        ##include "fp/arith/dp_arith.isa"
 
         default: decode X_XO {
-            0: FloatOp::fcmpu({{
-                uint32_t c = makeCRField(Fa, Fb);
-                Fpscr fpscr = FPSCR;
-                fpscr.fprf.fpcc = c;
-                FPSCR = fpscr;
-                CR = insertCRField(CR, BF, c);
-            }});
-
-            8: FloatRCCheckOp::fcpsgn({{
-                Ft_ud = Fb_ud;
-                Ft_ud = insertBits(Ft_ud, 63, Fa_ud<63:63>);
-            }});
-
-            format FloatConvertOp {
-                12: frsp({{ Ft_sf = Fb; }});
-                15: fctiwz({{ Ft_sw = (int32_t)trunc(Fb); }});
-            }
-
-            format FloatRCCheckOp {
-                38: mtfsb1({{ FPSCR = insertBits(FPSCR, 31 - BT, 1); }});
-                40: fneg({{ Ft = -Fb; }});
-                70: mtfsb0({{ FPSCR = insertBits(FPSCR, 31 - BT, 0); }});
-                72: fmr({{ Ft = Fb; }});
-
-                134: mtfsfi({{
-                    FPSCR = insertCRField(FPSCR, BF + (8 * (1 - W_FIELD)),
-                                          U_FIELD);
-                }});
-
-                136: fnabs({{
-                    Ft_ud = Fb_ud;
-                    Ft_ud = insertBits(Ft_ud, 63, 1);
-                }});
-
-                264: fabs({{
-                    Ft_ud = Fb_ud;
-                    Ft_ud = insertBits(Ft_ud, 63, 0);
-                }});
-
-                583: mffs({{ Ft_ud = FPSCR; }});
-
-                default: decode XFL_XO {
-                    711: mtfsf({{
-                        if (L_FIELD == 1) { FPSCR = Fb_ud; }
-                        else {
-                            for (int i = 0; i < 8; ++i) {
-                                if (bits(FLM, i) == 1) {
-                                    int k = 4 * (i + (8 * (1 - W_FIELD)));
-                                    FPSCR = insertBits(FPSCR, k + 3, k,
-                                                       bits(Fb_ud, k + 3, k));
-                                }
-                            }
-                        }
-                    }});
-                }
-            }
+            ##include "fp/arith/misc.isa"
+            ##include "fp/convert/convert_dp.isa"
+            ##include "fp/cmp/fp_cmp.isa"
+            ##include "fp/move/fp_regmove.isa"
         }
     }
 }

@@ -1,0 +1,47 @@
+ format IntArithOp {
+    51:mfvsrd({{
+        ThreadContext *tc = xc->tcBase();
+        RegId id(VecRegClass, XX_S + XX_SX * 32);
+        auto reg = tc->readVecReg(id);
+        auto val = reg.as<uint64_t>();
+        Ra_sd = val[0];
+    }});
+
+    115:mfvsrwz({{
+        ThreadContext *tc = xc->tcBase();
+        RegId id(VecRegClass, XX_S + XX_SX * 32);
+        auto reg = tc->readVecReg(id);
+        auto val = reg.as<uint32_t>();
+        Ra_ud = val[0];
+    }});
+
+    179:mtvsrd({{
+        ThreadContext *tc = xc->tcBase();
+        RegId id(VecRegClass, XX_T + XX_TX * 32);
+        auto reg = tc->readVecReg(id);
+        auto val = reg.as<int64_t>();
+        val[0] = Ra_sd;
+        val[1] = 0;
+        tc->setVecReg(id, reg);
+    }});
+
+    211:mtvsrwa({{
+        ThreadContext *tc = xc->tcBase();
+        RegId id(VecRegClass, XX_T + XX_TX * 32);
+        auto reg = tc->readVecReg(id);
+        auto val = reg.as<int64_t>();
+        val[0] = Ra_sw;
+        val[1] = 0;
+        tc->setVecReg(id, reg);
+    }});
+
+    243:mtvsrwz({{
+        ThreadContext *tc = xc->tcBase();
+        RegId id(VecRegClass, XX_T + XX_TX * 32);
+        auto reg = tc->readVecReg(id);
+        auto val = reg.as<uint64_t>();
+        val[0] = Ra_uw;
+        val[1] = 0;
+        tc->setVecReg(id, reg);
+    }});
+ }

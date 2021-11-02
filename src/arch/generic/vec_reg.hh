@@ -110,6 +110,115 @@ namespace gem5
 
 constexpr unsigned MaxVecRegLenInBytes = 4096;
 
+template <size_t Sz>
+class VecRegContainer;
+
+/** Vector Register Abstraction
+ * This generic class is a view in a particularization of MVC, to vector
+ * registers. There is a VecRegContainer that implements the model, and
+ * contains the data. To that model we can interpose different instantiations
+ * of VecRegT to view the container as a vector of NumElems elems of type
+ * VecElem.
+ * @tparam VecElem Type of each element of the vector.
+ * @tparam NumElems Amount of components of the vector.
+ * @tparam Const Indicate if the underlying container can be modified through
+ * the view.
+ */
+template <typename VecElem, size_t NumElems, bool Const>
+class VecRegT
+{
+    /** Size of the register in bytes. */
+    static constexpr inline size_t
+    size()
+    {
+        return sizeof(VecElem) * NumElems;
+    }
+  public:
+    /** Container type alias. */
+    using Container = typename std::conditional<Const,
+                                              const VecRegContainer<size()>,
+                                              VecRegContainer<size()>>::type;
+  private:
+    /** My type alias. */
+    using MyClass = VecRegT<VecElem, NumElems, Const>;
+    /** Reference to container. */
+    Container& container;
+
+  public:
+    /** Constructor. */
+    VecRegT(Container& cnt) : container(cnt) {};
+
+    /** Zero the container. */
+    template<bool Condition = !Const>
+    typename std::enable_if_t<Condition, void>
+    zero() { container.zero(); }
+
+    template<bool Condition = !Const>
+    typename std::enable_if_t<Condition, MyClass&>
+    operator=(const MyClass& that)
+    {
+        container = that.container;
+        return *this;
+    }
+
+    /** Index operator. */
+    const VecElem& operator[](size_t idx) const
+    {
+        return container.template raw_ptr<VecElem>()[idx];
+    }
+
+    /** Index operator. */
+    template<bool Condition = !Const>
+    typename std::enable_if_t<Condition, VecElem&>
+    operator[](size_t idx)
+    {
+        return container.template raw_ptr<VecElem>()[idx];
+    }
+
+    /** Equality operator.
+     * Required to compare thread contexts.
+     */
+    template<typename VE2, size_t NE2, bool C2>
+    bool
+    operator==(const VecRegT<VE2, NE2, C2>& that) const
+    {
+        return container == that.container;
+    }
+    /** Inequality operator.
+     * Required to compare thread contexts.
+     */
+    template<typename VE2, size_t NE2, bool C2>
+    bool
+    operator!=(const VecRegT<VE2, NE2, C2>& that) const
+    {
+        return !operator==(that);
+    }
+
+    /** Output stream operator. */
+    friend std::ostream&
+    operator<<(std::ostream& os, const MyClass& vr)
+    {
+        /* 0-sized is not allowed */
+        os << "[" << std::hex << (uint32_t)vr[0];
+        for (uint32_t e = 1; e < vr.size(); e++)
+            os << " " << std::hex << (uint32_t)vr[e];
+        os << ']';
+        return os;
+    }
+
+    const std::string print() const { return csprintf("%s", *this); }
+    /**
+     * Cast to VecRegContainer&
+     * It is useful to get the reference to the container for ISA tricks,
+     * because casting to reference prevents unnecessary copies.
+     */
+    operator Container&() { return container; }
+};
+
+/* Forward declaration. */
+template <typename VecElem, bool Const>
+class VecLaneT;
+
 /**
  * Vector Register Abstraction
  * This generic class is the model in a particularization of MVC, to vector

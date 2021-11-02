@@ -29,10 +29,16 @@
 
 #include "arch/power/insts/integer.hh"
 
+
+bool inv_flag, lt_flag, gt_flag, eq_flag, ox_flag, sat_flag;              // wwf
+bool vxsnan_flag, vximz_flag, vxidi_flag, vxisi_flag, vxzdz_flag, vxsqrt_flag, vxcvi_flag, vxvc_flag;
+bool inc_flag, ux_flag, xx_flag, zx_flag;
+
 namespace gem5
 {
 
 using namespace PowerISA;
+using namespace std;
 
 std::string
 IntOp::generateDisassembly(Addr pc, const loader::SymbolTable *symtab) const
@@ -926,3 +932,419 @@ IntImmTrapOp::generateDisassembly(
 }
 
 } // namespace gem5
+
+void bcd_ADD(uint8_t *p_t, uint8_t *p_a, uint8_t *p_b, bool PS)               // wwf
+{
+  bool sign_a, sign_b;
+  sign_a = ((p_a[15] & 0x0f) == 0xB) | ((p_a[15] & 0x0f) == 0xD);
+  sign_b = ((p_b[15] & 0x0f) == 0xB) | ((p_b[15] & 0x0f) == 0xD);
+  
+  // check if a or b are undefined.
+  inv_flag = (p_a[15] & 0x0f) < 0xA | (p_b[15] & 0x0f) < 0xA; 
+  for(int i=0; i<15; i++)
+  {
+    inv_flag = inv_flag | ((p_a[i]>>4) > 0x9) | ((p_b[i]>>4) > 0x9);
+    inv_flag = inv_flag | ((p_a[i]&0x0F) > 0x9) | ((p_b[i]&0x0F) > 0x9);
+  }
+  inv_flag = inv_flag | ((p_a[15]>>4) > 0x9) | ((p_b[15]>>4) > 0x9);
+  
+  if(inv_flag)
+  { lt_flag = false; gt_flag = false; eq_flag = false;    return;  }
+  
+  for(int i=0; i<16; i++)
+    p_t[i] = 0x0;
+  
+  if(sign_a == sign_b)
+  {
+    uint8_t sum, offset=6, inc=0, t, k;
+    for(int i=30; i >= 0; i--)
+    {
+      t = i % 2;
+      k = i / 2;
+      if(t == 0)
+        sum = (p_a[k] >> 4) + (p_b[k] >> 4) + inc;
+      else
+        sum = (p_a[k] & 0x0F) + (p_b[k] & 0x0F) + inc;
+      if(sum > 9)
+      {
+        inc = 1;
+        sum = (sum + offset) & 0x0F;
+      }
+      else
+        inc = 0;
+      if(t == 0)
+        p_t[k] = p_t[k] | ((sum << 4) & 0xFF);
+      else
+        p_t[k] = p_t[k] | (sum & 0x0F);
+    }
+    if(inc == 1)
+      ox_flag = 1;
+    else  ox_flag = 0;
+    p_t[15] = p_t[15] | (p_a[15] & 0x0f);
+  }
+  else
+  {
+    if(!sign_a)   // a >= 0  and b < 0
+    {
+      uint8_t tmp[18], *p_tmpa;
+      for(int i=0; i<16; i++)
+        tmp[i] = p_b[i];
+      tmp[15] = tmp[15] & 0xF0;
+      tmp[15] = tmp[15] | 0x0C;        // -b
+      p_tmpa = &tmp[0];
+      
+      printf("vector      0 - b :                          ");
+      for(int i=0; i<16; i++)
+        printf("%02x", p_tmpa[i]);
+      printf("\n");
+      printf("vector      start doing     a - (0 - b)\n");
+      bcd_SUBTRACT(p_t, p_a, p_tmpa, PS);
+    }
+    else          // a < 0  and b >= 0
+    {
+      uint8_t tmp[18], *p_tmpa;
+      for(int i=0; i<16; i++)
+        tmp[i] = p_a[i];
+      tmp[15] = tmp[15] & 0xF0;
+      tmp[15] = tmp[15] | 0x0C;        // -a
+      p_tmpa = &tmp[0];
+      
+      printf("vector      0 - a :                         ");
+      for(int i=0; i<16; i++)
+        printf("%02x", p_tmpa[i]);
+      printf("\n");
+      printf("vector      start doing     b - (0 - a)\n");
+      bcd_SUBTRACT(p_t, p_b, p_tmpa, PS);
+    }
+  }
+  
+  // set control flags.
+  bool src_sign = ((p_t[15] & 0x0f) == 0xB) | ((p_t[15] & 0x0f) == 0xD);
+  eq_flag = true;
+  for(int i=0; i<15; i++)
+    eq_flag = eq_flag & (p_t[i] == 0x0);
+  eq_flag = eq_flag & ((p_t[15]>>4) == 0x0);
+  lt_flag = (!eq_flag) & src_sign;
+  gt_flag = (!eq_flag) & (!src_sign);
+  
+  p_t[15] = p_t[15] & 0xF0;
+  if(!lt_flag)
+  {
+    if(PS == 0)
+      p_t[15] = p_t[15] | 0b1100;
+    else
+      p_t[15] = p_t[15] | 0b1111;
+  }
+  else
+    p_t[15] = p_t[15] | 0b1101;
+}
+
+void bcd_SUBTRACT(uint8_t *p_t, uint8_t *p_a, uint8_t *p_b, bool PS)               // wwf  a - b
+{
+  bool sign_a, sign_b;
+  sign_a = ((p_a[15] & 0x0f) == 0xB) | ((p_a[15] & 0x0f) == 0xD);
+  sign_b = ((p_b[15] & 0x0f) == 0xB) | ((p_b[15] & 0x0f) == 0xD);
+  
+  // check if a or b are undefined.
+  inv_flag = (p_a[15] & 0x0f) < 0xA | (p_b[15] & 0x0f) < 0xA; 
+  for(int i=0; i<15; i++)
+  {
+    inv_flag = inv_flag | ((p_a[i]>>4) > 0x9) | ((p_b[i]>>4) > 0x9);
+    inv_flag = inv_flag | ((p_a[i]&0x0F) > 0x9) | ((p_b[i]&0x0F) > 0x9);
+  }
+  inv_flag = inv_flag | ((p_a[15]>>4) > 0x9) | ((p_b[15]>>4) > 0x9);
+  
+  if(inv_flag)
+  { lt_flag = false; gt_flag = false; eq_flag = false;    return;  }
+  ox_flag = 0;
+  
+  for(int i=0; i<16; i++)
+    p_t[i] = 0x0;
+  
+  if(sign_a == sign_b)
+  {
+    int8_t sub, offset=6, inc=0, t, k;
+    
+    // check if a > b not consider the sign.
+    bool check_flag = true;
+    uint8_t *p_tmp, tmp_a, tmp_b;    
+    for(int i=0; i < 31; i++)
+    {
+      t = i % 2;
+      k = i / 2;
+      if(t == 0)
+      {
+        tmp_a = p_a[k] >> 4;
+        tmp_b = p_b[k] >> 4;
+      }
+      else
+      {
+        tmp_a = p_a[k] & 0x0F;
+        tmp_b = p_b[k] & 0x0F;
+      }
+      if(tmp_a < tmp_b)               // a < b , not consider the sign
+      {
+        check_flag = false;
+        p_tmp = p_a;   p_a = p_b;    p_b = p_tmp;
+        break;
+      }
+      else if(tmp_a > tmp_b)
+        break;
+    }
+    
+    for(int i=30; i >= 0; i--)
+    {
+      t = i % 2;
+      k = i / 2;
+      if(t == 0)
+      {
+        sub = (p_a[k] >> 4) - inc;
+        if(sub < 0)
+        {
+          sub = sub + 16 - (p_b[k] >> 4);
+          inc = 1;
+        }
+        else
+        {
+          inc = 0;                        // reset inc.
+          sub = sub - (p_b[k] >> 4);
+          if(sub < 0)
+          {
+            sub = sub + 16;
+            inc = 1;
+          }
+        }
+        
+      }
+      else
+      {
+        sub = (p_a[k] & 0x0F) - inc;
+        if(sub < 0)
+        {
+          sub = sub + 16 - (p_b[k] & 0x0F);
+          inc = 1;
+        }
+        else
+        {
+          inc = 0;                        // reset inc.
+          sub = sub - (p_b[k] & 0x0F);
+          if(sub < 0)
+          {
+            sub = sub + 16;
+            inc = 1;
+          }
+        }
+        
+      }
+        
+      //printf("vector  1   i=%d k=%d t=%d  a=%x b=%x sub=%x  inc=%d   sign=%d\n", i, k, t, p_a[k], p_b[k], sub, inc, sign_a);
+      if(inc == 1)
+      {
+        sub = (sub - offset) & 0x0F;
+      }
+      //printf("vector      i=%d k=%d t=%d  a=%x b=%x sub=%x  inc=%d   sign=%d\n", i, k, t, p_a[k], p_b[k], sub, inc, sign_a);
+      if(t == 0)
+        p_t[k] = p_t[k] | ((sub << 4) & 0xFF);
+      else
+        p_t[k] = p_t[k] | (sub & 0x0F);
+    }
+    
+    printf("vector    check_flag=%d   inc=%d\n", check_flag, inc);
+    if(!check_flag)
+    {
+      if(sign_a)
+        p_t[15] = p_t[15] | 0b1100;
+      else
+        p_t[15] = p_t[15] | 0b1101;
+    }
+    else  
+      p_t[15] = p_t[15] | (p_a[15] & 0x0f);
+  }
+  else
+  {    
+    if(!sign_a)   // a >= 0  and b < 0
+    {
+      uint8_t tmp[18], *p_tmpa;
+      for(int i=0; i<16; i++)
+        tmp[i] = p_b[i];
+      tmp[15] = tmp[15] & 0xF0;
+      tmp[15] = tmp[15] | 0x0C;        // -b
+      p_tmpa = &tmp[0];
+      
+      printf("vector      0 - b :                          ");
+      for(int i=0; i<16; i++)
+        printf("%02x", p_tmpa[i]);
+      printf("\n");
+      printf("vector      start doing     a + (0 - b)\n");
+      bcd_ADD(p_t, p_a, p_tmpa, PS);
+    }
+    else          // a < 0  and b >= 0
+    {
+      uint8_t tmp[18], *p_tmpa;
+      for(int i=0; i<16; i++)
+        tmp[i] = p_b[i];
+      tmp[15] = tmp[15] & 0xF0;
+      tmp[15] = tmp[15] | 0x0D;        // -b
+      p_tmpa = &tmp[0];
+      
+      printf("vector      0 - b :                         ");
+      for(int i=0; i<16; i++)
+        printf("%02x", p_tmpa[i]);
+      printf("\n");
+      printf("vector      start doing     a + (0 - b)\n");
+      bcd_ADD(p_t, p_a, p_tmpa, PS);
+    }
+  }
+  
+  // set control flags.
+  bool src_sign = ((p_t[15] & 0x0f) == 0xB) | ((p_t[15] & 0x0f) == 0xD);
+  eq_flag = true;
+  for(int i=0; i<15; i++)
+    eq_flag = eq_flag & (p_t[i] == 0x0);
+  eq_flag = eq_flag & ((p_t[15]>>4) == 0x0);
+  lt_flag = (!eq_flag) & src_sign;
+  gt_flag = (!eq_flag) & (!src_sign);
+  
+  p_t[15] = p_t[15] & 0xF0;
+  if(!lt_flag)
+  {
+    if(PS == 0)
+      p_t[15] = p_t[15] | 0b1100;
+    else
+      p_t[15] = p_t[15] | 0b1111;
+  }
+  else
+    p_t[15] = p_t[15] | 0b1101;
+}
+
+
+void print128(__int128_t x)  
+{  
+    if(x < 0)
+    {
+        x = -x;
+        putchar('-');
+    }
+    if(!x)  
+    {  
+        puts("0");  
+        return ;  
+    }  
+    std::string ret="";  
+    while(x)  
+    {  
+        ret+=x%10+'0';  
+        x/=10;  
+    }  
+    std::reverse(ret.begin(),ret.end());  
+    std::cout<<ret<<std::endl;  
+}  
+void assign_128(__int128 &x, char num[])
+{
+    x = 0;
+    int f = 1, i=0;
+    char ch;
+    int n = strlen(num);
+    if(num[0] == '-') 
+    { f = -f;  i = 1;  }
+    for(; i < n; i++)
+    {
+      ch = num[i];
+      x = x*10 + ch-'0';
+    }
+    x *= f;
+}
+
+//Let x be a signed integer quadword.
+//Let y indicate the preferred sign code.
+//Return the signed integer value x in packed decimal format.
+void bcd_CONVERT_FROM_SI128(uint8_t *p_t, __int128_t x, bool y)
+{
+        __int128_t zero = 0x0;
+	
+	printf("vector:  bcd_CONVERT_FROM_SI128  data = ");
+	print128(x);
+        uint64_t *pu = (uint64_t *)&x;
+        printf("vector:    x=    %llx    %llx\n", *pu, *(pu+1));
+	
+        uint8_t sign;
+        uint8_t *p8 = (uint8_t *)&x;
+        
+        if( x < zero)
+        {
+	  x = ~x + 1;
+	  printf("vector:  x = %x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x\n", \
+		                                 p8[0],p8[1],p8[2],p8[3],p8[4],p8[5],p8[6],p8[7], \
+		                                 p8[8],p8[9],p8[10],p8[11],p8[12],p8[13],p8[14],p8[15]);
+	  sign = 0x000D;
+	}
+	else
+	  sign = (y==0) ? 0x000C : 0x000F;
+	printf("vector:     sign=%d\n", sign);
+          
+        printf("vector: start     vrb =  ");
+        print128(x);
+        pu = (uint64_t *)&x;
+        printf("vector:        %llx    %llx\n", *pu, *(pu+1));
+	
+	for(int i=0; i<16; i++)
+	  p_t[i] = 0x0;
+	int8_t digit, i, j, t;
+	for(i=30; i > -1; i--)
+	{
+	  if(x <= 0)
+	    break;
+	  t = i % 2;
+	  j = i / 2;
+	  digit = x % 10;
+	  if(t == 0)
+	    p_t[j] = p_t[j] | (digit << 4);
+	  else
+	    p_t[j] = p_t[j] | digit;	
+	  printf("vector:  digit= %d   data= ", digit);  
+          print128(x);
+	  x = x / 10;
+	}
+	p_t[15] = p_t[15] | (sign & 0x0F);
+}
+
+void si128_CONVERT_FROM_BCD(uint8_t *p_t, uint8_t *p8)
+{
+        __int128_t result = 0x0;
+	
+	//printf("vector:    si128_CONVERT_FROM_BCD  data =  %x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x\n", \
+		                                 p8[0],p8[1],p8[2],p8[3],p8[4],p8[5],p8[6],p8[7], \
+		                                 p8[8],p8[9],p8[10],p8[11],p8[12],p8[13],p8[14],p8[15]);
+	
+        __int128_t scale = 1, digit;
+        int sign = p8[15] & 0x0F;
+        int t, j;
+        for(int i=30; i>-1; i--)
+        {
+	  t = i % 2;
+	  j = i / 2;
+	  if(t == 0)
+	    digit = (p8[j] >> 4) & 0x0F;
+	  else
+	    digit = p8[j] & 0x0F;
+	  result = result + digit * scale;
+	  scale = scale * 10;
+	}
+	
+	//printf("vector: result =  ");
+        //print128(result);
+        
+	if (sign == 0x0B | sign == 0x0D)
+	 result = ~result + 1;
+	
+	//printf("vector: result =  ");
+        //print128(result);
+	
+	uint8_t *ppp = (uint8_t*)&result;
+	for(int i = 0; i < 16; i++)
+	  p_t[15-i] = ppp[i];
+	
+	//printf("vector:    return data =  %x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x\n", \
+		                                 p_t[0],p_t[1],p_t[2],p_t[3],p_t[4],p_t[5],p_t[6],p_t[7], \
+		                                 p_t[8],p_t[9],p_t[10],p_t[11],p_t[12],p_t[13],p_t[14],p_t[15]);
+}

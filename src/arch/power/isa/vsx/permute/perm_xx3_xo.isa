@@ -1,0 +1,63 @@
+format FloatArithOp {
+    18: xxmrghw({{                                            // wwf
+        /*
+            VSR[32×TX+T].word[0] ← VSR[32×AX+A].word[0]
+            VSR[32×TX+T].word[1] ← VSR[32×BX+B].word[0]
+            VSR[32×TX+T].word[2] ← VSR[32×AX+A].word[1]
+            VSR[32×TX+T].word[3] ← VSR[32×BX+B].word[1]
+        */
+        ThreadContext *tc = xc->tcBase();
+        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
+        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
+        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
+        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
+        auto vra_reg = tc->readVecReg(vra_id);
+        auto vra = vra_reg.as<uint32_t>();
+        auto vrb_reg = tc->readVecReg(vrb_id);
+        auto vrb = vrb_reg.as<uint32_t>();
+        auto vrt_reg = tc->readVecReg(vrt_id);
+        auto vrt = vrt_reg.as<uint32_t>();
+        
+        /*
+        ALL PASSED.
+        */
+                        
+        vrt[3] = vra[0];
+        vrt[2] = vrb[0];
+        vrt[1] = vra[1];
+        vrt[0] = vrb[1];
+        
+        tc->setVecReg(vrt_id, vrt_reg);
+    }});
+                    
+    50: xxmrglw({{                                            // wwf
+        /*
+            VSR[32×TX+T].word[0] ← VSR[32×AX+A].word[2]
+            VSR[32×TX+T].word[1] ← VSR[32×BX+B].word[2]
+            VSR[32×TX+T].word[2] ← VSR[32×AX+A].word[3]
+            VSR[32×TX+T].word[3] ← VSR[32×BX+B].word[3]
+        */
+        ThreadContext *tc = xc->tcBase();
+        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
+        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
+        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
+        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);  
+        auto vra_reg = tc->readVecReg(vra_id);
+        auto vra = vra_reg.as<uint32_t>();
+        auto vrb_reg = tc->readVecReg(vrb_id);
+        auto vrb = vrb_reg.as<uint32_t>();
+        auto vrt_reg = tc->readVecReg(vrt_id);
+        auto vrt = vrt_reg.as<uint32_t>();
+        
+        /*
+        ALL PASSED.
+        */
+                        
+        vrt[3] = vra[2];
+        vrt[2] = vrb[2];
+        vrt[1] = vra[3];
+        vrt[0] = vrb[3];
+        
+        tc->setVecReg(vrt_id, vrt_reg);
+    }});
+}

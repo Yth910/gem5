@@ -124,6 +124,7 @@ class InstRecord
         DataInt16 = 2,
         DataInt32 = 4,
         DataInt64 = 8,
+        DataInt128 = 16,
         DataDouble = 3,
         DataVec = 5,
         DataVecPred = 6
@@ -189,15 +190,18 @@ class InstRecord
         data.as_int = d[0];
         data_status = (DataStatus)sizeof(T);
         static_assert(sizeof(T) == DataInt8 || sizeof(T) == DataInt16 ||
-                      sizeof(T) == DataInt32 || sizeof(T) == DataInt64,
+                      sizeof(T) == DataInt32 || sizeof(T) == DataInt64 ||
+                      sizeof(T) == DataInt128,
                       "Type T has an unrecognized size.");
     }
 
+    void setData(__uint128_t d) { data.as_int = d; data_status = DataInt128; }
     void setData(uint64_t d) { data.as_int = d; data_status = DataInt64; }
     void setData(uint32_t d) { data.as_int = d; data_status = DataInt32; }
     void setData(uint16_t d) { data.as_int = d; data_status = DataInt16; }
     void setData(uint8_t d) { data.as_int = d; data_status = DataInt8; }
 
+    void setData(__int128_t d) { setData((__uint128_t)d); }
     void setData(int64_t d) { setData((uint64_t)d); }
     void setData(int32_t d) { setData((uint32_t)d); }
     void setData(int16_t d) { setData((uint16_t)d); }

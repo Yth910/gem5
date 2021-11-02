@@ -150,6 +150,31 @@ szext(uint64_t val)
 }
 
 /**
+ * Zero-extend an N-bit value to 64 bits.
+ *
+ * @ingroup api_bitfield              // wwf
+ */
+template <int N>
+constexpr inline uint64_t
+zext(uint64_t val)
+{
+    val &= mask(N);
+    return val;
+}
+
+// Adjust the order of data, n is bytes. such as 0xccbbaa to 0xaabbcc.          // wwf
+inline void data_order_adjust(unsigned char *p_c, int n)
+{
+  unsigned char uch;
+  int i, t=n-1;
+  
+  for(i = 0; i < n/2; i++)
+  {
+    uch = p_c[i];  p_c[i] = p_c[t-i]; p_c[t-i] = uch;
+  }
+}
+
+/**
  * Returns val with bits first to last set to the LSBs of bit_val
  *
  * E.g.:

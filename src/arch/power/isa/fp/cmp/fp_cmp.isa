@@ -1,0 +1,17 @@
+format FloatOp {
+    0: fcmpu({{
+        uint32_t c = makeCRField(Fa, Fb);
+        Fpscr fpscr = FPSCR;
+        fpscr.fprf.fpcc = c;
+        FPSCR = fpscr;
+        CR = insertCRField(CR, BF, c);
+    }});
+
+    32: fcmpo({{
+        uint32_t c = makeCRField(Fa, Fb);
+        Fpscr fpscr = FPSCR;
+        fpscr.fprf.fpcc = c;
+        FPSCR = fpscr;
+        CR = insertCRField(CR, BF, c);
+    }});
+}

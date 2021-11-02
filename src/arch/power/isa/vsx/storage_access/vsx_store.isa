@@ -1,0 +1,41 @@
+format StoreIndexOp {
+    716: stxsdx({{
+        ThreadContext *tc = xc->tcBase();
+        RegId id(VecRegClass, XX_S + XX_SX * 32);
+        auto reg = tc->readVecReg(id);
+        auto val = reg.as<uint64_t>();
+        Mem_ud = val[0];
+    }});
+
+    140: stxsiwx({{
+        ThreadContext *tc = xc->tcBase();
+        RegId id(VecRegClass, XX_S + XX_SX * 32);
+        auto reg = tc->readVecReg(id);
+        auto val = reg.as<uint32_t>();
+        Mem_ud = val[1];
+    }});
+
+    652: stxsspx({{
+        ThreadContext *tc = xc->tcBase();
+        RegId id(VecRegClass, XX_S + XX_SX * 32);
+        auto reg = tc->readVecReg(id);
+        auto val = reg.as<double>();
+        Mem_df = (float)val[0];
+    }});
+
+    972: stxvd2x({{
+        ThreadContext *tc = xc->tcBase();
+        RegId id(VecRegClass, XX_S + XX_SX * 32);
+        auto reg = tc->readVecReg(id);
+        auto val = reg.as<__uint128_t>();
+        Mem_uq = val[0];
+    }});
+
+    908: stxvw4x({{
+        ThreadContext *tc = xc->tcBase();
+        RegId id(VecRegClass, XX_S + XX_SX * 32);
+        auto reg = tc->readVecReg(id);
+        auto val = reg.as<__uint128_t>();
+        Mem_uq = val[0];
+    }});
+}

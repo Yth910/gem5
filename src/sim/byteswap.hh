@@ -65,6 +65,17 @@ namespace gem5
 // lengths.
 
 inline uint64_t
+swap_byte64(uint64_t x);
+
+inline __uint128_t
+swap_byte128(__uint128_t x)
+{
+    return ((__uint128_t)swap_byte64(x & 0xffffffffffffffffULL) << 64) |
+        swap_byte64((x >> 64));
+}
+
+
+inline uint64_t
 swap_byte64(uint64_t x)
 {
 #if defined(__linux__)
@@ -108,6 +119,14 @@ swap_byte16(uint16_t x)
     return (uint16_t)(((uint16_t)(x) & 0xff) << 8 |
                       ((uint16_t)(x) & 0xff00) >> 8);
 #endif
+}
+
+template <typename T>
+inline std::enable_if_t<
+    sizeof(T) == 16 && std::is_convertible<T, __uint128_t>::value, T>
+swap_byte(T x)
+{
+    return swap_byte128((__uint128_t)x);
 }
 
 template <typename T>

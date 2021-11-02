@@ -68,7 +68,8 @@ enum MiscIntRegNums
     INTREG_MSR,
     INTREG_RSV,
     INTREG_RSV_LEN,
-    INTREG_RSV_ADDR
+    INTREG_RSV_ADDR,
+    INTREG_VSCR
 };
 
 } // namespace PowerISA

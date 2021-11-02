@@ -1,0 +1,209 @@
+format IntArithOp {
+    130:xxland({{
+        ThreadContext *tc = xc->tcBase();
+        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
+        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
+        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
+        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
+        auto vra_reg = tc->readVecReg(vra_id);
+        auto vra_val = vra_reg.as<uint64_t>();
+        auto vrb_reg = tc->readVecReg(vrb_id);
+        auto vrb_val = vrb_reg.as<uint64_t>();
+        auto vrc_reg = tc->readVecReg(vrc_id);
+        auto vrc_val = vrc_reg.as<uint64_t>();
+        auto vrt_reg = tc->readVecReg(vrt_id);
+        auto vrt_val = vrt_reg.as<uint64_t>();
+
+        /*
+        ALL PASSED.
+        */
+
+        for (auto i = 0; i < 2; i++) {
+            vrt_val[i] = vra_val[i] & vrb_val[i];
+        }
+
+        tc->setVecReg(vrt_id, vrt_reg);
+    }});
+    
+    138:xxlandc({{
+        ThreadContext *tc = xc->tcBase();
+        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
+        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
+        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
+        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
+        auto vra_reg = tc->readVecReg(vra_id);
+        auto vra_val = vra_reg.as<uint64_t>();
+        auto vrb_reg = tc->readVecReg(vrb_id);
+        auto vrb_val = vrb_reg.as<uint64_t>();
+        auto vrc_reg = tc->readVecReg(vrc_id);
+        auto vrc_val = vrc_reg.as<uint64_t>();
+        auto vrt_reg = tc->readVecReg(vrt_id);
+        auto vrt_val = vrt_reg.as<uint64_t>();
+
+        /*
+        ALL PASSED.
+        */
+
+        for (auto i = 0; i < 2; i++) {
+            vrt_val[i] = vra_val[i] & ~vrb_val[i];
+        }
+
+        tc->setVecReg(vrt_id, vrt_reg);
+    }});
+    
+    186:xxleqv({{
+        ThreadContext *tc = xc->tcBase();
+        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
+        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
+        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
+        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
+        auto vra_reg = tc->readVecReg(vra_id);
+        auto vra_val = vra_reg.as<uint64_t>();
+        auto vrb_reg = tc->readVecReg(vrb_id);
+        auto vrb_val = vrb_reg.as<uint64_t>();
+        auto vrc_reg = tc->readVecReg(vrc_id);
+        auto vrc_val = vrc_reg.as<uint64_t>();
+        auto vrt_reg = tc->readVecReg(vrt_id);
+        auto vrt_val = vrt_reg.as<uint64_t>();
+
+        /*
+        ALL PASSED.
+        */
+
+        for (auto i = 0; i < 2; i++) {
+            vrt_val[i] = ~(vra_val[i] ^ vrb_val[i]);
+        }
+
+        tc->setVecReg(vrt_id, vrt_reg);
+    }});
+    
+    178:xxlnand({{
+        ThreadContext *tc = xc->tcBase();
+        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
+        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
+        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
+        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
+        auto vra_reg = tc->readVecReg(vra_id);
+        auto vra_val = vra_reg.as<uint64_t>();
+        auto vrb_reg = tc->readVecReg(vrb_id);
+        auto vrb_val = vrb_reg.as<uint64_t>();
+        auto vrc_reg = tc->readVecReg(vrc_id);
+        auto vrc_val = vrc_reg.as<uint64_t>();
+        auto vrt_reg = tc->readVecReg(vrt_id);
+        auto vrt_val = vrt_reg.as<uint64_t>();
+
+        /*
+        ALL PASSED.
+        */
+
+        for (auto i = 0; i < 2; i++) {
+            vrt_val[i] = ~(vra_val[i] & vrb_val[i]);
+        }
+
+        tc->setVecReg(vrt_id, vrt_reg);
+    }});
+    
+    170:xxlorc({{
+        ThreadContext *tc = xc->tcBase();
+        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
+        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
+        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
+        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
+        auto vra_reg = tc->readVecReg(vra_id);
+        auto vra_val = vra_reg.as<uint64_t>();
+        auto vrb_reg = tc->readVecReg(vrb_id);
+        auto vrb_val = vrb_reg.as<uint64_t>();
+        auto vrc_reg = tc->readVecReg(vrc_id);
+        auto vrc_val = vrc_reg.as<uint64_t>();
+        auto vrt_reg = tc->readVecReg(vrt_id);
+        auto vrt_val = vrt_reg.as<uint64_t>();
+
+        /*
+        ALL PASSED.
+        */
+
+        for (auto i = 0; i < 2; i++) {
+            vrt_val[i] = vra_val[i] | ~vrb_val[i];
+        }
+
+        tc->setVecReg(vrt_id, vrt_reg);
+    }});
+    
+    162:xxlnor({{
+        ThreadContext *tc = xc->tcBase();
+        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
+        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
+        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
+        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
+        auto vra_reg = tc->readVecReg(vra_id);
+        auto vra_val = vra_reg.as<uint64_t>();
+        auto vrb_reg = tc->readVecReg(vrb_id);
+        auto vrb_val = vrb_reg.as<uint64_t>();
+        auto vrc_reg = tc->readVecReg(vrc_id);
+        auto vrc_val = vrc_reg.as<uint64_t>();
+        auto vrt_reg = tc->readVecReg(vrt_id);
+        auto vrt_val = vrt_reg.as<uint64_t>();
+
+        /*
+        ALL PASSED.
+        */
+
+        for (auto i = 0; i < 2; i++) {
+            vrt_val[i] = ~(vra_val[i] | vrb_val[i]);
+        }
+
+        tc->setVecReg(vrt_id, vrt_reg);
+    }});
+    
+    146:xxlor({{
+        ThreadContext *tc = xc->tcBase();
+        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
+        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
+        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
+        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
+        auto vra_reg = tc->readVecReg(vra_id);
+        auto vra_val = vra_reg.as<uint64_t>();
+        auto vrb_reg = tc->readVecReg(vrb_id);
+        auto vrb_val = vrb_reg.as<uint64_t>();
+        auto vrc_reg = tc->readVecReg(vrc_id);
+        auto vrc_val = vrc_reg.as<uint64_t>();
+        auto vrt_reg = tc->readVecReg(vrt_id);
+        auto vrt_val = vrt_reg.as<uint64_t>();
+
+        /*
+        ALL PASSED.
+        */
+
+        for (auto i = 0; i < 2; i++) {
+            vrt_val[i] = vra_val[i] | vrb_val[i];
+        }
+
+        tc->setVecReg(vrt_id, vrt_reg);
+    }});
+    
+    154:xxlxor({{
+        ThreadContext *tc = xc->tcBase();
+        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
+        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
+        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
+        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
+        auto vra_reg = tc->readVecReg(vra_id);
+        auto vra_val = vra_reg.as<uint64_t>();
+        auto vrb_reg = tc->readVecReg(vrb_id);
+        auto vrb_val = vrb_reg.as<uint64_t>();
+        auto vrc_reg = tc->readVecReg(vrc_id);
+        auto vrc_val = vrc_reg.as<uint64_t>();
+        auto vrt_reg = tc->readVecReg(vrt_id);
+        auto vrt_val = vrt_reg.as<uint64_t>();
+
+        /*
+        ALL PASSED.
+        */
+
+        for (auto i = 0; i < 2; i++) {
+            vrt_val[i] = vra_val[i] ^ vrb_val[i];
+        }
+
+        tc->setVecReg(vrt_id, vrt_reg);
+    }});
+}

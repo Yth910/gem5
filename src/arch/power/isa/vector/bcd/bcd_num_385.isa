@@ -1,0 +1,601 @@
+format IntArithOp {
+    385: decode NUM_385 {
+        7:bcdcfn({{                                            // wwf
+            /*
+                src_sign ← (VSR[VRB+32].hword[7] = 0x002D)
+                eq_flag ← 1
+
+                inv_flag ← (VSR[VRB+32].hword[7] != 0x002B) &
+                (VSR[VRB+32].hword[7] != 0x002D)
+                do i = 0 to 6
+                eq_flag ← eq_flag & (VSR[VRB+32].hword[i] = 0x0030)
+                inv_flag ← inv_flag | (VSR[VRB+32].hword[i] < 0x0030)
+                | (VSR[VRB+32].hword[i] > 0x0039)
+                end
+                lt_flag ← (eq_flag=0) & (src_sign=1)
+                gt_flag ← (eq_flag=0) & (src_sign=0)
+                do i = 0 to 23
+                result.nibble[i] ← 0x0
+                end
+                do i = 0 to 6
+                result.nibble[i+24] ← VSR[VRB+32].hword[i].nibble[3]
+                end
+                result.nibble[31] ← (src_sign=0) ? ((PS=0) ? 0xC : 0xF) : 0xD
+                VSR[VRT+32] ← inv_flag ? undefined : result
+                CR.bit[56] ← inv_flag ? 0b0 : lt_flag
+                CR.bit[57] ← inv_flag ? 0b0 : gt_flag
+                CR.bit[58] ← inv_flag ? 0b0 : eq_flag
+                CR.bit[59] ← inv_flag
+            */
+            ThreadContext *tc = xc->tcBase();
+            RegId vrb_id(VecRegClass, VRB + 32);
+            RegId vrt_id(VecRegClass, VRT + 32);                
+            auto vrb_reg = tc->readVecReg(vrb_id);
+            auto vrb = vrb_reg.as<uint16_t>();
+            auto vrt_reg = tc->readVecReg(vrt_id);
+            auto vrt = vrt_reg.as<uint64_t>();            
+                            
+            //printf("vector:  vrb[7]= %x\n", vrb[7]); 
+            bool src_sign = (vrb[7] == 0x2D00);
+            eq_flag = true;
+            inv_flag = (vrb[7] != 0x2B00) & (vrb[7] != 0x2D00);
+            //printf("vector:  src_sign= %d eq_flag=%d inv_flag=%d\n", src_sign, eq_flag, inv_flag); 
+            uint8_t tmp_data[2], *p_8; 
+            uint16_t *p_16; 
+            uint8_t result[18];  
+            for(int i=0; i<7; i++)
+            {
+                p_8 = (uint8_t *)&vrb[i];
+                tmp_data[0] = p_8[1];   tmp_data[1] = p_8[0];
+                p_16 = (uint16_t *)&tmp_data;
+                eq_flag = eq_flag & (*p_16 == 0x0030);
+                inv_flag = inv_flag | (*p_16 < 0x0030) | (*p_16 > 0x0039);
+                //printf("vector:  i=%d    vrb[i]= %x  tmp_data=%x    eq_flag=%d inv_flag=%d\n", i, vrb[i], *p_16, eq_flag, inv_flag);
+            }
+            lt_flag = (!eq_flag) & src_sign;
+            gt_flag = (!eq_flag) & (!src_sign);
+            for(int i=0; i<12; i++)
+                result[i] = 0x00;
+            int jj;
+            for(int i=0; i<7; i++)
+            {
+                p_8 = (uint8_t *)&vrb[i];
+                jj = i / 2;
+                if(i%2 == 0)
+                    result[jj+12] = (p_8[1] & 0x0f) << 4;
+                else
+                    result[jj+12] = result[jj+12] | (p_8[1] & 0x0f);
+                //printf("vector:  i=%d    data= %x  result[jj+12]=%x\n", i, p_8[1] & 0x0f, result[jj+12]);
+            }
+            result[15] = result[15] | ((!src_sign) ? ((PS==0) ? 0xC : 0xF) : 0xD);
+            if(!inv_flag)
+            {
+                uint64_t *p_64 = (uint64_t*)result;
+                vrt[0] = p_64[0];
+                vrt[1] = p_64[1];
+            }
+            
+            if(inv_flag)
+            {
+                CR = insertBits(CR,  7, 5, 0b000);
+            }
+            else
+            {
+                CR = insertBits(CR,  7, lt_flag);
+                CR = insertBits(CR,  6, gt_flag);
+                CR = insertBits(CR,  5, eq_flag);
+            }
+            CR = insertBits(CR,  4, inv_flag);
+            
+                
+            //printf("vector:  src_sign= %d  lt_flag= %d  gt_flag=%x  eq_flag=%d inv_flag=%d\n", src_sign, lt_flag,  gt_flag, eq_flag, inv_flag); 
+            //printf("vector:  Vt = %llx%llx   CR= %lx\n", \
+                                        vrt[0], vrt[1], CR);
+            
+            tc->setVecReg(vrt_id, vrt_reg);
+        }});
+
+        6:bcdcfz({{                                            // wwf
+            /*
+                inv_flag ← ((VSR[VRB+32].byte[15].nibble[0] < 0xA) & (PS=1)) |
+                (VSR[VRB+32].byte[15].nibble[1] > 0x9)
+                MIN ← (PS=0) ? 0x30 : 0xF0
+                MAX ← (PS=0) ? 0x39 : 0xF9
+                do i = 0 to 14
+                inv_flag ← inv_flag | (VSR[VRB+32].byte[i] < MIN)
+                | (VSR[VRB+32].byte[i] > MAX)
+                end
+                if PS=0 then
+                src_sign ← VSR[VRB+32].nibble[30].bit[1]
+                else
+                src_sign ← (VSR[VRB+32].nibble[30] = 0b1011) |
+                (VSR[VRB+32].nibble[30] = 0b1101)
+                eq_flag ← 1
+                do i = 0 to 14
+                result.nibble[i] ← 0x0
+                end
+                do i = 0 to 15
+                result.nibble[i+15] ← VSR[VRB+32].byte[i].nibble[1]
+                eq_flag ← eq_flag & (VSR[VRB+32].byte[i].nibble[1]=0x0)
+                end
+                lt_flag ← (eq_flag=0) & (src_sign=1)
+                gt_flag ← (eq_flag=0) & (src_sign=0)
+                result.nibble[31] ← (src_sign=0) ? 0xC : 0xD
+                VSR[VRT+32] ← inv_flag ? undefined : result
+                CR.bit[56] ← inv_flag ? 0b0 : lt_flag
+                CR.bit[57] ← inv_flag ? 0b0 : gt_flag
+                CR.bit[58] ← inv_flag ? 0b0 : eq_flag
+                CR.bit[59] ← inv_flag
+            */
+            ThreadContext *tc = xc->tcBase();
+            RegId vrb_id(VecRegClass, VRB + 32);
+            RegId vrt_id(VecRegClass, VRT + 32);                
+            auto vrb_reg = tc->readVecReg(vrb_id);
+            auto vrb = vrb_reg.as<uint8_t>();
+            auto vrt_reg = tc->readVecReg(vrt_id);
+            auto vrt = vrt_reg.as<uint64_t>();            
+                            
+            //printf("vector:  vrb[15]= %x  high=%x  low=%x  ps=%d\n", vrb[15], vrb[15]>>4, (vrb[15] & 0x0f), PS); 
+            inv_flag = (((vrb[15]>>4) < 0xA) & (PS==1)) | ((vrb[15] & 0x0f) > 0x9);
+            //printf("vector:  inv_flag=%d\n", inv_flag); 
+            int wMIN = (PS==0) ? 0x30 : 0xF0;
+            int wMAX = (PS==0) ? 0x39 : 0xF9;
+            for(int i=0; i<15; i++)
+                inv_flag = inv_flag | (vrb[i] < wMIN) | (vrb[i] > wMAX);
+            bool src_sign;
+            if(PS==0)
+                src_sign = bits(vrb[15], 6);
+            else
+                src_sign = ((vrb[15]>>4) == 0b1011) | ((vrb[15]>>4) == 0b1101);
+            eq_flag = true;
+            //printf("vector:  src_sign= %d eq_flag=%d inv_flag=%d  min=%x  max=%x\n", src_sign, eq_flag, inv_flag, wMIN, wMAX); 
+            uint8_t result[18];
+            for(int i=0; i<7; i++)
+                result[i] = 0x00;
+            result[7] = 0x00;
+            int j;
+            for(int i=0; i<16; i++)
+            {
+                j = i / 2;
+                if(i%2 == 0)
+                result[7+j] = result[7+j] | (vrb[i] & 0x0F);
+                else
+                result[8+j] = (vrb[i] & 0x0F) << 4;
+                eq_flag = eq_flag & ((vrb[i] & 0x0F) == 0x0);
+                //printf("vector: i=%d  vrb[i]= %x  eq_flag=%d\n", i, (vrb[i] & 0x0F), eq_flag); 
+            }
+            //printf("vector:  src_sign= %d  lt_flag= %d  gt_flag=%x  eq_flag=%d inv_flag=%d\n", src_sign, lt_flag,  gt_flag, eq_flag, inv_flag);
+            
+            lt_flag = (!eq_flag) & src_sign;
+            gt_flag = (!eq_flag) & (!src_sign);
+            result[15] = result[15] | ((!src_sign) ? 0xC : 0xD);
+            uint64_t *p_64;
+            if(!inv_flag)
+            {
+                uint64_t *p_64 = (uint64_t*)result;
+                vrt[0] = p_64[0];
+                vrt[1] = p_64[1];
+            }
+            
+            if(inv_flag)
+            {
+                CR = insertBits(CR,  7, 5, 0b000);
+            }
+            else
+            {
+                CR = insertBits(CR,  7, lt_flag);
+                CR = insertBits(CR,  6, gt_flag);
+                CR = insertBits(CR,  5, eq_flag);
+            }
+            CR = insertBits(CR,  4, inv_flag);
+            
+                
+            //printf("vector:  src_sign= %d  lt_flag= %d  gt_flag=%x  eq_flag=%d inv_flag=%d\n", src_sign, lt_flag,  gt_flag, eq_flag, inv_flag); 
+            //printf("vector:  Vt = %llx%llx   CR= %lx\n", \
+                                        vrt[0], vrt[1], CR);
+            
+            tc->setVecReg(vrt_id, vrt_reg);
+        }});
+
+        5:bcdctn({{                                            // wwf
+            /*
+                ox_flag ← 0
+                do i = 0 to 23
+                ox_flag ← ox_flag | (VSR[VRB+32].nibble[i] != 0x0)
+                end
+                inv_flag ← (VSR[VRB+32].nibble[31] < 0xA)
+                do i = 0 to 30
+                inv_flag ← inv_flag | (VSR[VRB+32].nibble[i] > 0x9)
+                end
+                src_sign ← (VSR[VRB+32].nibble[31] = 0xB) |
+                src.sign ← (VSR[VRB+32].nibble[31] = 0xD)
+                eq_flag ← (VSR[VRB+32].nibble[0:30] = 0)
+                lt_flag ← (eq_flag=0) & (src_sign=1)
+                gt_flag ← (eq_flag=0) & (src_sign=0)
+                do i = 0 to 6
+                result.hword[i].nibble[0:2] ← 0x003
+                result.hword[i].nibble[3] ← VSR[VRB+32].nibble[i+24]
+                end
+                result.hword[7] ← (src_sign=1) ? 0x002D : 0x002B
+                VSR[VRT+32] ← inv_flag ? undefined : result
+                CR.bit[56] ← inv_flag ? 0b0 : lt_flag
+                CR.bit[57] ← inv_flag ? 0b0 : gt_flag
+                CR.bit[58] ← inv_flag ? 0b0 : eq_flag
+                CR.bit[59] ← inv_flag | ox_flag
+            */
+            ThreadContext *tc = xc->tcBase();
+            RegId vrb_id(VecRegClass, VRB + 32);
+            RegId vrt_id(VecRegClass, VRT + 32);                
+            auto vrb_reg = tc->readVecReg(vrb_id);
+            auto vrb = vrb_reg.as<uint8_t>();
+            auto vrt_reg = tc->readVecReg(vrt_id);
+            auto vrt = vrt_reg.as<uint64_t>();            
+                            
+            ox_flag = false;
+            int j;
+            for(int i=0; i<12; i++)
+                ox_flag = ox_flag | (vrb[i] != 0x0);		        
+            inv_flag = (vrb[15] & 0x0f) < 0xA;
+            //printf("vector:  vrb[15]= %x   inv_flag=%d  ox_flag=%d\n", vrb[15], inv_flag, ox_flag); 
+            for(int i=0; i<15; i++)
+            {
+                inv_flag = inv_flag | ((vrb[i]>>4) > 0x9);
+                inv_flag = inv_flag | ((vrb[i]&0x0F) > 0x9);
+            }
+            inv_flag = inv_flag | ((vrb[15]>>4) > 0x9);
+            //printf("vector:  inv_flag=%d\n", inv_flag);
+            
+            bool src_sign = ((vrb[15] & 0x0f) == 0xB) | ((vrb[15] & 0x0f) == 0xD);
+            eq_flag = true;
+            for(int i=0; i<15; i++)
+                eq_flag = eq_flag & (vrb[i] == 0x0);
+            eq_flag = eq_flag & ((vrb[15]>>4) == 0x0);
+            //printf("vector:  src_sign= %d eq_flag=%d inv_flag=%d\n", src_sign, eq_flag, inv_flag); 
+            
+            lt_flag = (!eq_flag) & src_sign;
+            gt_flag = (!eq_flag) & (!src_sign);
+            uint8_t result[18];
+            int t;
+            for(int i=0; i<28; i= i + 4)
+            {
+                j = i / 2;
+                result[j] = 0x0;
+                result[j+1] = 0x30;
+                t = i/4+24;
+                if(t%2 == 0)
+                result[j+1] = result[j+1] | (vrb[t/2]>>4);
+                else
+                result[j+1] = result[j+1] | (vrb[t/2] & 0x0F);
+                //printf("vector: i=%d t=%d vrb[%d]= %x  result=%x %x\n", i, t, t/2, vrb[t/2], result[j], result[j+1]); 
+            }
+            //printf("vector:  src_sign= %d  lt_flag= %d  gt_flag=%x  eq_flag=%d inv_flag=%d\n", src_sign, lt_flag,  gt_flag, eq_flag, inv_flag);
+            
+            result[14] = 0x0;
+            result[15] = src_sign ? 0x2D : 0x2B;
+            
+            uint64_t *p_64;
+            if(!inv_flag)
+            {
+                uint64_t *p_64 = (uint64_t*)result;
+                vrt[0] = p_64[0];
+                vrt[1] = p_64[1];
+            }
+            
+            if(inv_flag)
+            {
+                CR = insertBits(CR,  7, 5, 0b000);
+            }
+            else
+            {
+                CR = insertBits(CR,  7, lt_flag);
+                CR = insertBits(CR,  6, gt_flag);
+                CR = insertBits(CR,  5, eq_flag);
+            }
+            CR = insertBits(CR,  4, inv_flag | ox_flag);
+            
+                
+            //printf("vector:  src_sign= %d  lt_flag= %d  gt_flag=%x  eq_flag=%d inv_flag=%d\n", src_sign, lt_flag,  gt_flag, eq_flag, inv_flag); 
+            //printf("vector:  Vt = %llx%llx   CR= %lx\n", \
+                                        vrt[0], vrt[1], CR);
+            
+            tc->setVecReg(vrt_id, vrt_reg);
+        }});
+
+        4:bcdctz({{                                            // wwf
+            /*
+                inv_flag ← (VSR[VRB+32].nibble[31] < 0xA)
+                do i = 0 to 30
+                inv_flag ← inv_flag | (VSR[VRB+32].nibble[i] > 0x9)
+                end
+                ox_flag ← 0
+                do i = 0 to 15
+                ox_flag ← ox_flag | (VSR[VRB+32].nibble[i] != 0x0)
+                end
+                src_sign ← (VSR[VRB+32].nibble[31] = 0xB) |
+                (VSR[VRB+32].nibble[31] = 0xD)
+                eq_flag ← (VSR[VRB+32].nibble[0:30] = 0)
+                lt_flag ← (eq_flag=0) & (src_sign=1)
+                gt_flag ← (eq_flag=0) & (src_sign=0)
+                do i = 0 to 14
+                result.byte[i].nibble[0] ← (PS=0) ? 0x3 : 0xF
+                result.byte[i].nibble[1] ← VSR[VRB+32].nibble[i+15]
+                end
+                if src.sign=0 then
+                result.byte[15].nibble[0] ← (PS=0) ? 0x3 : 0xC
+                else
+                result.byte[15].nibble[0] ← (PS=0) ? 0x7 : 0xD
+                result.byte[15].nibble[1] ← VSR[VRB+32].nibble[30]
+                VSR[VRT+32] ← inv_flag ? undefined : result
+                CR.bit[56] ← inv_flag ? 0b0 : lt_flag
+                CR.bit[57] ← inv_flag ? 0b0 : gt_flag
+                CR.bit[58] ← inv_flag ? 0b0 : eq_flag
+                CR.bit[59] ← inv_flag | ox_flag
+            */
+            ThreadContext *tc = xc->tcBase();
+            RegId vrb_id(VecRegClass, VRB + 32);
+            RegId vrt_id(VecRegClass, VRT + 32);                
+            auto vrb_reg = tc->readVecReg(vrb_id);
+            auto vrb = vrb_reg.as<uint8_t>();
+            auto vrt_reg = tc->readVecReg(vrt_id);
+            auto vrt = vrt_reg.as<uint64_t>();            
+                                        
+            inv_flag = (vrb[15] & 0x0f) < 0xA;
+            for(int i=0; i<15; i++)
+            {
+                inv_flag = inv_flag | ((vrb[i]>>4) > 0x9);
+                inv_flag = inv_flag | ((vrb[i]&0x0F) > 0x9);
+            }
+            inv_flag = inv_flag | ((vrb[15]>>4) > 0x9);
+            //printf("vector:  inv_flag=%d\n", inv_flag);
+            
+            ox_flag = false;
+            int j;
+            for(int i=0; i<8; i++)
+                ox_flag = ox_flag | (vrb[i] != 0x0);	
+            //printf("vector:  vrb[15]= %x   inv_flag=%d  ox_flag=%d\n", vrb[15], inv_flag, ox_flag); 
+            
+            bool src_sign = ((vrb[15] & 0x0f) == 0xB) | ((vrb[15] & 0x0f) == 0xD);
+            eq_flag = true;
+            for(int i=0; i<15; i++)
+                eq_flag = eq_flag & (vrb[i] == 0x0);
+            eq_flag = eq_flag & ((vrb[15]>>4) == 0x0);
+            //printf("vector:  src_sign= %d eq_flag=%d inv_flag=%d  ox_flag=%d\n", src_sign, eq_flag, inv_flag, ox_flag); 
+            
+            lt_flag = (!eq_flag) & src_sign;
+            gt_flag = (!eq_flag) & (!src_sign);
+            uint8_t result[18];
+            int t;
+            for(int i=0; i<15; i++)
+            {
+                t = (PS==0) ? 0x3 : 0xF;
+                result[i] = (t << 4) & 0xFF;
+                j = i+15;
+                if(j%2 == 0)
+                result[i] = result[i] | (vrb[j/2]>>4);
+                else
+                result[i] = result[i] | (vrb[j/2] & 0x0F);
+                //printf("vector: i=%d t=%d vrb[%d]= %x  result=%x\n", i, t, j/2, vrb[j/2], result[i]); 
+            }
+            //printf("vector:  src_sign= %d  lt_flag= %d  gt_flag=%x  eq_flag=%d inv_flag=%d  ox_flag=%d\n", src_sign, lt_flag,  gt_flag, eq_flag, inv_flag, ox_flag);
+            
+            if(!src_sign)
+            {
+                t = (PS==0) ? 0x3 : 0xC;
+                result[15] = (t << 4) & 0xFF;
+            }
+            else
+            {
+                t = (PS==0) ? 0x7 : 0xD;
+                result[15] = (t << 4) & 0xFF;
+            }
+            result[15] = result[15] | (vrb[15]>>4);
+            
+            uint64_t *p_64;
+            if(!inv_flag)
+            {
+                uint64_t *p_64 = (uint64_t*)result;
+                vrt[0] = p_64[0];
+                vrt[1] = p_64[1];
+            }
+            
+            if(inv_flag)
+            {
+                CR = insertBits(CR,  7, 5, 0b000);
+            }
+            else
+            {
+                CR = insertBits(CR,  7, lt_flag);
+                CR = insertBits(CR,  6, gt_flag);
+                CR = insertBits(CR,  5, eq_flag);
+            }
+            CR = insertBits(CR,  4, inv_flag | ox_flag);
+            
+                
+            //printf("vector:  src_sign= %d  lt_flag= %d  gt_flag=%x  eq_flag=%d inv_flag=%d  ox_flag=%d\n", src_sign, lt_flag,  gt_flag, eq_flag, inv_flag, ox_flag); 
+            //printf("vector:  Vt = %llx%llx   CR= %lx\n", \
+                                        vrt[0], vrt[1], CR);
+            
+            tc->setVecReg(vrt_id, vrt_reg);
+        }});
+
+        2:bcdcfsq({{                                            // wwf
+            /*
+                ox_flag ← (EXTS(VSR[VRB+32]) > 10(31)-1) |
+                (EXTS(VSR[VRB+32]) < -10(31)-1)
+                lt_flag ← (EXTS(VSR[VRB+32]) < 0)
+                gt_flag ← (EXTS(VSR[VRB+32]) > 0)
+                eq_flag ← (EXTS(VSR[VRB+32]) = 0)
+                if ox_flag=0 then
+                result ← bcd_CONVERT_FROM_SI128(EXTS(VSR[VRB+32]),PS)
+                else
+                result ← 0xUUUU_UUUU_UUUU_UUUU_UUUU_UUUU_UUUU_UUUU
+                VSR[VRT+32] ← ox_flag ? undefined : result
+                CR.bit[56] ← lt_flag
+                CR.bit[57] ← gt_flag
+                CR.bit[58] ← eq_flag
+                CR.bit[59] ← ox_flag
+            */
+            ThreadContext *tc = xc->tcBase();
+            RegId vrb_id(VecRegClass, VRB + 32);
+            RegId vrt_id(VecRegClass, VRT + 32);                
+            auto vrb_reg = tc->readVecReg(vrb_id);
+            auto vrb = vrb_reg.as<uint8_t>();
+            auto vrt_reg = tc->readVecReg(vrt_id);
+            auto vrt = vrt_reg.as<uint64_t>();            
+                                        
+            __int128_t max, min, tmp, zero = 0x0;
+            char num[64] = "10000000000000000000000000000000";
+            assign_128(tmp, num);
+            //printf("vector:  tmp  = ");
+            print128(tmp);
+            max = tmp - 1;
+            min = -tmp - 1;
+            
+            int64_t *pu;
+            int64_t  *ps;
+            uint8_t tmp_data[18];
+            for(int i=0; i<16; i++)
+                    tmp_data[i] = vrb[i];
+                data_order_adjust((unsigned char*)&tmp_data[0], 8);
+                data_order_adjust((unsigned char*)&tmp_data[8], 8);
+            ps = (int64_t*)&tmp_data[0];
+            pu = (int64_t*)&tmp_data[8];
+            //printf("vector:        %llx    %llx\n", *ps, *pu);
+            __int128_t vrbtt, vrbss;
+            vrbtt = *ps;
+            vrbss = *pu;
+            vrbtt = vrbtt << 64;
+            vrbtt = vrbtt | vrbss;
+            ox_flag = false;
+            ox_flag = (vrbtt > max) | (vrbtt < min);
+            
+            //printf("vector:  vrb  = ");
+            print128(vrbtt);		        
+            //printf("vector:  max  = ");
+            print128(max);
+            //printf("vector:  min  = ");
+            print128(min);
+            //printf("vector:  ox_flag=%d\n", ox_flag); 
+            
+            eq_flag = (vrbtt == zero);
+            lt_flag = (vrbtt < zero);
+            gt_flag = (vrbtt > zero);
+            //printf("vector:  lt_flag=%d gt_flag=%d eq_flag=%d  ox_flag=%d\n", lt_flag, gt_flag, eq_flag, ox_flag); 
+            
+            uint8_t result[18];
+            if(!ox_flag)
+                bcd_CONVERT_FROM_SI128(result, vrbtt, PS);
+            
+            uint64_t *p_64;
+            if(!ox_flag)
+            {
+                uint64_t *p_64 = (uint64_t*)result;
+                vrt[0] = p_64[0];
+                vrt[1] = p_64[1];
+            }
+            
+            CR = insertBits(CR,  7, lt_flag);
+            CR = insertBits(CR,  6, gt_flag);
+            CR = insertBits(CR,  5, eq_flag);
+            CR = insertBits(CR,  4, ox_flag);
+            
+                
+            //printf("vector:  lt_flag= %d  gt_flag=%x  eq_flag=%d  ox_flag=%d\n", lt_flag,  gt_flag, eq_flag, ox_flag); 
+            //printf("vector:  Vt = %llx%llx   CR= %lx\n", \
+                                        vrt[0], vrt[1], CR);
+            
+            tc->setVecReg(vrt_id, vrt_reg);
+        }});
+
+        0:bcdctsq({{                                            // wwf
+            /*
+                inv_flag ← (VSR[VRB+32].nibble[31] < 0xA)
+                do i = 0 to 30
+                inv_flag ← inv_flag | (VSR[VRB+32].nibble[i] > 0x9)
+                end
+                src_sign ← (VSR[VRB+32].nibble[31] = 0xB) |
+                (VSR[VRB+32].nibble[31] = 0xD)
+                eq_flag ← (VSR[VRB+32].nibble[0:30] = 0)
+                lt_flag ← (eq_flag=0) & (src_sign=1)
+                gt_flag ← (eq_flag=0) & (src_sign=0)
+                result ← si128_CONVERT_FROM_BCD(VSR[VRB+32])
+                VSR[VRT+32] ← inv_flag ? undefined : result
+                CR.bit[56] ← inv_flag ? 0b0 : lt_flag
+                CR.bit[57] ← inv_flag ? 0b0 : gt_flag
+                CR.bit[58] ← inv_flag ? 0b0 : eq_flag
+                CR.bit[59] ← inv_flag
+            */
+            ThreadContext *tc = xc->tcBase();
+            RegId vrb_id(VecRegClass, VRB + 32);
+            RegId vrt_id(VecRegClass, VRT + 32);                
+            auto vrb_reg = tc->readVecReg(vrb_id);
+            auto vrb = vrb_reg.as<uint8_t>();
+            auto vrt_reg = tc->readVecReg(vrt_id);
+            auto vrt = vrt_reg.as<uint64_t>();            
+                                        
+            inv_flag = (vrb[15] & 0x0f) < 0xA;
+            for(int i=0; i<15; i++)
+            {
+                inv_flag = inv_flag | ((vrb[i]>>4) > 0x9);
+                inv_flag = inv_flag | ((vrb[i]&0x0F) > 0x9);
+            }
+            inv_flag = inv_flag | ((vrb[15]>>4) > 0x9);
+            //printf("vector:  inv_flag=%d\n", inv_flag); 
+            
+            bool src_sign = ((vrb[15] & 0x0f) == 0xB) | ((vrb[15] & 0x0f) == 0xD);
+            eq_flag = true;
+            for(int i=0; i<15; i++)
+                eq_flag = eq_flag & (vrb[i] == 0x0);
+            eq_flag = eq_flag & ((vrb[15]>>4) == 0x0);
+            //printf("vector:  src_sign= %d eq_flag=%d inv_flag=%d\n", src_sign, eq_flag, inv_flag); 
+            
+            lt_flag = (!eq_flag) & src_sign;
+            gt_flag = (!eq_flag) & (!src_sign);
+            //printf("vector:  src_sign= %d lt_flag=%d gt_flag=%d eq_flag=%d  inv_flag=%d\n", src_sign, lt_flag, gt_flag, eq_flag, inv_flag); 
+            
+            uint8_t result[18], *p8= &vrb[0];
+            si128_CONVERT_FROM_BCD(result, p8);
+            
+            uint64_t *p_64;
+            if(!inv_flag)
+            {
+                uint64_t *p_64 = (uint64_t*)result;
+                vrt[0] = p_64[0];
+                vrt[1] = p_64[1];
+            }
+            
+            CR = insertBits(CR,  7, lt_flag);
+            CR = insertBits(CR,  6, gt_flag);
+            CR = insertBits(CR,  5, eq_flag);
+            CR = insertBits(CR,  4, inv_flag);
+            
+                
+            //printf("vector:  lt_flag= %d  gt_flag=%x  eq_flag=%d  ox_flag=%d\n", lt_flag,  gt_flag, eq_flag, inv_flag); 
+            //printf("vector:  Vt = %llx%llx   CR= %lx\n", \
+                                        vrt[0], vrt[1], CR);
+            
+            tc->setVecReg(vrt_id, vrt_reg);
+        }});
+
+        31:bcdsetsgn({{                                            // wwf
+            /*
+                inv_flag ← (VSR[VRB+32].nibble[31] < 0xA)
+            do i = 0 to 30
+                inv_flag ← inv_flag | (VSR[VRB+32].nibble[i] > 0x9)
+            end
+            src_sign ← (VSR[VRB+32].nibble[31] = 0xB) |
+                (VSR[VRB+32].nibble[31] = 0xD)
+            eq_flag ← (VSR[VRB+32].nibble[0:30] = 0)
+            lt_flag ← (eq_flag=0) & (src_sign=1)
+            gt_flag ← (eq_flag=0) & (src_sign=0)
+            result.nibble[0:30] ← VSR[VRB+32].nibble[0:30]
+            result.nibble[31] ← (src_sign=0) ? ((PS=0) ? 0xC:0xF) : 0xD
+            VSR[VRT+32] ← inv_flag ? undefined : result
+            CR.bit[56] ← inv_flag ? 0b0 : lt_flag
+            CR.bit[57] ← inv_flag ? 0b0 : gt_flag
+            CR.bit[58] ← inv_flag ? 0b0 : eq_flag
+            CR.bit[59] ← inv_flag
+            */
+        }});
+    }
+}

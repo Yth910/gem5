@@ -1,0 +1,105 @@
+format FloatRCCheckOp {
+    21: fadd({{
+        double tmp;
+        Fpscr fpscr_0 = FPSCR;
+        fp_before_cal(fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp64_ADD(Fa, Fb, FPSCR);
+        fpscr_0 = vsx_set_class(tmp, fpscr_0);
+        Ft = tmp;
+        FPSCR = fpscr_0;
+        //Ft = Fa + Fb;
+        //ALL PASSED.
+    }});
+
+    20: fsub({{ 
+        double tmp;
+        Fpscr fpscr_0 = FPSCR;
+        fp_before_cal(fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp64_ADD(Fa, bfp_NEGATE(Fb), FPSCR);
+        fpscr_0 = vsx_set_class(tmp, fpscr_0);
+        Ft = tmp;
+        FPSCR = fpscr_0;
+        //ALL PASSED.
+        //Ft = Fa - Fb; 
+    }});
+
+    25: fmul({{ 
+        double tmp;
+        Fpscr fpscr_0 = FPSCR;
+        fp_before_cal(fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp64_MULTIPLY(Fa, Fc, FPSCR);
+        fpscr_0 = vsx_set_class(tmp, fpscr_0);
+        Ft = tmp;
+        FPSCR = fpscr_0;
+        //Ft = Fa * Fc; 
+        //ALL PASSED.
+    }});
+
+    18: fdiv({{
+        double tmp;
+        Fpscr fpscr_0 = FPSCR;
+        fp_before_cal(fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp64_DIV(Fa, Fb, FPSCR);
+        fpscr_0 = vsx_set_class(tmp, fpscr_0);
+        Ft = tmp;
+        FPSCR = fpscr_0; 
+        //Ft = Fa / Fb; 
+        //ALL PASSED.
+    }});
+    
+    29: fmadd({{ 
+        double tmp;
+        Fpscr fpscr_0 = FPSCR;
+        fp_before_cal(fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(Fa, Fc, Fb, FPSCR);
+        fpscr_0 = vsx_set_class(tmp, fpscr_0);
+        Ft = tmp;
+        FPSCR = fpscr_0; 
+        //Ft = (Fa * Fc) + Fb;
+    }});
+
+    28: fmsub({{
+        double tmp;
+        Fpscr fpscr_0 = FPSCR;
+        fp_before_cal(fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(Fa, Fc, bfp_NEGATE(Fb), FPSCR);
+        fpscr_0 = vsx_set_class(tmp, fpscr_0);
+        Ft = tmp;
+        FPSCR = fpscr_0;  
+        //Ft = (Fa * Fc) - Fb;
+    }});
+
+    31: fnmadd({{
+        double tmp;
+        Fpscr fpscr_0 = FPSCR;
+        fp_before_cal(fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(Fa, Fc, Fb, FPSCR);
+        tmp = bfp_NEGATE(tmp);
+        fpscr_0 = vsx_set_class(tmp, fpscr_0);
+        Ft = tmp;
+        FPSCR = fpscr_0;  
+        //Ft = -((Fa * Fc) + Fb);
+    }});
+
+    30: fnmsub({{ 
+        double tmp;
+        Fpscr fpscr_0 = FPSCR;
+        fp_before_cal(fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(Fa, Fc, bfp_NEGATE(Fb), FPSCR);
+        tmp = bfp_NEGATE(tmp);
+        fpscr_0 = vsx_set_class(tmp, fpscr_0);
+        Ft = tmp;
+        FPSCR = fpscr_0;  
+        //Ft = -((Fa * Fc) - Fb);
+    }});
+
+    22: fsqrt({{ Ft = sqrt(Fb); }});
+    24: fre({{ Ft = 1.0 / Fb; }});
+    26: frsqrte({{ Ft = 1.0 / sqrt(Fb); }});
+    23: fsel({{
+            if (Fa >= 0.0)
+            Ft_sf = Fc;
+            else
+            Ft_sf = Fb;
+    }});
+}

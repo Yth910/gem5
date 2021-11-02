@@ -1,0 +1,61 @@
+format FloatArithOp {
+    46: vmaddfp({{
+        ThreadContext *tc = xc->tcBase();
+        RegId src1_id(VecRegClass, VRA + 32);
+        RegId src2_id(VecRegClass, VRB + 32);
+        RegId src3_id(VecRegClass, VRC + 32);
+        RegId dst_id(VecRegClass, VRT + 32);
+        auto src1_reg = tc->readVecReg(src1_id);
+        auto src1_val = src1_reg.as<float>();
+        auto src2_reg = tc->readVecReg(src2_id);
+        auto src2_val = src2_reg.as<float>();
+        auto src3_reg = tc->readVecReg(src3_id);
+        auto src3_val = src3_reg.as<float>();
+        auto dst_reg = tc->readVecReg(dst_id);
+        auto dst_val = dst_reg.as<float>();
+
+        for (auto i = 0; i < 4; i++) {
+            dst_val[i] = src1_val[i] * src3_val[i] + src2_val[i];
+        }
+
+        tc->setVecReg(dst_id, dst_reg);
+    }});
+
+    47:vnmsubfp({{
+        ThreadContext *tc = xc->tcBase();
+        RegId vra_id(VecRegClass, VRA + 32);
+        RegId vrb_id(VecRegClass, VRB + 32);
+        RegId vrc_id(VecRegClass, VRC + 32);
+        RegId vrt_id(VecRegClass, VRT + 32);
+        auto vra_reg = tc->readVecReg(vra_id);
+        auto vra_val = vra_reg.as<float>();
+        auto vrb_reg = tc->readVecReg(vrb_id);
+        auto vrb_val = vrb_reg.as<float>();
+        auto vrc_reg = tc->readVecReg(vrc_id);
+        auto vrc_val = vrc_reg.as<float>();
+        auto vrt_reg = tc->readVecReg(vrt_id);
+        auto vrt_val = vrt_reg.as<float>();
+
+        /*
+        ISA 3.1
+        */
+
+        /* CODE SEG 1 */
+        //code seg 1
+        /* CODE SEG 1 END */
+
+        for (auto i = 0; i < 4; i++) {
+
+            /* CODE SEG 2 */
+            vrt_val[i] = -(vra_val[i] * vrc_val[i] - vrb_val[i]);
+            /* CODE SEG 2 END */
+        }
+
+        /* CODE SEG 3 */
+        //code seg 3
+        /* CODE SEG 3 END */
+
+        tc->setVecReg(vrt_id, vrt_reg);
+    }});
+    // ###4: decode VA_XO FloatArithOp###
+}
