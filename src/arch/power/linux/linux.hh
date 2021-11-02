@@ -110,6 +110,22 @@ class PowerLinux : public Linux, public OpenFlagTable<PowerLinux>
         int32_t tms_cstime;     //!< system time of children
     };
 
+    typedef struct
+    {
+        int64_t  uptime;    /* Seconds since boot */
+        uint64_t loads[3];  /* 1, 5, and 15 minute load averages */
+        uint64_t totalram;  /* Total usable main memory size */
+        uint64_t freeram;   /* Available memory size */
+        uint64_t sharedram; /* Amount of shared memory */
+        uint64_t bufferram; /* Memory used by buffers */
+        uint64_t totalswap; /* Total swap space size */
+        uint64_t freeswap;  /* swap space still available */
+        uint16_t procs;     /* Number of current processes */
+        uint64_t totalhigh; /* Total high memory size */
+        uint64_t freehigh;  /* Available high memory size */
+        uint64_t mem_unit;  /* Memory unit size in bytes */
+    } tgt_sysinfo;
+
     static const int TGT_SIGHUP         = 0x000001;
     static const int TGT_SIGINT         = 0x000002;
     static const int TGT_SIGQUIT        = 0x000003;

@@ -2654,6 +2654,10 @@ schedGetaffinityFunc(SyscallDesc *desc, ThreadContext *tc,
 #endif
 }
 
+// Target listxattr() handler.
+SyscallReturn listxattrFunc(SyscallDesc *desc, ThreadContext *tc,
+           VPtr<> path_ptr, VPtr<> list_ptr, unsigned long size);
+
 } // namespace gem5
 
 #endif // __SIM_SYSCALL_EMUL_HH__
