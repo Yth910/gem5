@@ -39,7 +39,8 @@ def operand_types {{
     'sq' : '__int128_t',
     'uq' : '__uint128_t',
     'sf' : 'float',
-    'df' : 'double'
+    'df' : 'double',
+    'vc' : 'PowerISA::VecRegContainer'
 }};
 
 def operands {{
@@ -56,6 +57,13 @@ def operands {{
     'Fc': ('FloatReg', 'df', 'FRC', 'IsFloating', 3),
     'Fs': ('FloatReg', 'df', 'FRS', 'IsFloating', 4),
     'Ft': ('FloatReg', 'df', 'FRT', 'IsFloating', 5),
+
+    # Vector Reg Operands
+    'Va': ('VecReg', 'vc', 'VRA', 'IsVector', 1),
+    'Vb': ('VecReg', 'vc', 'VRB', 'IsVector', 2),
+    'Vc': ('VecReg', 'vc', 'VRC', 'IsVector', 3),
+    'Vs': ('VecReg', 'vc', 'VRS', 'IsVector', 4),
+    'Vt': ('VecReg', 'vc', 'VRT', 'IsVector', 5),
 
     # Memory Operand
     'Mem': ('Mem', 'ud', None, (None, 'IsLoad', 'IsStore'), 8),

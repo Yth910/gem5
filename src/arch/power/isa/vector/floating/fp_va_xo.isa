@@ -1,4 +1,4 @@
-format FloatArithOp {
+format VsxFloatArithOp {
     46: vmaddfp({{
         ThreadContext *tc = xc->tcBase();
         RegId src1_id(VecRegClass, VRA + 32);

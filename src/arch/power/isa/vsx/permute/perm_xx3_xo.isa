@@ -1,4 +1,4 @@
-format FloatArithOp {
+format VsxFloatArithOp {
     18: xxmrghw({{                                            // wwf
         /*
             VSR[32×TX+T].word[0] ← VSR[32×AX+A].word[0]

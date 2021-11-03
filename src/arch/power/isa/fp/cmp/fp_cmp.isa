@@ -1,5 +1,7 @@
 format FloatOp {
     0: fcmpu({{
+        Fa = Va_df[0];
+        Fb = Vb_df[0];
         uint32_t c = makeCRField(Fa, Fb);
         Fpscr fpscr = FPSCR;
         fpscr.fprf.fpcc = c;
@@ -8,6 +10,8 @@ format FloatOp {
     }});
 
     32: fcmpo({{
+        Fa = Va_df[0];
+        Fb = Vb_df[0];
         uint32_t c = makeCRField(Fa, Fb);
         Fpscr fpscr = FPSCR;
         fpscr.fprf.fpcc = c;

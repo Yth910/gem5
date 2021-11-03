@@ -1,4 +1,4 @@
-format FloatArithOp {
+format VsxFloatArithOp {
 
 	43:xscmpodp({{
 		// TODO if (MSR.VEC == 0) ???

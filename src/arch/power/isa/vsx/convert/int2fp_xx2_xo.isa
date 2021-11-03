@@ -1,4 +1,4 @@
-format FloatArithOp {
+format VsxFloatArithOp {
     376:xscvsxddp({{
         ThreadContext *tc = xc->tcBase();
         RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);

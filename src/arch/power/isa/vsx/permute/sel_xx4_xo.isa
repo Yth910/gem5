@@ -1,5 +1,5 @@
 
-format FloatArithOp {
+format VsxFloatArithOp {
     3:xxsel({{
         ThreadContext *tc = xc->tcBase();
         RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);

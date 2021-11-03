@@ -43,10 +43,11 @@ let {{
                  (fpscr_rc.vx << 1) | fpscr_rc.ox;
         CR = cr;
     '''
+
 }};
 
 // Primary format for floating point operate instructions:
-def format FloatOp(code, inst_flags = []) {{
+def format VsxFloatOp(code, inst_flags = []) {{
     iop = InstObjParams(name, Name, 'FloatOp',
                         {"code": code},
                         inst_flags)
@@ -58,7 +59,7 @@ def format FloatOp(code, inst_flags = []) {{
 
 // Floating point operations that compute the CR1 code if RC is set. No other
 // special registers are touched using these operations.
-def format FloatRCCheckOp(code, inst_flags = []) {{
+def format VsxFloatRCCheckOp(code, inst_flags = []) {{
 
     # Code when Rc is set
     code_rc1 = code + readFPSCRCode + computeCR1Code
@@ -83,7 +84,7 @@ def format FloatRCCheckOp(code, inst_flags = []) {{
 // versions of each instruction for when Rc is set or not, we also have
 // to alter lots of special registers depending on the result of the
 // operation. The result is always in Ft_sf.
-def format FloatArithOp(code, inst_flags = []) {{
+def format VsxFloatArithOp(code, inst_flags = []) {{
 
     # Code when Rc is set
     code_rc1 = code + readFPSCRCode + computeCR1Code
@@ -108,7 +109,7 @@ def format FloatArithOp(code, inst_flags = []) {{
 // versions of each instruction for when Rc is set or not, we also have
 // to alter lots of special registers depending on the result of the
 // operation. The result is always in Ft_sf.
-def format FloatConvertOp(code, inst_flags = []) {{
+def format VsxFloatConvertOp(code, inst_flags = []) {{
 
     # Code when Rc is set
     code_rc1 = code + readFPSCRCode + computeCR1Code
