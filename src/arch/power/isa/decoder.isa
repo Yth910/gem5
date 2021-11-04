@@ -1441,50 +1441,10 @@ decode PO default Unknown::unknown() {
         ##include "fp/arith/dp_arith.isa"
 
         default: decode X_XO {
-
-           ##include "fp/arith/misc.isa"
-
-            format CondMoveOp {
-				64: mcrfs({{
-					uint32_t crBfa = bits(FPSCR, 31 - bfa*4, 28 - bfa*4);
-					CR = insertBits(CR, 31 - bf*4, 28 - bf*4, crBfa);
-					Fpscr fpscr = FPSCR;
-					switch (bfa) {
-						case 0:
-							fpscr.fx = 0;
-							fpscr.ox = 0;
-							break;
-						case 1:
-							fpscr.ux = 0;
-							fpscr.zx = 0;
-							fpscr.xx = 0;
-							fpscr.vxsnan = 0;
-							break;
-						case 2:
-							fpscr.vxisi = 0;
-							fpscr.vxidi = 0;
-							fpscr.vxzdz = 0;
-							fpscr.vximz = 0;
-							break;
-						case 3:
-							fpscr.vxvc = 0;
-							break;
-						case 5:
-							fpscr.vxsoft = 0;
-							fpscr.vxsqrt = 0;
-							fpscr.vxcvi = 0;
-							break;
-						default:
-							break;
-					}
-					FPSCR = fpscr;
-				}});
-            }
-
+            ##include "fp/arith/misc.isa"
             ##include "fp/convert/convert_dp.isa"
             ##include "fp/cmp/fp_cmp.isa"
             ##include "fp/move/fp_regmove.isa"
-            
         }
     }
 }

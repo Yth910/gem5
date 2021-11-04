@@ -1,21 +1,29 @@
 format FloatRCCheckOp {
-    583: mffs({{ Ft_ud = FPSCR; }});
+    38: mtfsb1({{ FPSCR = insertBits(FPSCR, 31 - BT, 1); }});
+    //40: fneg({{ Ft = -Fb; }});
+    70: mtfsb0({{ FPSCR = insertBits(FPSCR, 31 - BT, 0); }});
+    //72: fmr({{ Ft = Fb; }});
+
     134: mtfsfi({{
         FPSCR = insertCRField(FPSCR, BF + (8 * (1 - W_FIELD)),
                                 U_FIELD);
     }});
-    70: mtfsb0({{ FPSCR = insertBits(FPSCR, 31 - BT, 0); }});
-    38: mtfsb1({{ FPSCR = insertBits(FPSCR, 31 - BT, 1); }});
+
+    583: mffs({{
+        Ft_ud = FPSCR;
+        Vt_ud[0] = Ft_ud;
+    }});
 
     default: decode XFL_XO {
         711: mtfsf({{
-        if (L_FIELD == 1) { FPSCR = Fb_ud; }
+            Fb_ud = Vb_ud[0];
+            if (L_FIELD == 1) { FPSCR = Fb_ud; }
             else {
                 for (int i = 0; i < 8; ++i) {
                     if (bits(FLM, i) == 1) {
                         int k = 4 * (i + (8 * (1 - W_FIELD)));
                         FPSCR = insertBits(FPSCR, k + 3, k,
-                                        bits(Fb_ud, k + 3, k));
+                                            bits(Fb_ud, k + 3, k));
                     }
                 }
             }
