@@ -21,6 +21,6 @@ format FloatArithOp {
 
         __uint128_t mask = vrc_val[0];
         vrt_val[0] = (vra_val[0] & ~mask) | (vrb_val[0] & mask);
-        tc->setVecReg(vrt_id, vrt_val);
+        tc->setVecReg(vrt_id, vrt_reg);
     }});
 }

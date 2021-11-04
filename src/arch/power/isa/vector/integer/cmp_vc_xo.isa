@@ -25,7 +25,7 @@ format IntArithOp {
 
 		if (RC21)
 			CR = insertCRField(CR, 6, ((all_true << 1) | (all_false << 3)));
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}}); 
 
 
@@ -55,7 +55,7 @@ format IntArithOp {
 
 		if (RC21)
 			CR = insertCRField(CR, 6, ((all_true << 1) | (all_false << 3)));
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}}); 
 
 	134:vcmpequw({{
@@ -84,7 +84,7 @@ format IntArithOp {
 
 		if (RC21)
 			CR = insertCRField(CR, 6, ((all_true << 1) | (all_false << 3)));
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}}); 
 
 	199:vcmpequd({{
@@ -113,7 +113,7 @@ format IntArithOp {
 
 		if (RC21)
 			CR = insertCRField(CR, 6, ((all_true << 1) | (all_false << 3)));
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}}); 
 	
 
@@ -148,7 +148,7 @@ format IntArithOp {
 
 		if (RC21)
 			CR = insertCRField(CR, 6, ((all_true << 1) | (all_false << 3)));
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}}); 
 
 	518:vcmpgtub({{
@@ -177,7 +177,7 @@ format IntArithOp {
 
 		if (RC21)
 			CR = insertCRField(CR, 6, ((all_true << 1) | (all_false << 3)));
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}}); 
 
 	838:vcmpgtsh({{
@@ -206,7 +206,7 @@ format IntArithOp {
 
 		if (RC21)
 			CR = insertCRField(CR, 6, ((all_true << 1) | (all_false << 3)));
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}}); 
 
 	582:vcmpgtuh({{
@@ -235,7 +235,7 @@ format IntArithOp {
 
 		if (RC21)
 			CR = insertCRField(CR, 6, ((all_true << 1) | (all_false << 3)));
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}}); 
 
 
@@ -266,7 +266,7 @@ format IntArithOp {
 
 		if (RC21)
 			CR = insertCRField(CR, 6, ((all_true << 1) | (all_false << 3)));
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}}); 
 
 	646:vcmpgtuw({{
@@ -295,7 +295,7 @@ format IntArithOp {
 
 		if (RC21)
 			CR = insertCRField(CR, 6, ((all_true << 1) | (all_false << 3)));
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}}); 
 
 	967:vcmpgtsd({{
@@ -324,7 +324,7 @@ format IntArithOp {
 
 		if (RC21)
 			CR = insertCRField(CR, 6, ((all_true << 1) | (all_false << 3)));
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}}); 
 
 	711:vcmpgtud({{
@@ -353,6 +353,6 @@ format IntArithOp {
 
 		if (RC21)
 			CR = insertCRField(CR, 6, ((all_true << 1) | (all_false << 3)));
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}}); 
 }

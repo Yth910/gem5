@@ -43,7 +43,7 @@ format FloatArithOp {
 
 		FPSCR = reg_fpscr;
 		CR = insertCRField(CR, BF, c);
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}}); 
 
 	35:xscmpudp({{
@@ -89,7 +89,7 @@ format FloatArithOp {
 
 		FPSCR = reg_fpscr;
 		CR = insertCRField(CR, BF, c);
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}}); 
 
 	99:xvcmpeqdp({{
@@ -156,7 +156,7 @@ format FloatArithOp {
 		if (RC21)
 			if (!ex_flag)
 				CR = insertCRField(CR, 6, ((all_true << 3) | (all_false << 1)));
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}}); 
 
 	115:xvcmpgedp({{
@@ -238,7 +238,7 @@ format FloatArithOp {
 		if (RC21)
 			if (!ex_flag)
 				CR = insertCRField(CR, 6, ((all_true << 3) | (all_false << 1)));
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}}); 
 
 	107:xvcmpgtdp({{
@@ -321,7 +321,7 @@ format FloatArithOp {
 		if (RC21)
 			if (!ex_flag)
 				CR = insertCRField(CR, 6, ((all_true << 3) | (all_false << 1)));
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}}); 
 
 	67:xvcmpeqsp({{
@@ -385,7 +385,7 @@ format FloatArithOp {
 		if (RC21)
 			if (!ex_flag)
 				CR = insertCRField(CR, 6, ((all_true << 3) | (all_false << 1)));
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}}); 
 
 	83:xvcmpgesp({{
@@ -468,7 +468,7 @@ format FloatArithOp {
 		if (RC21)
 			if (!ex_flag)
 				CR = insertCRField(CR, 6, ((all_true << 3) | (all_false << 1)));
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}}); 
 
 	75:xvcmpgtsp({{
@@ -551,6 +551,6 @@ format FloatArithOp {
 		if (RC21)
 			if (!ex_flag)
 				CR = insertCRField(CR, 6, ((all_true << 3) | (all_false << 1)));
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}}); 
 }

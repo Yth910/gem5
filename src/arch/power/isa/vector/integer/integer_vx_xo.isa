@@ -1935,7 +1935,7 @@ placed into word element i of VSR[VRT+32].
 			else
 				vrt_val[i] = vrb_val[i];
 		}
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}});
 		
 	2:vmaxub({{
@@ -1952,7 +1952,7 @@ placed into word element i of VSR[VRT+32].
 			else
 				vrt_val[i] = vrb_val[i];
 		}
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}});
 		
 	322:vmaxsh({{
@@ -1969,7 +1969,7 @@ placed into word element i of VSR[VRT+32].
 			else
 				vrt_val[i] = vrb_val[i];
 		}
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}});
 		
 	66:vmaxuh({{
@@ -1986,7 +1986,7 @@ placed into word element i of VSR[VRT+32].
 			else
 				vrt_val[i] = vrb_val[i];
 		}
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}});
 		
 	386:vmaxsw({{
@@ -2003,7 +2003,7 @@ placed into word element i of VSR[VRT+32].
 			else
 				vrt_val[i] = vrb_val[i];
 		}
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}});
 		
 	130:vmaxuw({{
@@ -2020,7 +2020,7 @@ placed into word element i of VSR[VRT+32].
 			else
 				vrt_val[i] = vrb_val[i];
 		}
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}});
 		
 	450:vmaxsd({{
@@ -2037,7 +2037,7 @@ placed into word element i of VSR[VRT+32].
 			else
 				vrt_val[i] = vrb_val[i];
 		}
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}});
 
 	194:vmaxud({{
@@ -2054,7 +2054,7 @@ placed into word element i of VSR[VRT+32].
 			else
 				vrt_val[i] = vrb_val[i];
 		}
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}});
 
 	770:vminsb({{
@@ -2071,7 +2071,7 @@ placed into word element i of VSR[VRT+32].
 			else
 				vrt_val[i] = vrb_val[i];
 		}
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}});
 		
 	514:vminub({{
@@ -2088,7 +2088,7 @@ placed into word element i of VSR[VRT+32].
 			else
 				vrt_val[i] = vrb_val[i];
 		}
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}});
 		
 	834:vminsh({{
@@ -2105,7 +2105,7 @@ placed into word element i of VSR[VRT+32].
 			else
 				vrt_val[i] = vrb_val[i];
 		}
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}});
 		
 	578:vminuh({{
@@ -2122,7 +2122,7 @@ placed into word element i of VSR[VRT+32].
 			else
 				vrt_val[i] = vrb_val[i];
 		}
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}});
 		
 	898:vminsw({{
@@ -2139,7 +2139,7 @@ placed into word element i of VSR[VRT+32].
 			else
 				vrt_val[i] = vrb_val[i];
 		}
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}});
 		
 	642:vminuw({{
@@ -2156,7 +2156,7 @@ placed into word element i of VSR[VRT+32].
 			else
 				vrt_val[i] = vrb_val[i];
 		}
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}});
 		
 	962:vminsd({{
@@ -2173,7 +2173,7 @@ placed into word element i of VSR[VRT+32].
 			else
 				vrt_val[i] = vrb_val[i];
 		}
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}});
 
 	706:vminud({{
@@ -2190,7 +2190,7 @@ placed into word element i of VSR[VRT+32].
 			else
 				vrt_val[i] = vrb_val[i];
 		}
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}});
 
 
@@ -2208,7 +2208,7 @@ placed into word element i of VSR[VRT+32].
 			vrt_val[i] = vra_val[i] & vrb_val[i];
 		}
 
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}});
 		
 	1092:vandc({{
@@ -2224,7 +2224,7 @@ placed into word element i of VSR[VRT+32].
 		vrt_val[0] = vra_val[0] & ~vrb_val[0];
 		vrt_val[1] = vra_val[1] & ~vrb_val[1];
 
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}});
 
 	1668:veqv({{
@@ -2240,7 +2240,7 @@ placed into word element i of VSR[VRT+32].
 		vrt_val[0] = ~(vra_val[0] ^ vrb_val[0]);
 		vrt_val[1] = ~(vra_val[1] ^ vrb_val[1]);
 
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}});
 
 	1412:vnand({{
@@ -2256,7 +2256,7 @@ placed into word element i of VSR[VRT+32].
 		vrt_val[0] = ~(vra_val[0] & vrb_val[0]);
 		vrt_val[1] = ~(vra_val[1] & vrb_val[1]);
 
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}});
 
 	1156:vor({{
@@ -2272,7 +2272,7 @@ placed into word element i of VSR[VRT+32].
 		vrt_val[0] = vra_val[0] | vrb_val[0];
 		vrt_val[1] = vra_val[1] | vrb_val[1];
 
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}});
 
 	1348:vorc({{
@@ -2288,7 +2288,7 @@ placed into word element i of VSR[VRT+32].
 		vrt_val[0] = vra_val[0] | ~vrb_val[0];
 		vrt_val[1] = vra_val[1] | ~vrb_val[1];
 
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}});
 
 	1284:vnor({{
@@ -2304,7 +2304,7 @@ placed into word element i of VSR[VRT+32].
 		vrt_val[0] = ~(vra_val[0] | vrb_val[0]);
 		vrt_val[1] = ~(vra_val[1] | vrb_val[1]);
 
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}});
 
 	1220:vxor({{
@@ -2321,7 +2321,7 @@ placed into word element i of VSR[VRT+32].
 			vrt_val[i] = vra_val[i] ^ vrb_val[i];
 		}
 
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}}); 
 
 	4:vrlb({{
@@ -2340,7 +2340,7 @@ placed into word element i of VSR[VRT+32].
 			vrt_val[i] = (vra_val[i] << (vrb_val[i] & mask)) | (vra_val[i] >> (8 - (vrb_val[i] & mask)));
 		}
 
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}}); 
   
 	68:vrlh({{
@@ -2359,7 +2359,7 @@ placed into word element i of VSR[VRT+32].
 			vrt_val[i] = (vra_val[i] << (vrb_val[i] & mask)) | (vra_val[i] >> (16 - (vrb_val[i] & mask)));
 		}
 
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}}); 
 
 	132:vrlw({{
@@ -2378,7 +2378,7 @@ placed into word element i of VSR[VRT+32].
 			vrt_val[i] = (vra_val[i] << (vrb_val[i] & mask)) | (vra_val[i] >> (32 - (vrb_val[i] & mask)));
 		}
 
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}}); 
 
 	196:vrld({{
@@ -2397,7 +2397,7 @@ placed into word element i of VSR[VRT+32].
 			vrt_val[i] = (vra_val[i] << (vrb_val[i] & mask)) | (vra_val[i] >> (64 - (vrb_val[i] & mask)));
 		}
 
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}}); 
 
 	260:vslb({{
@@ -2416,7 +2416,7 @@ placed into word element i of VSR[VRT+32].
 			vrt_val[i] = (vra_val[i] << (vrb_val[i] & mask));
 		}
 
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}}); 
 
 	324:vslh({{
@@ -2435,7 +2435,7 @@ placed into word element i of VSR[VRT+32].
 			vrt_val[i] = (vra_val[i] << (vrb_val[i] & mask));
 		}
 
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}}); 
 
 	388:vslw({{
@@ -2454,7 +2454,7 @@ placed into word element i of VSR[VRT+32].
 			vrt_val[i] = (vra_val[i] << (vrb_val[i] & mask));
 		}
 
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}}); 
 
 	1476:vsld({{
@@ -2473,7 +2473,7 @@ placed into word element i of VSR[VRT+32].
 			vrt_val[i] = (vra_val[i] << (vrb_val[i] & mask));
 		}
 
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}}); 
 
  
@@ -2493,7 +2493,7 @@ placed into word element i of VSR[VRT+32].
 			vrt_val[i] = (vra_val[i] >> (vrb_val[i] & mask));
 		}
 
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}}); 
 
 	580:vsrh({{
@@ -2512,7 +2512,7 @@ placed into word element i of VSR[VRT+32].
 			vrt_val[i] = (vra_val[i] >> (vrb_val[i] & mask));
 		}
 
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}}); 
 
 	644:vsrw({{
@@ -2531,7 +2531,7 @@ placed into word element i of VSR[VRT+32].
 			vrt_val[i] = (vra_val[i] >> (vrb_val[i] & mask));
 		}
 
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}}); 
 
 	1732:vsrd({{
@@ -2550,7 +2550,7 @@ placed into word element i of VSR[VRT+32].
 			vrt_val[i] = (vra_val[i] >> (vrb_val[i] & mask));
 		}
 
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}}); 
 
 	772:vsrab({{
@@ -2569,7 +2569,7 @@ placed into word element i of VSR[VRT+32].
 			vrt_val[i] = (vra_val[i] >> (vrb_val[i] & mask));
 		}
 
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}}); 
 
 	836:vsrah({{
@@ -2588,7 +2588,7 @@ placed into word element i of VSR[VRT+32].
 			vrt_val[i] = (vra_val[i] >> (vrb_val[i] & mask));
 		}
 
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}}); 
 	900:vsraw({{
 	// TODO if (MSR.VEC == 0) ???
@@ -2606,7 +2606,7 @@ placed into word element i of VSR[VRT+32].
 			vrt_val[i] = (vra_val[i] >> (vrb_val[i] & mask));
 		}
 
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}});  
 
 	964:vsrad({{
@@ -2625,6 +2625,6 @@ placed into word element i of VSR[VRT+32].
 			vrt_val[i] = (vra_val[i] >> (vrb_val[i] & mask));
 		}
 
-		tc->setVecReg(vrt_id, vrt_val);
+		tc->setVecReg(vrt_id, vrt_reg);
 	}});
 }
