@@ -77,20 +77,20 @@ class PowerLinux : public Linux, public OpenFlagTable<PowerLinux>
         uint32_t __unused5;
     };
 
-    struct tgt_stat64
+    typedef struct
     {
         uint64_t st_dev;
-        uint32_t __pad1;
-        uint32_t st_ino;
+        uint64_t st_ino;
         uint32_t st_mode;
         uint32_t st_nlink;
         uint32_t st_uid;
         uint32_t st_gid;
         uint64_t st_rdev;
-        uint32_t __pad2;
-        uint32_t st_size;
+        uint64_t __pad2;
+        uint64_t st_size;
         uint32_t st_blksize;
-        uint32_t st_blocks;
+        uint32_t __blksize_pad;
+        uint64_t st_blocks;
         uint32_t st_atimeX;
         uint32_t st_atime_nsec;
         uint32_t st_mtimeX;
@@ -99,7 +99,7 @@ class PowerLinux : public Linux, public OpenFlagTable<PowerLinux>
         uint32_t st_ctime_nsec;
         uint32_t __unused4;
         uint32_t __unused5;
-    };
+    } tgt_stat64;
 
     /// For times().
     struct tms

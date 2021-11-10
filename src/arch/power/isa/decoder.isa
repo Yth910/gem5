@@ -537,7 +537,7 @@ decode PO default Unknown::unknown() {
             cr = (res != 0) << 2;
         }});
 
-        246: MiscOp::dcbtst({{ }});
+        //246: MiscOp::dcbtst({{ }});
         247: StoreIndexUpdateOp::stbux({{ Mem_ub = Rs_ub; }});
 
         252: IntLogicOp::bpermd({{
@@ -573,7 +573,7 @@ decode PO default Unknown::unknown() {
             }});
         }
 
-        278: MiscOp::dcbt({{ }});
+        //278: MiscOp::dcbt({{ }});
         279: LoadIndexOp::lhzx({{ Rt = Mem_uh; }});
         284: IntLogicOp::eqv({{ Ra = ~(Rs ^ Rb); }}, true);
         311: LoadIndexUpdateOp::lhzux({{ Rt = Mem_uh; }});
@@ -673,7 +673,37 @@ decode PO default Unknown::unknown() {
             CR = insertCRField(CR, BF, res);
         }});
 
-        598: MiscOp::sync({{ }}, [ IsReadBarrier, IsWriteBarrier ]);
+        //598: MiscOp::sync({{ }}, [ IsReadBarrier, IsWriteBarrier ]);
+        // These instructions all provide data cache hints
+        // Right now doesn't have cache support
+        format MiscOp {
+            278: dcbt({{ }});
+            246: dcbtst({{ }});
+
+            1014: dcbz({{
+                  Request::Flags flags = Request::PHYSICAL;
+                  Addr EA;
+                  if(RA == 0)
+                    EA = Rb & -128ULL;
+                  else
+                    EA = (Ra + Rb) & -128ULL;
+                  Mem = 0;
+                  for (int i = 0; i < 16; ++i) {
+                    writeMemAtomicLE(xc, traceData, Mem,EA + i*8,
+                                            flags, NULL);
+                }
+            }});
+
+            86: dcbf({{ }});
+            598: sync({{ }}, [ IsReadBarrier, IsWriteBarrier ]);
+            854: eieio({{ }}, [ IsReadBarrier, IsWriteBarrier ]);
+            54:  dcbst({{ }});
+            982: icbi({{ }});
+            306: tlbie({{ }});
+            274: tlbiel({{ }});
+            566: tlbsync({{ }});
+            498: slbia({{ }});
+        }
         //599: LoadIndexOp::lfdx({{ Ft = Mem_df; }});
         //631: LoadIndexUpdateOp::lfdux({{ Ft = Mem_df; }});
 
@@ -803,7 +833,7 @@ decode PO default Unknown::unknown() {
             Ra = res;
         }}, true);
 
-        854: MiscOp::eieio({{ }}, [ IsReadBarrier, IsWriteBarrier ]);
+        //854: MiscOp::eieio({{ }}, [ IsReadBarrier, IsWriteBarrier ]);
         //855: LoadIndexOp::lfiwax({{ Ft_uw = Mem; }});
         918: StoreIndexOp::sthbrx({{ Mem_uh = swap_byte(Rs_uh); }});
 
