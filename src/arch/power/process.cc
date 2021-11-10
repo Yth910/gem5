@@ -63,7 +63,7 @@ PowerProcess::PowerProcess(
     Addr brk_point = image.maxAddr();
     brk_point = roundUp(brk_point, PageBytes);
 
-    Addr stack_base = 0xbf000000L;
+    Addr stack_base = 0x7ffffffff000ULL;
 
     Addr max_stack_size = 8 * 1024 * 1024;
 
@@ -71,7 +71,7 @@ PowerProcess::PowerProcess(
     Addr next_thread_stack_base = stack_base - max_stack_size;
 
     // Set up region for mmaps. For now, start at bottom of kuseg space.
-    Addr mmap_end = 0x70000000L;
+    Addr mmap_end = 0x7ffff7fff000ULL;
 
     memState = std::make_shared<MemState>(
             this, brk_point, stack_base, max_stack_size,
@@ -161,7 +161,7 @@ PowerProcess::argsInit(int pageSize)
     //Auxilliary vectors are loaded only for elf formatted executables.
     auto *elfObject = dynamic_cast<loader::ElfObject *>(objFile);
     if (elfObject) {
-        IntType features = HWCAP_FEATURE_32;
+        IntType features = HWCAP_FEATURE_32 | HWCAP_FEATURE_HAS_VSX;
 
         // Check if running in 64-bit mode
         if (is64bit)
@@ -213,7 +213,7 @@ PowerProcess::argsInit(int pageSize)
     // A sentry NULL void pointer at the top of the stack.
     int sentry_size = intSize;
 
-    std::string platform = "v51";
+    std::string platform = "power8";
     int platform_size = platform.size() + 1;
 
     // The aux vectors are put on the stack in two groups. The first group are
@@ -233,7 +233,6 @@ PowerProcess::argsInit(int pageSize)
     for (int i = 0; i < argv.size(); ++i) {
         arg_data_size += argv[i].size() + 1;
     }
-
     int info_block_size =
         sentry_size + env_data_size + arg_data_size +
         aux_data_size + platform_size;

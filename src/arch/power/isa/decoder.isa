@@ -808,12 +808,12 @@ decode PO default Unknown::unknown() {
         918: StoreIndexOp::sthbrx({{ Mem_uh = swap_byte(Rs_uh); }});
 
         format IntLogicOp {
-            922: extsh({{ Ra = sext<16>(Rs); }}, true);
-            954: extsb({{ Ra = sext<8>(Rs); }}, true);
+            922: extsh({{ Ra = Rs_sh; }}, true);
+            954: extsb({{ Ra = Rs_sb; }}, true);
         }
 
         //983: StoreIndexOp::stfiwx({{ Mem = Fs_uw; }});
-        986: IntLogicOp::extsw({{ Ra = sext<32>(Rs); }}, true);
+        986: IntLogicOp::extsw({{ Ra = Rs_sw; }}, true);
 
         // These instructions are of XO form with bit 21 as the OE bit.
         default: decode XO_XO {

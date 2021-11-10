@@ -43,7 +43,7 @@ class PCState : public GenericISA::SimplePCState<4>
 {
   private:
     typedef GenericISA::SimplePCState<4> Base;
-    ByteOrder guestByteOrder = ByteOrder::big;
+    ByteOrder guestByteOrder = ByteOrder::little;
 
   public:
     PCState()
