@@ -87,7 +87,7 @@ def format VsxFloatRCCheckOp(code, inst_flags = []) {{
 def format VsxFloatArithOp(code, inst_flags = []) {{
 
     # Code when Rc is set
-    code_rc1 = code + readFPSCRCode + computeCR1Code
+    code_rc1 = code + readFPSCRCode
 
     # Generate the first class
     (header_output, decoder_output, decode_block, exec_output) = \
@@ -112,7 +112,7 @@ def format VsxFloatArithOp(code, inst_flags = []) {{
 def format VsxFloatConvertOp(code, inst_flags = []) {{
 
     # Code when Rc is set
-    code_rc1 = code + readFPSCRCode + computeCR1Code
+    code_rc1 = code + readFPSCRCode
 
     # Generate the first class
     (header_output, decoder_output, decode_block, exec_output) = \
