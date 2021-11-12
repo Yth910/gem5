@@ -56,25 +56,24 @@ class PowerLinux : public Linux, public OpenFlagTable<PowerLinux>
     struct tgt_stat
     {
         uint64_t st_dev;
-        uint32_t __pad1;
-        uint32_t st_ino;
+        uint64_t st_ino;
+        uint64_t st_nlink;
         uint32_t st_mode;
-        uint32_t st_nlink;
         uint32_t st_uid;
         uint32_t st_gid;
-        uint64_t st_rdev;
         uint32_t __pad2;
-        uint32_t st_size;
-        uint32_t st_blksize;
-        uint32_t st_blocks;
-        uint32_t st_atimeX;
-        uint32_t st_atime_nsec;
-        uint32_t st_mtimeX;
-        uint32_t st_mtime_nsec;
-        uint32_t st_ctimeX;
-        uint32_t st_ctime_nsec;
-        uint32_t __unused4;
-        uint32_t __unused5;
+        uint64_t st_rdev;
+        uint64_t st_size;
+        uint64_t st_blksize;
+        uint64_t st_blocks;
+        uint64_t st_atimeX;
+        uint64_t st_atime_nsec;
+        uint64_t st_mtimeX;
+        uint64_t st_mtime_nsec;
+        uint64_t st_ctimeX;
+        uint64_t st_ctime_nsec;
+        uint64_t __unused4;
+        uint64_t __unused5;
     };
 
     typedef struct
@@ -89,7 +88,6 @@ class PowerLinux : public Linux, public OpenFlagTable<PowerLinux>
         uint64_t __pad2;
         uint64_t st_size;
         uint32_t st_blksize;
-        uint32_t __blksize_pad;
         uint64_t st_blocks;
         uint32_t st_atimeX;
         uint32_t st_atime_nsec;
