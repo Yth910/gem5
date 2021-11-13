@@ -44,8 +44,8 @@ format LoadIndexOp {
         RegId id(VecRegClass, XX_T + XX_TX * 32);
         auto reg = tc->readVecReg(id);
         auto val = reg.as<uint64_t>();
-        val[0] = ((uint64_t *)&Mem_uq)[0];
-        val[1] = ((uint64_t *)&Mem_uq)[1];
+        val[0] = ((uint64_t *)&Mem_uq)[1];
+        val[1] = ((uint64_t *)&Mem_uq)[0];
         tc->setVecReg(id, reg);
     }});
 
@@ -64,10 +64,10 @@ format LoadIndexOp {
         RegId id(VecRegClass, XX_T + XX_TX * 32);
         auto reg = tc->readVecReg(id);
         auto val = reg.as<uint32_t>();
-        val[0] = ((uint32_t *)&Mem_uq)[0];
-        val[1] = ((uint32_t *)&Mem_uq)[1];
-        val[2] = ((uint32_t *)&Mem_uq)[2];
-        val[3] = ((uint32_t *)&Mem_uq)[3];
+        val[0] = ((uint32_t *)&Mem_uq)[3];
+        val[1] = ((uint32_t *)&Mem_uq)[2];
+        val[2] = ((uint32_t *)&Mem_uq)[1];
+        val[3] = ((uint32_t *)&Mem_uq)[0];
         tc->setVecReg(id, reg);
     }});
 }

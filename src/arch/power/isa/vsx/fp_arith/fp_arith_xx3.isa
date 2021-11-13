@@ -20,10 +20,10 @@ format VsxFloatArithOp {
         */
 
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp64_ADD(vra_val[0], vrb_val[0], fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp64_ADD(vra_val[1], vrb_val[1], fpscr_0);
 
         fpscr_0 = vsx_set_class((double)tmp, fpscr_0);
-        vrt_val[0] = tmp;
+        vrt_val[1] = tmp;
 
         
         FPSCR = fpscr_0;
@@ -50,10 +50,10 @@ format VsxFloatArithOp {
         */
 
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp32_ADD(vra_val[0], vrb_val[0], fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp32_ADD(vra_val[1], vrb_val[1], fpscr_0);
 
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
-        vrt_val[0] = tmp;
+        vrt_val[1] = tmp;
         FPSCR = fpscr_0;
         tc->setVecReg(vrt_id, vrt_reg);
     }});
@@ -114,10 +114,10 @@ format VsxFloatArithOp {
         */
 
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp64_DIV(vra_val[0], vrb_val[0], fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp64_DIV(vra_val[1], vrb_val[1], fpscr_0);
 
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
-        vrt_val[0] = tmp;
+        vrt_val[1] = tmp;
 
         FPSCR = fpscr_0;
         tc->setVecReg(vrt_id, vrt_reg);
@@ -144,10 +144,10 @@ format VsxFloatArithOp {
         */
 
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp32_DIV(vra_val[0], vrb_val[0], fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp32_DIV(vra_val[1], vrb_val[1], fpscr_0);
 
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
-        vrt_val[0] = tmp;
+        vrt_val[1] = tmp;
 
         FPSCR = fpscr_0;
         tc->setVecReg(vrt_id, vrt_reg);
@@ -173,10 +173,10 @@ format VsxFloatArithOp {
         ALL PASSED.
         */
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(vra_val[0], vrb_val[0], vrt_val[0], fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(vra_val[1], vrb_val[1], vrt_val[1], fpscr_0);
 
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
-        vrt_val[0] = tmp;
+        vrt_val[1] = tmp;
 
         /* CODE SEG 3 */
         //code seg 3
@@ -206,10 +206,10 @@ format VsxFloatArithOp {
         */
 
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(vra_val[0], vrt_val[0], vrb_val[0], fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(vra_val[1], vrt_val[1], vrb_val[1], fpscr_0);
 
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
-        vrt_val[0] = tmp;
+        vrt_val[1] = tmp;
 
 
         FPSCR = fpscr_0;
@@ -237,10 +237,10 @@ format VsxFloatArithOp {
         */
 
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(vra_val[0], vrb_val[0], vrt_val[0], fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(vra_val[1], vrb_val[1], vrt_val[1], fpscr_0);
 
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
-        vrt_val[0] = tmp;
+        vrt_val[1] = tmp;
 
 
         FPSCR = fpscr_0;
@@ -268,10 +268,10 @@ format VsxFloatArithOp {
         */
 
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(vra_val[0], vrt_val[0], vrb_val[0], fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(vra_val[1], vrt_val[1], vrb_val[1], fpscr_0);
 
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
-        vrt_val[0] = tmp;
+        vrt_val[1] = tmp;
 
         FPSCR = fpscr_0;
         tc->setVecReg(vrt_id, vrt_reg);
@@ -298,9 +298,9 @@ format VsxFloatArithOp {
         */
 
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp64_MAX(vra_val[0], vrb_val[0], fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp64_MAX(vra_val[1], vrb_val[1], fpscr_0);
 
-        vrt_val[0] = tmp;
+        vrt_val[1] = tmp;
 
         FPSCR = fpscr_0;
         tc->setVecReg(vrt_id, vrt_reg);
@@ -327,9 +327,9 @@ format VsxFloatArithOp {
         */
 
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp64_MIN(vra_val[0], vrb_val[0], fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp64_MIN(vra_val[1], vrb_val[1], fpscr_0);
 
-        vrt_val[0] = tmp;
+        vrt_val[1] = tmp;
 
         FPSCR = fpscr_0;
         tc->setVecReg(vrt_id, vrt_reg);
@@ -356,10 +356,10 @@ format VsxFloatArithOp {
         */
 
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(vra_val[0], vrb_val[0], bfp_NEGATE(vrt_val[0]), fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(vra_val[1], vrb_val[1], bfp_NEGATE(vrt_val[1]), fpscr_0);
 
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
-        vrt_val[0] = tmp;
+        vrt_val[1] = tmp;
         FPSCR = fpscr_0;
         tc->setVecReg(vrt_id, vrt_reg);
     }});
@@ -385,10 +385,10 @@ format VsxFloatArithOp {
         */
 
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(vra_val[0], vrt_val[0], bfp_NEGATE(vrb_val[0]), fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(vra_val[1], vrt_val[1], bfp_NEGATE(vrb_val[1]), fpscr_0);
 
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
-        vrt_val[0] = tmp;
+        vrt_val[1] = tmp;
 
         FPSCR = fpscr_0;
         tc->setVecReg(vrt_id, vrt_reg);
@@ -415,10 +415,10 @@ format VsxFloatArithOp {
         */
 
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(vra_val[0], vrb_val[0], bfp_NEGATE(vrt_val[0]), fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(vra_val[1], vrb_val[1], bfp_NEGATE(vrt_val[1]), fpscr_0);
 
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
-        vrt_val[0] = tmp;
+        vrt_val[1] = tmp;
         FPSCR = fpscr_0;
         tc->setVecReg(vrt_id, vrt_reg);
     }});
@@ -444,10 +444,10 @@ format VsxFloatArithOp {
         */
 
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(vra_val[0], vrt_val[0], bfp_NEGATE(vrb_val[0]), fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(vra_val[1], vrt_val[1], bfp_NEGATE(vrb_val[1]), fpscr_0);
 
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
-        vrt_val[0] = tmp;
+        vrt_val[1] = tmp;
         
         FPSCR = fpscr_0;
         tc->setVecReg(vrt_id, vrt_reg);
@@ -474,10 +474,10 @@ format VsxFloatArithOp {
         */
 
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp64_MULTIPLY(vra_val[0], vrb_val[0], fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp64_MULTIPLY(vra_val[1], vrb_val[1], fpscr_0);
 
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
-        vrt_val[0] = tmp;
+        vrt_val[1] = tmp;
         FPSCR = fpscr_0;
         tc->setVecReg(vrt_id, vrt_reg);
     }});
@@ -503,10 +503,10 @@ format VsxFloatArithOp {
         */
 
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp32_MULTIPLY(vra_val[0], vrb_val[0], fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp32_MULTIPLY(vra_val[1], vrb_val[1], fpscr_0);
 
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
-        vrt_val[0] = tmp;
+        vrt_val[1] = tmp;
         FPSCR = fpscr_0;
         tc->setVecReg(vrt_id, vrt_reg);
     }});
@@ -532,11 +532,11 @@ format VsxFloatArithOp {
         */
 
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(vra_val[0], vrb_val[0], vrt_val[0], fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(vra_val[1], vrb_val[1], vrt_val[1], fpscr_0);
         tmp = bfp_NEGATE(tmp);
 
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
-        vrt_val[0] = tmp;
+        vrt_val[1] = tmp;
         
         FPSCR = fpscr_0;
         tc->setVecReg(vrt_id, vrt_reg);
@@ -563,11 +563,11 @@ format VsxFloatArithOp {
         */
 
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(vra_val[0], vrt_val[0], vrb_val[0], fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(vra_val[1], vrt_val[1], vrb_val[1], fpscr_0);
         tmp = bfp_NEGATE(tmp);
 
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
-        vrt_val[0] = tmp;
+        vrt_val[1] = tmp;
         FPSCR = fpscr_0;
         tc->setVecReg(vrt_id, vrt_reg);
     }});
@@ -593,11 +593,11 @@ format VsxFloatArithOp {
         */
 
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(vra_val[0], vrb_val[0], vrt_val[0], fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(vra_val[1], vrb_val[1], vrt_val[1], fpscr_0);
         tmp = bfp_NEGATE(tmp);
 
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
-        vrt_val[0] = tmp;
+        vrt_val[1] = tmp;
 
         FPSCR = fpscr_0;
         tc->setVecReg(vrt_id, vrt_reg);
@@ -624,11 +624,11 @@ format VsxFloatArithOp {
         */
 
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(vra_val[0], vrt_val[0], vrb_val[0], fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(vra_val[1], vrt_val[1], vrb_val[1], fpscr_0);
         tmp = bfp_NEGATE(tmp);
 
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
-        vrt_val[0] = tmp;
+        vrt_val[1] = tmp;
 
         FPSCR = fpscr_0;
         tc->setVecReg(vrt_id, vrt_reg);
@@ -655,11 +655,11 @@ format VsxFloatArithOp {
         */
 
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(vra_val[0], vrb_val[0], bfp_NEGATE(vrt_val[0]), fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(vra_val[1], vrb_val[1], bfp_NEGATE(vrt_val[1]), fpscr_0);
         tmp = bfp_NEGATE(tmp);
 
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
-        vrt_val[0] = tmp;
+        vrt_val[1] = tmp;
         
         FPSCR = fpscr_0;
         tc->setVecReg(vrt_id, vrt_reg);
@@ -686,11 +686,11 @@ format VsxFloatArithOp {
         */
 
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(vra_val[0], vrt_val[0], bfp_NEGATE(vrb_val[0]), fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(vra_val[1], vrt_val[1], bfp_NEGATE(vrb_val[1]), fpscr_0);
         tmp = bfp_NEGATE(tmp);
 
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
-        vrt_val[0] = tmp;
+        vrt_val[1] = tmp;
 
         FPSCR = fpscr_0;
         tc->setVecReg(vrt_id, vrt_reg);
@@ -717,11 +717,11 @@ format VsxFloatArithOp {
         */
 
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(vra_val[0], vrb_val[0], bfp_NEGATE(vrt_val[0]), fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(vra_val[1], vrb_val[1], bfp_NEGATE(vrt_val[1]), fpscr_0);
         tmp = bfp_NEGATE(tmp);
 
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
-        vrt_val[0] = tmp;
+        vrt_val[1] = tmp;
 
         FPSCR = fpscr_0;
         tc->setVecReg(vrt_id, vrt_reg);
@@ -748,11 +748,11 @@ format VsxFloatArithOp {
         */
 
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(vra_val[0], vrt_val[0], bfp_NEGATE(vrb_val[0]), fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(vra_val[1], vrt_val[1], bfp_NEGATE(vrb_val[1]), fpscr_0);
         tmp = bfp_NEGATE(tmp);
 
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
-        vrt_val[0] = tmp;
+        vrt_val[1] = tmp;
 
         FPSCR = fpscr_0;
         tc->setVecReg(vrt_id, vrt_reg);
@@ -779,9 +779,9 @@ format VsxFloatArithOp {
         */
 
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp64_ADD(vra_val[0], bfp_NEGATE(vrb_val[0]), fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp64_ADD(vra_val[1], bfp_NEGATE(vrb_val[1]), fpscr_0);
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
-        vrt_val[0] = tmp;
+        vrt_val[1] = tmp;
             
         
         FPSCR = fpscr_0;
@@ -809,9 +809,9 @@ format VsxFloatArithOp {
         */
 
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp32_ADD(vra_val[0], bfp_NEGATE(vrb_val[0]), fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp32_ADD(vra_val[1], bfp_NEGATE(vrb_val[1]), fpscr_0);
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
-        vrt_val[0] = tmp;
+        vrt_val[1] = tmp;
 
         FPSCR = fpscr_0;
         tc->setVecReg(vrt_id, vrt_reg);

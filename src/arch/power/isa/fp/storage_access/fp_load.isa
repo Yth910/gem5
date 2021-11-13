@@ -1,18 +1,18 @@
 format LoadIndexOp {
     535: lfsx({{
         Ft_df = Mem_sf;
-        Vt_df[0] = Ft_df;
+        Vt_df[1] = Ft_df;
     }});
     599: lfdx({{
         Ft_ud = Mem_ud;
-        Vt_ud[0] = Ft_ud;
+        Vt_ud[1] = Ft_ud;
     }});
     855: lfiwax({{
         Ft_sd = Mem_sw;
-        Vt_sd[0] = Ft_sd;
+        Vt_sd[1] = Ft_sd;
     }});
     887: lfiwzx({{
         Ft_ud = Mem_uw;
-        Vt_ud[0] = Ft_ud;
+        Vt_ud[1] = Ft_ud;
     }});
 }

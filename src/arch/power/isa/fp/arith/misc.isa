@@ -1,32 +1,32 @@
  format FloatRCCheckOp {
     72: fmr({{
-        Fb = Vb_df[0];
+        Fb = Vb_df[1];
         Ft = Fb;
-        Vt_df[0] = Ft;
+        Vt_df[1] = Ft;
     }});
     264: fabs({{
-        Fb_ud = Vb_ud[0];
+        Fb_ud = Vb_ud[1];
         Ft_ud = Fb_ud;
         Ft_ud = insertBits(Ft_ud, 63, 0);
-        Vt_ud[0] = Ft_ud;
+        Vt_ud[1] = Ft_ud;
     }});
     136: fnabs({{
-        Fb_ud = Vb_ud[0];
+        Fb_ud = Vb_ud[1];
         Ft_ud = Fb_ud;
         Ft_ud = insertBits(Ft_ud, 63, 1);
-        Vt_ud[0] = Ft_ud;
+        Vt_ud[1] = Ft_ud;
     }});
     40: fneg({{
-        Fb_ud = Vb_ud[0];
+        Fb_ud = Vb_ud[1];
         Ft_ud = -Fb_ud;
-        Vt_ud[0] = Ft_ud;
+        Vt_ud[1] = Ft_ud;
     }});
     8: fcpsgn({{
         Fa_ud = Va_ud[0];
-        Fb_ud = Vb_ud[0];
+        Fb_ud = Vb_ud[1];
         Ft_ud = Fb_ud;
         Ft_ud = insertBits(Ft_ud, 63, Fa_ud<63:63>);
-        Vt_ud[0] = Ft_ud;
+        Vt_ud[1] = Ft_ud;
     }});
 }
 

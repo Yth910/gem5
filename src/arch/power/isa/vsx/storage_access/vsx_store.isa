@@ -27,15 +27,19 @@ format StoreIndexOp {
         ThreadContext *tc = xc->tcBase();
         RegId id(VecRegClass, XX_S + XX_SX * 32);
         auto reg = tc->readVecReg(id);
-        auto val = reg.as<__uint128_t>();
-        Mem_uq = val[0];
+        auto val = reg.as<uint64_t>();
+        ((uint64_t *)&Mem_uq)[0] = val[1];
+        ((uint64_t *)&Mem_uq)[1] = val[0];
     }});
 
     908: stxvw4x({{
         ThreadContext *tc = xc->tcBase();
         RegId id(VecRegClass, XX_S + XX_SX * 32);
         auto reg = tc->readVecReg(id);
-        auto val = reg.as<__uint128_t>();
-        Mem_uq = val[0];
+        auto val = reg.as<uint32_t>();
+        ((uint32_t *)&Mem_uq)[0] = val[3];
+        ((uint32_t *)&Mem_uq)[1] = val[2];
+        ((uint32_t *)&Mem_uq)[2] = val[1];
+        ((uint32_t *)&Mem_uq)[3] = val[0];
     }});
 }

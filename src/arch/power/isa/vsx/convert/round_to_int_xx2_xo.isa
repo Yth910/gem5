@@ -19,17 +19,16 @@ format VsxFloatArithOp {
         ALL PASSED.
         */
 
-        /* CODE SEG 1 */
-        //code seg 1
+        double tmp;
         fp_before_cal(fpscr_0);
         fesetround(FE_TONEAREST);
-        /* CODE SEG 1 END */
-        /* CODE SEG 2 */
-        vrt_val[0] = bfp64_ROUND_TO_INTEGER_NEAR(vrb_val[0]);
+        tmp = bfp64_ROUND_TO_INTEGER_NEAR(vrb_val[1]);
         /* CODE SEG 2 END */
         /* CODE SEG 3 */
-        std::tie(vrt_val[0], fpscr_0) = get_floating_exception(vrb_val[0], vrb_val[0], fpscr_0, vrt_val[0]);
-        fpscr_0 = vsx_set_class(vrt_val[0], fpscr_0);
+        std::tie(tmp, fpscr_0) = get_floating_exception(vrb_val[1], vrb_val[1], fpscr_0, tmp);
+        fpscr_0 = vsx_set_class(tmp, fpscr_0);
+        
+        vrt_val[1] = tmp;
         /* CODE SEG 3 END */
         FPSCR = fpscr_0;
         tc->setVecReg(vrt_id, vrt_reg);
@@ -56,15 +55,17 @@ format VsxFloatArithOp {
         */
 
         /* CODE SEG 1 */
+        double tmp;
         fp_before_cal(fpscr_0);
         /* CODE SEG 1 END */
         /* CODE SEG 2 */
-        std::tie(vrt_val[0], fpscr_0) = round_current(vrb_val[0], fpscr_0);
+        std::tie(tmp, fpscr_0) = round_current(vrb_val[1], fpscr_0);
         /* CODE SEG 2 END */
         /* CODE SEG 3 */
-        std::tie(vrt_val[0], fpscr_0) = get_floating_exception(vrb_val[0], vrb_val[0], fpscr_0, vrt_val[0]);
-        fpscr_0 = vsx_set_class(vrt_val[0], fpscr_0);
+        std::tie(tmp, fpscr_0) = get_floating_exception(vrb_val[1], vrb_val[1], fpscr_0, tmp);
+        fpscr_0 = vsx_set_class(tmp, fpscr_0);
         /* CODE SEG 3 END */
+        vrt_val[1] = tmp;
         FPSCR = fpscr_0;
         tc->setVecReg(vrt_id, vrt_reg);
     }});
@@ -90,18 +91,14 @@ format VsxFloatArithOp {
         */
 
         /* CODE SEG 1 */
+        double tmp;
         fp_before_cal(fpscr_0);
         fesetround(FE_DOWNWARD);
-        /* CODE SEG 1 END */
-        for (auto i = 0; i < 1; i++) {
-            /* CODE SEG 2 */
-            vrt_val[i] = bfp64_ROUND_TO_INTEGER_FLOOR(vrb_val[i]);
-            /* CODE SEG 2 END */
-        }
-        /* CODE SEG 3 */
-        std::tie(vrt_val[0], fpscr_0) = get_floating_exception(vrb_val[0], vrb_val[0], fpscr_0, vrt_val[0]);
-        fpscr_0 = vsx_set_class(vrt_val[0], fpscr_0);
+        tmp = bfp64_ROUND_TO_INTEGER_FLOOR(vrb_val[1]);
+        std::tie(tmp, fpscr_0) = get_floating_exception(vrb_val[1], vrb_val[1], fpscr_0, tmp);
+        fpscr_0 = vsx_set_class(tmp, fpscr_0);
         /* CODE SEG 3 END */
+        vrt_val[1] = tmp;
         FPSCR = fpscr_0;
         tc->setVecReg(vrt_id, vrt_reg);
     }});
@@ -127,18 +124,13 @@ format VsxFloatArithOp {
         */
 
         /* CODE SEG 1 */
+        double tmp;
         fp_before_cal(fpscr_0);
         fesetround(FE_UPWARD);
-        /* CODE SEG 1 END */
-        for (auto i = 0; i < 1; i++) {
-            /* CODE SEG 2 */
-            vrt_val[i] = bfp64_ROUND_TO_INTEGER_CEIL(vrb_val[i]);
-            /* CODE SEG 2 END */
-        }
-        /* CODE SEG 3 */
-        std::tie(vrt_val[0], fpscr_0) = get_floating_exception(vrb_val[0], vrb_val[0], fpscr_0, vrt_val[0]);
-        fpscr_0 = vsx_set_class(vrt_val[0], fpscr_0);
-        /* CODE SEG 3 END */
+        tmp = bfp64_ROUND_TO_INTEGER_CEIL(vrb_val[1]);
+        std::tie(tmp, fpscr_0) = get_floating_exception(vrb_val[1], vrb_val[1], fpscr_0, tmp);
+        fpscr_0 = vsx_set_class(tmp, fpscr_0);
+        vrt_val[1] = tmp;
         FPSCR = fpscr_0;
         tc->setVecReg(vrt_id, vrt_reg);
     }});
@@ -164,17 +156,14 @@ format VsxFloatArithOp {
         */
 
         /* CODE SEG 1 */
+        double tmp;
         fp_before_cal(fpscr_0);
         fesetround(FE_TOWARDZERO);
-        /* CODE SEG 1 END */
-        for (auto i = 0; i < 1; i++) {
-            /* CODE SEG 2 */
-            vrt_val[i] = bfp64_ROUND_TO_INTEGER_TRUNC(vrb_val[i]);
-            /* CODE SEG 2 END */
-        }
-        /* CODE SEG 3 */
-        std::tie(vrt_val[0], fpscr_0) = get_floating_exception(vrb_val[0], vrb_val[0], fpscr_0, vrt_val[0]);
-        fpscr_0 = vsx_set_class(vrt_val[0], fpscr_0);
+        tmp = bfp64_ROUND_TO_INTEGER_TRUNC(vrb_val[1]);
+        std::tie(tmp, fpscr_0) = get_floating_exception(vrb_val[1], vrb_val[1], fpscr_0, tmp);
+        fpscr_0 = vsx_set_class(tmp, fpscr_0);
+        
+        vrt_val[1] = tmp;
         /* CODE SEG 3 END */
         FPSCR = fpscr_0;
         tc->setVecReg(vrt_id, vrt_reg);
@@ -206,7 +195,7 @@ format VsxFloatArithOp {
         /* CODE SEG 2 */
         for (auto i = 0; i < 2; i++) {
             vrt_val[i] = bfp64_ROUND_TO_INTEGER_NEAR(vrb_val[i]);
-            std::tie(vrt_val[i], fpscr_0) = get_floating_exception(vrb_val[i], vrb_val[0], fpscr_0, vrt_val[i]);
+            std::tie(vrt_val[i], fpscr_0) = get_floating_exception(vrb_val[i], vrb_val[1], fpscr_0, vrt_val[i]);
         }
         fpscr_0.fi = 0;
         fpscr_0.fr = 0;
@@ -375,7 +364,7 @@ format VsxFloatArithOp {
         /* CODE SEG 2 */
         for (auto i = 0; i < 4; i++) {
             vrt_val[i] = bfp32_ROUND_TO_INTEGER_NEAR(vrb_val[i]);
-            std::tie(vrt_val[i], fpscr_0) = get_floating_exception(vrb_val[i], vrb_val[0], fpscr_0, vrt_val[i]);
+            std::tie(vrt_val[i], fpscr_0) = get_floating_exception(vrb_val[i], vrb_val[1], fpscr_0, vrt_val[i]);
         }
         fpscr_0.fi = 0;
         fpscr_0.fr = 0;

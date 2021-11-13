@@ -35,11 +35,11 @@ format VsxFloatArithOp {
 		// TODO
 		// std::cout << "fpscr.ve is " << reg_fpscr.ve << std::endl;
 
-		uint64_t *pVal = reinterpret_cast<uint64_t *>(&vrt_val[0]);
-		vxsnan_flag = isSnan(vra_val[0]) | isSnan(vrb_val[0]);
+		uint64_t *pVal = reinterpret_cast<uint64_t *>(&vrt_val[1]);
+		vxsnan_flag = isSnan(vra_val[1]) | isSnan(vrb_val[1]);
 		uint32_t c;
 
-		std::tie(reg_fpscr, c) = bfp64_COMPARE_ORDER(vra_val[0], vrb_val[0], reg_fpscr);
+		std::tie(reg_fpscr, c) = bfp64_COMPARE_ORDER(vra_val[1], vrb_val[1], reg_fpscr);
 
 		FPSCR = reg_fpscr;
 		CR = insertCRField(CR, BF, c);
@@ -81,11 +81,11 @@ format VsxFloatArithOp {
 		// TODO
 		// std::cout << "fpscr.ve is " << reg_fpscr.ve << std::endl;
 
-		uint64_t *pVal = reinterpret_cast<uint64_t *>(&vrt_val[0]);
-		vxsnan_flag = isSnan(vra_val[0]) | isSnan(vrb_val[0]);
+		uint64_t *pVal = reinterpret_cast<uint64_t *>(&vrt_val[1]);
+		vxsnan_flag = isSnan(vra_val[1]) | isSnan(vrb_val[1]);
 		uint32_t c;
 
-		std::tie(reg_fpscr, c) = bfp64_COMPARE_UNORDER(vra_val[0], vrb_val[0], reg_fpscr);
+		std::tie(reg_fpscr, c) = bfp64_COMPARE_UNORDER(vra_val[1], vrb_val[1], reg_fpscr);
 
 		FPSCR = reg_fpscr;
 		CR = insertCRField(CR, BF, c);

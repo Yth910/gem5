@@ -23,17 +23,17 @@ format VsxFloatArithOp {
         fpscr_0 = fp_before_cal(fpscr_0);
         /* CODE SEG 1 END */
         //double check. undefined reg fields.
-        vrt_val[0] = vrb_val[0];
-        std::tie(vrt_val[0], fpscr_0) = get_floating_exception(vrb_val[0], vrb_val[0], fpscr_0, (double)vrt_val[0]);
-        if (!isNan(vrb_val[0]) && !isInfinity(vrb_val[0])) {
-            if (fabs((double)vrt_val[0]) > fabs(vrb_val[0]))
+        vrt_val[3] = vrb_val[1];
+        std::tie(vrt_val[3], fpscr_0) = get_floating_exception(vrb_val[1], vrb_val[1], fpscr_0, (double)vrt_val[3]);
+        if (!isNan(vrb_val[1]) && !isInfinity(vrb_val[1])) {
+            if (fabs((double)vrt_val[3]) > fabs(vrb_val[1]))
                 fpscr_0.fr = 1;
             else
                 fpscr_0.fr = 0;
         }
-        fpscr_0 = vsx_set_class((double)vrt_val[0], fpscr_0);
+        fpscr_0 = vsx_set_class((double)vrt_val[3], fpscr_0);
 
-        vrt_val[1] = vrb_val[0];
+        vrt_val[2] = vrt_val[3];
         /* CODE SEG 3 END */
         FPSCR = fpscr_0;
         tc->setVecReg(vrt_id, vrt_reg);
@@ -60,8 +60,8 @@ format VsxFloatArithOp {
         */
 
         fpscr_0 = fp_before_cal(fpscr_0);
-        vrt_val[0] = CONVERT_FROM_BFP64(vrb_val[0]);
-        vrt_val[1] = vrt_val[0];
+        vrt_val[3] = CONVERT_FROM_BFP64(vrb_val[1]);
+        vrt_val[2] = vrt_val[3];
         FPSCR = fpscr_0;
         tc->setVecReg(vrt_id, vrt_reg);
     }});

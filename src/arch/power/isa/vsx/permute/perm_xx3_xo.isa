@@ -22,10 +22,10 @@ format VsxFloatArithOp {
         ALL PASSED.
         */
                         
-        vrt[3] = vra[0];
-        vrt[2] = vrb[0];
-        vrt[1] = vra[1];
-        vrt[0] = vrb[1];
+        vrt[0] = vrb[2];
+        vrt[1] = vra[2];
+        vrt[2] = vrb[3];
+        vrt[3] = vra[3];
         
         tc->setVecReg(vrt_id, vrt_reg);
     }});
@@ -53,10 +53,10 @@ format VsxFloatArithOp {
         ALL PASSED.
         */
                         
-        vrt[3] = vra[2];
-        vrt[2] = vrb[2];
-        vrt[1] = vra[3];
-        vrt[0] = vrb[3];
+        vrt[0] = vrb[0];
+        vrt[1] = vra[0];
+        vrt[2] = vrb[1];
+        vrt[3] = vra[1];
         
         tc->setVecReg(vrt_id, vrt_reg);
     }});

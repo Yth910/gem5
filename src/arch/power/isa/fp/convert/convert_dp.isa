@@ -1,6 +1,6 @@
 format FloatConvertOp {
     12: frsp({{ 
-        Fb_df = Vb_df[0];
+        Fb_df = Vb_df[1];
         double tmp = (float)Fb_df;
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
@@ -12,7 +12,7 @@ format FloatConvertOp {
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
         FPSCR = fpscr_0;
         Ft_df = tmp;
-        Vt_df[0] = Ft_df;
+        Vt_df[1] = Ft_df;
         //Ft_sf = Fb_sf;
     }});
 
@@ -22,7 +22,7 @@ format FloatConvertOp {
         fp_before_cal(fpscr_0);
         fpscr_0.fr = 0;
         fpscr_0.fi = 0;
-        Fb_df = Vb_df[0];
+        Fb_df = Vb_df[1];
         tmp = bfp64_ROUND_TO_INTEGER_TRUNC(Fb_df);
         //std::tie(tmp, fpscr_0) = get_floating_exception(tmp,
         //    tmp, fpscr_0, tmp);
@@ -31,11 +31,11 @@ format FloatConvertOp {
         FPSCR = fpscr_0;
         int32_t i_tmp = tmp;
         Ft_sd = ((int64_t)i_tmp << 32) | i_tmp;
-        Vt_sd[0] = Ft_sd;
+        Vt_sd[1] = Ft_sd;
     }});
 
     814: fctid({{
-        Fb_df = Vb_df[0];
+        Fb_df = Vb_df[1];
         double tmp = Fb_df;
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
@@ -47,7 +47,7 @@ format FloatConvertOp {
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
         FPSCR = fpscr_0;
         Ft_sd = tmp;
-        Vt_sd[0] = Ft_sd;
+        Vt_sd[1] = Ft_sd;
         //Ft_sd = Fb_df;
     }});
 
@@ -57,7 +57,7 @@ format FloatConvertOp {
         fp_before_cal(fpscr_0);
         fpscr_0.fr = 0;
         fpscr_0.fi = 0;
-        Fb_df = Vb_df[0];
+        Fb_df = Vb_df[1];
         tmp = bfp64_ROUND_TO_INTEGER_TRUNC(Fb_df);
         //std::tie(tmp, fpscr_0) = get_floating_exception(tmp,
         //    tmp, fpscr_0, tmp);
@@ -65,11 +65,11 @@ format FloatConvertOp {
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
         FPSCR = fpscr_0;
         Ft_sd = tmp;
-        Vt_sd[0] = Ft_sd;
+        Vt_sd[1] = Ft_sd;
     }});
 
     942: fctidu({{
-        Fb_df = Vb_df[0];
+        Fb_df = Vb_df[1];
         double tmp = Fb_df;
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
@@ -81,7 +81,7 @@ format FloatConvertOp {
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
         FPSCR = fpscr_0;
         Ft_ud = tmp;
-        Vt_ud[0] = Ft_ud;
+        Vt_ud[1] = Ft_ud;
         //Ft_ud = Fb_df;
     }});
 
@@ -91,7 +91,7 @@ format FloatConvertOp {
         fp_before_cal(fpscr_0);
         fpscr_0.fr = 0;
         fpscr_0.fi = 0;
-        Fb_df = Vb_df[0];
+        Fb_df = Vb_df[1];
         tmp = bfp64_ROUND_TO_INTEGER_TRUNC(Fb_df);
         //std::tie(tmp, fpscr_0) = get_floating_exception(tmp,
         //    tmp, fpscr_0, tmp);
@@ -99,11 +99,11 @@ format FloatConvertOp {
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
         FPSCR = fpscr_0;
         Ft_ud = tmp;
-        Vt_ud[0] = Ft_ud;
+        Vt_ud[1] = Ft_ud;
     }});
 
     14: fctiw({{
-        Fb_df = Vb_df[0];
+        Fb_df = Vb_df[1];
         double tmp = Fb_df;
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
@@ -112,52 +112,52 @@ format FloatConvertOp {
         
         int32_t i_tmp = tmp;
         Ft_sd = ((int64_t)i_tmp << 32) | i_tmp;
-        Vt_sd[0] = Ft_sd;
+        Vt_sd[1] = Ft_sd;
     }});
 
     142: fctiwu({{
-        Fb_df = Vb_df[0];
+        Fb_df = Vb_df[1];
         uint32_t i_tmp = Fb_df;
         Ft_ud = (i_tmp << 32) | i_tmp;
-        Vt_ud[0] = Ft_ud;
+        Vt_ud[1] = Ft_ud;
     }});
 
     143: fctiwuz({{
-        Fb_df = Vb_df[0];
+        Fb_df = Vb_df[1];
         uint32_t i_tmp = bfp64_ROUND_TO_INTEGER_TRUNC(Fb_df);
         Ft_ud = ((int64_t)i_tmp << 32) | i_tmp;
-        Vt_ud[0] = Ft_ud;
+        Vt_ud[1] = Ft_ud;
     }});
 
     846: fcfid({{
-        Fb_sd = Vb_sd[0];
+        Fb_sd = Vb_sd[1];
         Ft_df = Fb_sd;
-        Vt_df[0] = Ft_df;
+        Vt_df[1] = Ft_df;
     }});
 
     974: fcfidu({{
-        Fb_ud = Vb_ud[0];
+        Fb_ud = Vb_ud[1];
         Ft_df = Fb_ud;
-        Vt_df[0] = Ft_df;
+        Vt_df[1] = Ft_df;
     }});
     392: frin({{
-        Fb_ud = Vb_ud[0];
+        Fb_ud = Vb_ud[1];
         Ft_df = bfp32_ROUND_TO_INTEGER_NEAR(Fb_ud);
-        Vt_df[0] = Ft_df;
+        Vt_df[1] = Ft_df;
     }});
     456: frip({{
-        Fb_ud = Vb_ud[0];
+        Fb_ud = Vb_ud[1];
         Ft_df = bfp32_ROUND_TO_INTEGER_CEIL(Fb_ud);
-        Vt_df[0] = Ft_df;
+        Vt_df[1] = Ft_df;
     }});
     424: friz({{
-        Fb_ud = Vb_ud[0];
+        Fb_ud = Vb_ud[1];
         Ft_df = bfp32_ROUND_TO_INTEGER_TRUNC(Fb_ud);
-        Vt_df[0] = Ft_df;
+        Vt_df[1] = Ft_df;
     }});
     488: frim({{
-        Fb_ud = Vb_ud[0];
+        Fb_ud = Vb_ud[1];
         Ft_df = bfp32_ROUND_TO_INTEGER_FLOOR(Fb_ud);
-        Vt_df[0] = Ft_df;
+        Vt_df[1] = Ft_df;
     }});
 }

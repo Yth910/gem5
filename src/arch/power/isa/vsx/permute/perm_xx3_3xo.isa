@@ -22,8 +22,8 @@ format IntArithOp {
         
         int t1 = (DM >> 1) & 0x1;
         int t2 = DM & 0x1;
-        vrt[0] = vra[t1];
-        vrt[1] = vrb[t2];
+        vrt[0] = vrb[t1];
+        vrt[1] = vra[t2];
         
         
         tc->setVecReg(vrt_id, vrt_reg);
@@ -54,9 +54,9 @@ format IntArithOp {
         uint32_t source[8];
         int i;
         for(i=0; i<4; i++)
-            source[i] = vra[i];
+            source[i] = vrb[i];
         for(i=0; i<4; i++)
-            source[i+4] = vrb[i];
+            source[i+4] = vra[i];
         for(i=0; i<4; i++)
             vrt[i] = source[i + SHW];		        
         

@@ -3,12 +3,12 @@ format FloatRCCheckOp {
         double tmp;
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
-        Fa = Va_df[0];
-        Fb = Vb_df[0];
+        Fa = Va_df[1];
+        Fb = Vb_df[1];
         std::tie(tmp, fpscr_0) = bfp32_ADD(Fa, Fb, FPSCR);
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
         Ft = tmp;
-        Vt_df[0] = Ft;
+        Vt_df[1] = Ft;
         FPSCR = fpscr_0;
         //Ft = Fa + Fb;
         //ALL PASSED.
@@ -17,12 +17,12 @@ format FloatRCCheckOp {
         double tmp;
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
-        Fa = Va_df[0];
-        Fb = Vb_df[0];
+        Fa = Va_df[1];
+        Fb = Vb_df[1];
         std::tie(tmp, fpscr_0) = bfp32_ADD(Fa, bfp_NEGATE(Fb), FPSCR);
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
         Ft = tmp;
-        Vt_df[0] = Ft;
+        Vt_df[1] = Ft;
         FPSCR = fpscr_0;
         //Ft = Fa - Fb;
         //ALL PASSED.
@@ -31,12 +31,12 @@ format FloatRCCheckOp {
         double tmp;
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
-        Fa = Va_df[0];
-        Fc = Vc_df[0];
+        Fa = Va_df[1];
+        Fc = Vc_df[1];
         std::tie(tmp, fpscr_0) = bfp32_MULTIPLY(Fa, Fc, FPSCR);
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
         Ft = tmp;
-        Vt_df[0] = Ft;
+        Vt_df[1] = Ft;
         FPSCR = fpscr_0;
         //Ft = Fa * Fc;
         //ALL PASSED.
@@ -45,12 +45,12 @@ format FloatRCCheckOp {
         double tmp;
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
-        Fa = Va_df[0];
-        Fb = Vb_df[0];
+        Fa = Va_df[1];
+        Fb = Vb_df[1];
         std::tie(tmp, fpscr_0) = bfp32_DIV(Fa, Fb, FPSCR);
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
         Ft = tmp;
-        Vt_df[0] = Ft;
+        Vt_df[1] = Ft;
         FPSCR = fpscr_0;
         //Ft = Fa / Fb;
         //ALL PASSED.
@@ -59,73 +59,73 @@ format FloatRCCheckOp {
         double tmp;
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
-        Fa = Va_df[0];
-        Fb = Vb_df[0];
-        Fc = Vc_df[0];
+        Fa = Va_df[1];
+        Fb = Vb_df[1];
+        Fc = Vc_df[1];
         std::tie(tmp, fpscr_0) =
             bfp32_MULTIPLY_ADD(Fa, Fc, Fb, FPSCR);
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
         Ft = tmp;
-        Vt_df[0] = Ft;
+        Vt_df[1] = Ft;
         FPSCR = fpscr_0;
         //Ft = (Fa * Fc) + Fb; }});
     28: fmsubs({{
         double tmp;
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
-        Fa = Va_df[0];
-        Fb = Vb_df[0];
-        Fc = Vc_df[0];
+        Fa = Va_df[1];
+        Fb = Vb_df[1];
+        Fc = Vc_df[1];
         std::tie(tmp, fpscr_0) =
             bfp32_MULTIPLY_ADD(Fa, Fc, bfp_NEGATE(Fb), FPSCR);
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
         Ft = tmp;
-        Vt_df[0] = Ft;
+        Vt_df[1] = Ft;
         FPSCR = fpscr_0;
         //Ft = (Fa * Fc) - Fb; }});
     31: fnmadds({{
         double tmp;
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
-        Fa = Va_df[0];
-        Fb = Vb_df[0];
-        Fc = Vc_df[0];
+        Fa = Va_df[1];
+        Fb = Vb_df[1];
+        Fc = Vc_df[1];
         std::tie(tmp, fpscr_0) =
             bfp32_MULTIPLY_ADD(Fa, Fc, Fb, FPSCR);
         tmp = bfp_NEGATE(tmp);
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
         Ft = tmp;
-        Vt_df[0] = Ft;
+        Vt_df[1] = Ft;
         FPSCR = fpscr_0;
         //Ft = -((Fa * Fc) + Fb); }});
     30: fnmsubs({{
         double tmp;
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
-        Fa = Va_df[0];
-        Fb = Vb_df[0];
-        Fc = Vc_df[0];
+        Fa = Va_df[1];
+        Fb = Vb_df[1];
+        Fc = Vc_df[1];
         std::tie(tmp, fpscr_0) =
             bfp32_MULTIPLY_ADD(Fa, Fc, bfp_NEGATE(Fb), FPSCR);
         tmp = bfp_NEGATE(tmp);
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
         Ft = tmp;
-        Vt_df[0] = Ft;
+        Vt_df[1] = Ft;
         FPSCR = fpscr_0;
         //Ft = -((Fa * Fc) - Fb); }});
     22: fsqrts({{
-        Fb = Vb_df[0];
+        Fb = Vb_df[1];
         Ft = sqrt(Fb);
-        Vt_df[0] = Ft;
+        Vt_df[1] = Ft;
     }});
     24: fres({{
-        Fb = Vb_df[0];
+        Fb = Vb_df[1];
         Ft = 1.0 / Fb;
-        Vt_df[0] = Ft;
+        Vt_df[1] = Ft;
     }});
     26: frsqrtes({{
-        Fb = Vb_df[0];
+        Fb = Vb_df[1];
         Ft = 1.0 / sqrt(Fb);
-        Vt_df[0] = Ft;
+        Vt_df[1] = Ft;
     }});
 }
