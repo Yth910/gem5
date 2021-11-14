@@ -30,7 +30,7 @@ format FloatConvertOp {
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
         FPSCR = fpscr_0;
         int32_t i_tmp = tmp;
-        Ft_sd = ((int64_t)i_tmp << 32) | i_tmp;
+        Ft_sd = ((uint64_t)i_tmp << 32) | i_tmp;
         Vt_sd[1] = Ft_sd;
     }});
 
@@ -111,7 +111,7 @@ format FloatConvertOp {
         fpscr_0.fi = 0;
         
         int32_t i_tmp = tmp;
-        Ft_sd = ((int64_t)i_tmp << 32) | i_tmp;
+        Ft_sd = ((uint64_t)i_tmp << 32) | i_tmp;
         Vt_sd[1] = Ft_sd;
     }});
 
@@ -125,7 +125,7 @@ format FloatConvertOp {
     143: fctiwuz({{
         Fb_df = Vb_df[1];
         uint32_t i_tmp = bfp64_ROUND_TO_INTEGER_TRUNC(Fb_df);
-        Ft_ud = ((int64_t)i_tmp << 32) | i_tmp;
+        Ft_ud = ((uint64_t)i_tmp << 32) | i_tmp;
         Vt_ud[1] = Ft_ud;
     }});
 
@@ -141,23 +141,23 @@ format FloatConvertOp {
         Vt_df[1] = Ft_df;
     }});
     392: frin({{
-        Fb_ud = Vb_ud[1];
-        Ft_df = bfp32_ROUND_TO_INTEGER_NEAR(Fb_ud);
+        Fb_df = Vb_df[1];
+        Ft_df = bfp32_ROUND_TO_INTEGER_NEAR(Fb_df);
         Vt_df[1] = Ft_df;
     }});
     456: frip({{
-        Fb_ud = Vb_ud[1];
-        Ft_df = bfp32_ROUND_TO_INTEGER_CEIL(Fb_ud);
+        Fb_df = Vb_df[1];
+        Ft_df = bfp32_ROUND_TO_INTEGER_CEIL(Fb_df);
         Vt_df[1] = Ft_df;
     }});
     424: friz({{
-        Fb_ud = Vb_ud[1];
-        Ft_df = bfp32_ROUND_TO_INTEGER_TRUNC(Fb_ud);
+        Fb_df = Vb_df[1];
+        Ft_df = bfp32_ROUND_TO_INTEGER_TRUNC(Fb_df);
         Vt_df[1] = Ft_df;
     }});
     488: frim({{
-        Fb_ud = Vb_ud[1];
-        Ft_df = bfp32_ROUND_TO_INTEGER_FLOOR(Fb_ud);
+        Fb_df = Vb_df[1];
+        Ft_df = bfp32_ROUND_TO_INTEGER_FLOOR(Fb_df);
         Vt_df[1] = Ft_df;
     }});
 }

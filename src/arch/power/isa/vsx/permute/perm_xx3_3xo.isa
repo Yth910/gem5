@@ -22,10 +22,9 @@ format IntArithOp {
         
         int t1 = (DM >> 1) & 0x1;
         int t2 = DM & 0x1;
-        vrt[0] = vrb[t1];
-        vrt[1] = vra[t2];
-        
-        
+        vrt[1] = vra[1 - t1];
+        vrt[0] = vrb[1 - t2];
+
         tc->setVecReg(vrt_id, vrt_reg);
         }});
                                 
