@@ -18,7 +18,7 @@
     }});
     40: fneg({{
         Fb_ud = Vb_ud[1];
-        Ft_ud = -Fb_ud;
+        Ft_ud = Fb_ud ^ 0x8000000000000000ULL;
         Vt_ud[1] = Ft_ud;
     }});
     8: fcpsgn({{

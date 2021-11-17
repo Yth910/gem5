@@ -78,17 +78,8 @@ format VsxFloatArithOp {
         ALL PASSED.
         */
 
-        /* CODE SEG 1 */
-        //code seg 1
-        /* CODE SEG 1 END */
-        for (auto i = 0; i < 1; i++) {
-            /* CODE SEG 2 */
-            vrt_val[i] = (vra_val[i] & 0x8000000000000000ULL) | (vrb_val[i] & 0x7fffffffffffffffULL);
-            /* CODE SEG 2 END */
-        }
-        /* CODE SEG 3 */
-        //code seg 3
-        /* CODE SEG 3 END */
+        vrt_val[1] = (vra_val[1] & 0x8000000000000000ULL) | (vrb_val[1] & 0x7fffffffffffffffULL);
+
         FPSCR = fpscr_0;
         tc->setVecReg(vrt_id, vrt_reg);
     }});
@@ -1777,21 +1768,19 @@ format VsxFloatArithOp {
 		uint32_t fg_flag = 0;
 		// uint32_t fl_flag = 0;
 
-		for (auto i = 0; i < 1; i++) {
-			uint64_t *pVala = reinterpret_cast<uint64_t *>(&vra_val[i]);
-			uint64_t *pValb = reinterpret_cast<uint64_t *>(&vrb_val[i]);
-			int16_t e_a = ((*pVala >> (64-12)) & 0x00000000000007FF) - 1023;
-			int16_t e_b = ((*pValb >> (64-12)) & 0x00000000000007FF) - 1023;
-			fe_flag = fe_flag | isNan(vra_val[i]) | isInfinity(vra_val[i]) |
-				isNan(vrb_val[i]) | isInfinity(vrb_val[i]) |
-				(e_b <= -1022) |
-				(e_b >=  1021) |
-				(!isZero(vra_val[i]) & ((e_a - e_b) >=	1023)) |
-				(!isZero(vra_val[i]) & ((e_a - e_b) <= -1021)) |
-				(!isZero(vra_val[i]) & (e_a <= -970));
-			fg_flag = fg_flag | isInfinity(vra_val[i]) | isInfinity(vrb_val[i]) |
-				isZero(vrb_val[i]) | isDenormalized(vrb_val[i]);
-		}
+		uint64_t *pVala = reinterpret_cast<uint64_t *>(&vra_val[1]);
+		uint64_t *pValb = reinterpret_cast<uint64_t *>(&vrb_val[1]);
+		int16_t e_a = ((*pVala >> (64-12)) & 0x00000000000007FF) - 1023;
+		int16_t e_b = ((*pValb >> (64-12)) & 0x00000000000007FF) - 1023;
+		fe_flag = fe_flag | isNan(vra_val[1]) | isInfinity(vra_val[1]) |
+			isNan(vrb_val[1]) | isInfinity(vrb_val[1]) |
+			(e_b <= -1022) |
+			(e_b >=  1021) |
+			(!isZero(vra_val[1]) & ((e_a - e_b) >=	1023)) |
+			(!isZero(vra_val[1]) & ((e_a - e_b) <= -1021)) |
+			(!isZero(vra_val[1]) & (e_a <= -970));
+		fg_flag = fg_flag | isInfinity(vra_val[1]) | isInfinity(vrb_val[1]) |
+			isZero(vrb_val[1]) | isDenormalized(vrb_val[1]);
 
 		CR = insertCRField(CR, BF, ((1 << 3) | (fg_flag << 2) | (fe_flag << 1)));
 	}}); 

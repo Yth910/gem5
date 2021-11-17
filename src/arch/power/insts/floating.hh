@@ -594,7 +594,8 @@ class FloatOp : public PowerStaticInst
 
     inline float bfp32_RECIPROCAL_ESTIMATE(float x) const
     {
-        return 1.0 / x;
+        double real = (double)1.0 / (double)x;
+        return real * (double)257 / (double)256;
     }
 
     inline float bfp32_RECIPROCAL_SQRT_ESTIMATE(float x) const
@@ -622,24 +623,25 @@ class FloatOp : public PowerStaticInst
         return trunc(x);
     }
 
-    inline double bfp32_POWER2_ESTIMATE(double x) const
+    inline double bfp64_POWER2_ESTIMATE(double x) const
     {
         return exp2(x);
     }
 
-    inline double bfp32_LOG_BASE2_ESTIMATE(double x) const
+    inline double bfp64_LOG_BASE2_ESTIMATE(double x) const
     {
         return log2(x);
     }
 
-    inline double bfp32_RECIPROCAL_ESTIMATE(double x) const
+    inline double bfp64_RECIPROCAL_ESTIMATE(double x) const
     {
-        return 1.0 / x;
+        double real = (double)1.0 / x;
+        return real * (double)257 / (double)256;
     }
 
-    inline double bfp32_RECIPROCAL_SQRT_ESTIMATE(double x) const
+    inline double bfp64_RECIPROCAL_SQRT_ESTIMATE(double x) const
     {
-        return 1.0 / sqrt(x);
+        return (double)1.0 / sqrt(x);
     }
 
 	std::tuple<__float128, Fpscr> bfp128_ADD(__float128 x, __float128 y, Fpscr fpscr) const

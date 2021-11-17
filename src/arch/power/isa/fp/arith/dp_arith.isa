@@ -134,7 +134,7 @@ format FloatRCCheckOp {
 
     24: fre({{
         Fb = Vb_df[1];
-        Ft = 1.0 / Fb;
+        Ft = bfp64_RECIPROCAL_ESTIMATE(Fb);
         Vt_df[1] = Ft;
     }});
 
@@ -147,10 +147,11 @@ format FloatRCCheckOp {
     23: fsel({{
         Fa = Va_df[1];
         Fb = Vb_df[1];
+        Fc = Vc_df[1];
         if (Fa >= 0.0)
-            Ft_sf = Fc;
+            Ft_df = Fc;
         else
-            Ft_sf = Fb;
-        Vt_sf[0] = Ft_sf;
+            Ft_df = Fb;
+        Vt_df[1] = Ft_df;
     }});
 }
