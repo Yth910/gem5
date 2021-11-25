@@ -19,15 +19,16 @@ format IntArithOp {
         /*
         ALL PASSED.
         */
-
+        
         int t1 = (DM >> 1) & 0x1;
         int t2 = DM & 0x1;
         vrt[1] = vra[1 - t1];
         vrt[0] = vrb[1 - t2];
-
+        
+        
         tc->setVecReg(vrt_id, vrt_reg);
         }});
-
+                                
     2: xxsldwi({{                                            // wwf
         /*
             source.qword[0] ← VSR[32×AX+A]
@@ -52,12 +53,12 @@ format IntArithOp {
         
         uint32_t source[8];
         int i;
-        for(i=0; i<4; i++)
+        for(i = 0; i < 4; i++)
             source[i] = vrb[i];
-        for(i=0; i<4; i++)
-            source[i+4] = vra[i];
-        for(i=0; i<4; i++)
-            vrt[i] = source[i + SHW];		        
+        for(i = 0; i < 4; i++)
+            source[i + 4] = vra[i];
+        for(i = 0; i < 4; i++)
+            vrt[3 - i] = source[7 - (i + SHW)];		        
         
         tc->setVecReg(vrt_id, vrt_reg);
     }});

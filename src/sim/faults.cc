@@ -99,9 +99,10 @@ GenericPageTableFault::invoke(ThreadContext *tc, const StaticInstPtr &inst)
         Process *p = tc->getProcessPtr();
         handled = p->fixupFault(vaddr);
     }
-    panic_if(!handled &&
-                 !tc->getSystemPtr()->trapToGdb(SIGSEGV, tc->contextId()),
-             "Page table fault when accessing virtual address %#x\n", vaddr);
+    panic_if(!handled ,
+              //  &&
+              //  !tc->getSystemPtr()->trapToGdb(SIGSEGV, tc->contextId()),
+             "Page table fault when accessing virtual address %#x pc = %#x\n", vaddr, tc->pcState().pc());
 }
 
 void

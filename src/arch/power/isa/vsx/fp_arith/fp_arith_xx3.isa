@@ -1768,20 +1768,21 @@ format VsxFloatArithOp {
 		uint32_t fg_flag = 0;
 		// uint32_t fl_flag = 0;
 
-		uint64_t *pVala = reinterpret_cast<uint64_t *>(&vra_val[1]);
-		uint64_t *pValb = reinterpret_cast<uint64_t *>(&vrb_val[1]);
-		int16_t e_a = ((*pVala >> (64-12)) & 0x00000000000007FF) - 1023;
-		int16_t e_b = ((*pValb >> (64-12)) & 0x00000000000007FF) - 1023;
-		fe_flag = fe_flag | isNan(vra_val[1]) | isInfinity(vra_val[1]) |
-			isNan(vrb_val[1]) | isInfinity(vrb_val[1]) |
-			(e_b <= -1022) |
-			(e_b >=  1021) |
-			(!isZero(vra_val[1]) & ((e_a - e_b) >=	1023)) |
-			(!isZero(vra_val[1]) & ((e_a - e_b) <= -1021)) |
-			(!isZero(vra_val[1]) & (e_a <= -970));
-		fg_flag = fg_flag | isInfinity(vra_val[1]) | isInfinity(vrb_val[1]) |
-			isZero(vrb_val[1]) | isDenormalized(vrb_val[1]);
-
+		
+			uint64_t *pVala = reinterpret_cast<uint64_t *>(&vra_val[1]);
+			uint64_t *pValb = reinterpret_cast<uint64_t *>(&vrb_val[1]);
+			int16_t e_a = ((*pVala >> (64-12)) & 0x00000000000007FF) - 1023;
+			int16_t e_b = ((*pValb >> (64-12)) & 0x00000000000007FF) - 1023;
+			fe_flag = fe_flag | isNan(vra_val[1]) | isInfinity(vra_val[1]) |
+				isNan(vrb_val[1]) | isInfinity(vrb_val[1]) |
+				(e_b <= -1022) |
+				(e_b >=  1021) |
+				(!isZero(vra_val[1]) & ((e_a - e_b) >=	1023)) |
+				(!isZero(vra_val[1]) & ((e_a - e_b) <= -1021)) |
+				(!isZero(vra_val[1]) & (e_a <= -970));
+			fg_flag = fg_flag | isInfinity(vra_val[1]) | isInfinity(vrb_val[1]) |
+				isZero(vrb_val[1]) | isDenormalized(vrb_val[1]);
+		
 		CR = insertCRField(CR, BF, ((1 << 3) | (fg_flag << 2) | (fe_flag << 1)));
 	}}); 
 

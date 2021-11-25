@@ -17,11 +17,11 @@ format VsxFloatArithOp {
         auto vrb = vrb_reg.as<uint32_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
         auto vrt = vrt_reg.as<uint32_t>();
-
+        
         /*
         ALL PASSED.
         */
-
+                        
         vrt[0] = vrb[2];
         vrt[1] = vra[2];
         vrt[2] = vrb[3];
@@ -48,16 +48,16 @@ format VsxFloatArithOp {
         auto vrb = vrb_reg.as<uint32_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
         auto vrt = vrt_reg.as<uint32_t>();
-
+        
         /*
         ALL PASSED.
         */
-
+                        
         vrt[0] = vrb[0];
         vrt[1] = vra[0];
         vrt[2] = vrb[1];
         vrt[3] = vra[1];
-
+        
         tc->setVecReg(vrt_id, vrt_reg);
     }});
 }

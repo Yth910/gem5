@@ -71,7 +71,7 @@ PowerProcess::PowerProcess(
     Addr next_thread_stack_base = stack_base - max_stack_size;
 
     // Set up region for mmaps. For now, start at bottom of kuseg space.
-    Addr mmap_end = 0x7ffff7fff000ULL;
+    Addr mmap_end = 0x7fffff7ff000ULL;
 
     memState = std::make_shared<MemState>(
             this, brk_point, stack_base, max_stack_size,
@@ -161,7 +161,7 @@ PowerProcess::argsInit(int pageSize)
     //Auxilliary vectors are loaded only for elf formatted executables.
     auto *elfObject = dynamic_cast<loader::ElfObject *>(objFile);
     if (elfObject) {
-        IntType features = HWCAP_FEATURE_32 | HWCAP_FEATURE_HAS_VSX;
+        IntType features = HWCAP_FEATURE_32;// | HWCAP_FEATURE_HAS_VSX;
 
         // Check if running in 64-bit mode
         if (is64bit)

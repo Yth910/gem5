@@ -360,11 +360,11 @@ if ((vra_val_int[i] == 0x00000000 && vrb_val_int[i] == 0x80000000) || (vra_val_i
         auto vrb_val = vrb_reg.as<float>();
         auto vrt_reg = tc->readVecReg(vrt_id);
         auto vrt_val = vrt_reg.as<float>();
-
+        
         for (auto i = 0; i < 4; i++) {
             vrt_val[i] = bfp64_RECIPROCAL_SQRT_ESTIMATE(vrb_val[i]);
         }
-
+        
         tc->setVecReg(vrt_id, vrt_reg);
     }});
 

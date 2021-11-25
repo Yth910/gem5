@@ -186,7 +186,7 @@ format IntArithOp {
             bool sat;
             std::tie(result, sat) = si16_CLAMP(result);
             uint64_t vscr = tc->readIntReg(INTREG_VSCR);
-            vscr |= (sat & 0x10001);
+            vscr |= sat;
             tc->setIntReg(INTREG_VSCR, vscr);
             vrt_val[i] = result;
             /* CODE SEG 2 END */
