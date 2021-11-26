@@ -1053,6 +1053,11 @@ chdirFunc(SyscallDesc *desc, ThreadContext *tc, VPtr<> pathname)
     }
     std::string host_cwd = p->checkPathRedirect(tgt_cwd);
 
+    tgt_cwd  = tgt_cwd + "/";
+
+    DPRINTF_SYSCALL(Verbose, "path: %s realpath: %s host cwd %s.\n",
+        path, tgt_cwd.c_str(), host_cwd.c_str());
+
     int result = chdir(host_cwd.c_str());
 
     if (result == -1)

@@ -918,6 +918,7 @@ unlinkatFunc(SyscallDesc *desc, ThreadContext *tc, int dirfd, VPtr<> pathname)
     if (dirfd != OS::TGT_AT_FDCWD)
         warn("unlinkat: first argument not AT_FDCWD; unlikely to work");
 
+    DPRINTF_SYSCALL(Verbose, "unlink %s\n", pathname);
     return unlinkFunc(desc, tc, pathname);
 }
 
@@ -1190,6 +1191,7 @@ statFunc(SyscallDesc *desc, ThreadContext *tc,
     // Adjust path for cwd and redirection
     path = process->checkPathRedirect(path);
 
+    DPRINTF_SYSCALL(Verbose, "stat %s\n", path.c_str());
     struct stat hostBuf;
     int result = stat(path.c_str(), &hostBuf);
 
@@ -1314,6 +1316,7 @@ lstatFunc(SyscallDesc *desc, ThreadContext *tc,
     // Adjust path for cwd and redirection
     path = process->checkPathRedirect(path);
 
+    DPRINTF_SYSCALL(Verbose, "lstat %s\n", path.c_str());
     struct stat hostBuf;
     int result = lstat(path.c_str(), &hostBuf);
 
@@ -1398,6 +1401,7 @@ statfsFunc(SyscallDesc *desc, ThreadContext *tc,
     // Adjust path for cwd and redirection
     path = process->checkPathRedirect(path);
 
+    DPRINTF_SYSCALL(Verbose, "statfs %s\n", path.c_str());
     struct statfs hostBuf;
     int result = statfs(path.c_str(), &hostBuf);
 
@@ -1550,6 +1554,7 @@ fstatfsFunc(SyscallDesc *desc, ThreadContext *tc,
         return -EBADF;
     int sim_fd = ffdp->getSimFD();
 
+    DPRINTF_SYSCALL(Verbose, "fstatfs fd = %d\n", sim_fd);
     struct statfs hostBuf;
     int result = fstatfs(sim_fd, &hostBuf);
 
