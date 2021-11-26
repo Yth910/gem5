@@ -1,10 +1,10 @@
 format LoadIndexUpdateOp {
     567: lfsux({{
-        Ft_df = Mem_sf;
-        Vt_df[1] = Ft_df;
+        double dst = Mem_sf;
+        Vt_df[1] = dst;
     }});
     631: lfdux({{
-        Ft_ud = Mem_ud;
-        Vt_ud[1] = Ft_ud;
+        double dst = Mem_df;
+        Vt_df[1] = dst;
     }});
 }

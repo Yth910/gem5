@@ -1,26 +1,26 @@
 format StoreIndexOp {
     663: stfsx({{
-        Fs_df = Vs_df[1];
-        Mem_sf = Fs_df;
+        double dst = Vs_df[1];
+        Mem_sf = dst;
     }});
     727: stfdx({{
-        Fs_ud = Vs_ud[1];
-        Mem_ud = Fs_ud;
+        double dst = Vs_df[1];
+        Mem_df = dst;
     }});
 
     983: stfiwx({{
-        Fs_uw = Vs_uw[3];
-        Mem_uw = Fs_uw;
+        uint64_t dst = Vs_ud[1];
+        Mem_uw = dst;
     }});
 }
 
 format StoreIndexUpdateOp {
     695: stfsux({{
-        Fs_df = Vs_df[1];
-        Mem_sf = Fs_df;
+        double dst = Vs_df[1];
+        Mem_sf = dst;
     }});
     759: stfdux({{
-        Fs_ud = Vs_ud[1];
-        Mem_ud = Fs_ud;
+        double dst = Vs_df[1];
+        Mem_df = dst;
     }});
 }

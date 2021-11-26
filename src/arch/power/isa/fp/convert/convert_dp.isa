@@ -1,7 +1,7 @@
 format FloatConvertOp {
     12: frsp({{ 
-        Fb_df = Vb_df[1];
-        double tmp = (float)Fb_df;
+        double src2 = Vb_df[1];
+        double tmp = (float)src2;
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
         fpscr_0.fr = 0;
@@ -11,8 +11,8 @@ format FloatConvertOp {
         fpscr_0.xx = 0;
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
         FPSCR = fpscr_0;
-        Ft_df = tmp;
-        Vt_df[1] = Ft_df;
+        double dst = tmp;
+        Vt_df[1] = dst;
         //Ft_sf = Fb_sf;
     }});
 
@@ -22,8 +22,8 @@ format FloatConvertOp {
         fp_before_cal(fpscr_0);
         fpscr_0.fr = 0;
         fpscr_0.fi = 0;
-        Fb_df = Vb_df[1];
-        tmp = bfp64_ROUND_TO_INTEGER_TRUNC(Fb_df);
+        double src2 = Vb_df[1];
+        tmp = bfp64_ROUND_TO_INTEGER_TRUNC(src2);
         //std::tie(tmp, fpscr_0) = get_floating_exception(tmp,
         //    tmp, fpscr_0, tmp);
         fpscr_0.xx = 0;
@@ -31,13 +31,13 @@ format FloatConvertOp {
         FPSCR = fpscr_0;
         int32_t i_tmp = tmp;
         uint64_t i_tmp2 = (((uint64_t)i_tmp << 32) | ((uint64_t)i_tmp & 0xffffffff));
-        Ft_sd = i_tmp2;
-        Vt_sd[1] = Ft_sd;
+        uint64_t dst = i_tmp2;
+        Vt_sd[1] = dst;
     }});
 
     814: fctid({{
-        Fb_df = Vb_df[1];
-        double tmp = Fb_df;
+        double src2 = Vb_df[1];
+        double tmp = src2;
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
         fpscr_0.fr = 0;
@@ -47,9 +47,9 @@ format FloatConvertOp {
         fpscr_0.xx = 0;
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
         FPSCR = fpscr_0;
-        Ft_sd = tmp;
-        Vt_sd[1] = Ft_sd;
-        //Ft_sd = Fb_df;
+        int64_t dst = tmp;
+        Vt_sd[1] = dst;
+        //dst = src2;
     }});
 
     815: fctidz({{ 
@@ -58,20 +58,20 @@ format FloatConvertOp {
         fp_before_cal(fpscr_0);
         fpscr_0.fr = 0;
         fpscr_0.fi = 0;
-        Fb_df = Vb_df[1];
-        tmp = bfp64_ROUND_TO_INTEGER_TRUNC(Fb_df);
+        double src2 = Vb_df[1];
+        tmp = bfp64_ROUND_TO_INTEGER_TRUNC(src2);
         //std::tie(tmp, fpscr_0) = get_floating_exception(tmp,
         //    tmp, fpscr_0, tmp);
         fpscr_0.xx = 0;
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
         FPSCR = fpscr_0;
-        Ft_sd = tmp;
-        Vt_sd[1] = Ft_sd;
+        int64_t dst = tmp;
+        Vt_sd[1] = dst;
     }});
 
     942: fctidu({{
-        Fb_df = Vb_df[1];
-        double tmp = Fb_df;
+        double src2 = Vb_df[1];
+        double tmp = src2;
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
         fpscr_0.fr = 0;
@@ -81,9 +81,9 @@ format FloatConvertOp {
         fpscr_0.xx = 0;
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
         FPSCR = fpscr_0;
-        Ft_ud = tmp;
-        Vt_ud[1] = Ft_ud;
-        //Ft_ud = Fb_df;
+        double dst = tmp;
+        Vt_ud[1] = dst;
+        //dst = src2;
     }});
 
     943: fctiduz({{ 
@@ -92,20 +92,20 @@ format FloatConvertOp {
         fp_before_cal(fpscr_0);
         fpscr_0.fr = 0;
         fpscr_0.fi = 0;
-        Fb_df = Vb_df[1];
-        tmp = bfp64_ROUND_TO_INTEGER_TRUNC(Fb_df);
+        double src2 = Vb_df[1];
+        tmp = bfp64_ROUND_TO_INTEGER_TRUNC(src2);
         //std::tie(tmp, fpscr_0) = get_floating_exception(tmp,
         //    tmp, fpscr_0, tmp);
         fpscr_0.xx = 0;
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
         FPSCR = fpscr_0;
-        Ft_ud = tmp;
-        Vt_ud[1] = Ft_ud;
+        uint64_t dst = tmp;
+        Vt_ud[1] = dst;
     }});
 
     14: fctiw({{
-        Fb_df = Vb_df[1];
-        double tmp = Fb_df;
+        double src2 = Vb_df[1];
+        double tmp = src2;
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
         fpscr_0.fr = 0;
@@ -113,53 +113,53 @@ format FloatConvertOp {
         
         int32_t i_tmp = tmp;
         uint64_t i_tmp2 = (((uint64_t)i_tmp << 32) | ((uint64_t)i_tmp & 0xffffffff));
-        Ft_sd = i_tmp2;
-        Vt_sd[1] = Ft_sd;
+        int64_t dst = i_tmp2;
+        Vt_sd[1] = dst;
     }});
 
     142: fctiwu({{
-        Fb_df = Vb_df[1];
-        uint32_t i_tmp = Fb_df;
-        Ft_ud = ((uint64_t)i_tmp << 32) | (uint64_t)i_tmp;
-        Vt_ud[1] = Ft_ud;
+        double src2 = Vb_df[1];
+        uint32_t i_tmp = src2;
+        uint64_t dst = ((uint64_t)i_tmp << 32) | (uint64_t)i_tmp;
+        Vt_ud[1] = dst;
     }});
 
     143: fctiwuz({{
-        Fb_df = Vb_df[1];
-        uint32_t i_tmp = bfp64_ROUND_TO_INTEGER_TRUNC(Fb_df);
-        Ft_ud = ((uint64_t)i_tmp << 32) | i_tmp;
-        Vt_ud[1] = Ft_ud;
+        double src2 = Vb_df[1];
+        uint32_t i_tmp = bfp64_ROUND_TO_INTEGER_TRUNC(src2);
+        uint64_t dst = ((uint64_t)i_tmp << 32) | i_tmp;
+        Vt_ud[1] = dst;
     }});
 
     846: fcfid({{
-        Fb_sd = Vb_sd[1];
-        Ft_df = Fb_sd;
-        Vt_df[1] = Ft_df;
+        int64_t src2 = Vb_sd[1];
+        double dst = src2;
+        Vt_df[1] = dst;
     }});
 
     974: fcfidu({{
-        Fb_ud = Vb_ud[1];
-        Ft_df = Fb_ud;
-        Vt_df[1] = Ft_df;
+        uint64_t src2 = Vb_ud[1];
+        double dst = src2;
+        Vt_df[1] = dst;
     }});
     392: frin({{
-        Fb_df = Vb_df[1];
-        Ft_df = bfp64_ROUND_TO_INTEGER_NEAR(Fb_df);
-        Vt_df[1] = Ft_df;
+        double src2 = Vb_df[1];
+        double dst = bfp64_ROUND_TO_INTEGER_NEAR_AWAY(src2);
+        Vt_df[1] = dst;
     }});
     456: frip({{
-        Fb_df = Vb_df[1];
-        Ft_df = bfp64_ROUND_TO_INTEGER_CEIL(Fb_df);
-        Vt_df[1] = Ft_df;
+        double src2 = Vb_df[1];
+        double dst = bfp64_ROUND_TO_INTEGER_CEIL(src2);
+        Vt_df[1] = dst;
     }});
     424: friz({{
-        Fb_df = Vb_df[1];
-        Ft_df = bfp64_ROUND_TO_INTEGER_TRUNC(Fb_df);
-        Vt_df[1] = Ft_df;
+        double src2 = Vb_df[1];
+        double dst = bfp64_ROUND_TO_INTEGER_TRUNC(src2);
+        Vt_df[1] = dst;
     }});
     488: frim({{
-        Fb_df = Vb_df[1];
-        Ft_df = bfp64_ROUND_TO_INTEGER_FLOOR(Fb_df);
-        Vt_df[1] = Ft_df;
+        double src2 = Vb_df[1];
+        double dst = bfp64_ROUND_TO_INTEGER_FLOOR(src2);
+        Vt_df[1] = dst;
     }});
 }

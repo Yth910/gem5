@@ -1,12 +1,12 @@
 format FloatConvertOp {
     846: fcfids({{
-        Fb_sd = Vb_sd[1];
-        Ft_df = (float)Fb_sd;
-        Vt_df[1] = Ft_df;
+        int64_t src2 = Vb_sd[1];
+        double dst = (float)src2;
+        Vt_df[1] = dst;
     }});
     974: fcfidus({{
-        Fb_ud = Vb_ud[1];
-        Ft_df = (float)Fb_ud;
-        Vt_df[1] = Ft_df;
+        uint64_t src2 = Vb_ud[1];
+        double dst = (float)src2;
+        Vt_df[1] = dst;
     }});
 }

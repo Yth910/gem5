@@ -582,6 +582,14 @@ class FloatOp : public PowerStaticInst
         return trunc(x);
     }
 
+    inline float bfp32_ROUND_TO_INTEGER_NEAR_AWAY(float x) const
+    {
+        if (x > 0)
+            return trunc(x + 0.5);
+        else
+            return trunc(x - 0.5);
+    }
+
     inline float bfp32_POWER2_ESTIMATE(float x) const
     {
         return exp2(x);
@@ -621,6 +629,14 @@ class FloatOp : public PowerStaticInst
     inline double bfp64_ROUND_TO_INTEGER_TRUNC(double x) const
     {
         return trunc(x);
+    }
+
+    inline double bfp64_ROUND_TO_INTEGER_NEAR_AWAY(double x) const
+    {
+        if (x > 0)
+            return trunc(x + 0.5);
+        else
+            return trunc(x - 0.5);
     }
 
     inline double bfp64_POWER2_ESTIMATE(double x) const

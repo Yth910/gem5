@@ -22,7 +22,7 @@ format VsxFloatArithOp {
         double tmp;
         fp_before_cal(fpscr_0);
         fesetround(FE_TONEAREST);
-        tmp = bfp64_ROUND_TO_INTEGER_NEAR(vrb_val[1]);
+        tmp = bfp64_ROUND_TO_INTEGER_NEAR_AWAY(vrb_val[1]);
         /* CODE SEG 2 END */
         /* CODE SEG 3 */
         std::tie(tmp, fpscr_0) = get_floating_exception(vrb_val[1], vrb_val[1], fpscr_0, tmp);
@@ -194,8 +194,9 @@ format VsxFloatArithOp {
         /* CODE SEG 1 END */
         /* CODE SEG 2 */
         for (auto i = 0; i < 2; i++) {
-            vrt_val[i] = bfp64_ROUND_TO_INTEGER_NEAR(vrb_val[i]);
-            std::tie(vrt_val[i], fpscr_0) = get_floating_exception(vrb_val[i], vrb_val[1], fpscr_0, vrt_val[i]);
+            vrt_val[i] = bfp64_ROUND_TO_INTEGER_NEAR_AWAY(vrb_val[i]);
+            std::tie(vrt_val[i], fpscr_0) =
+                get_floating_exception(vrb_val[i], vrb_val[i], fpscr_0, vrt_val[i]);
         }
         fpscr_0.fi = 0;
         fpscr_0.fr = 0;
@@ -364,7 +365,7 @@ format VsxFloatArithOp {
         /* CODE SEG 2 */
         for (auto i = 0; i < 4; i++) {
             vrt_val[i] = bfp32_ROUND_TO_INTEGER_NEAR(vrb_val[i]);
-            std::tie(vrt_val[i], fpscr_0) = get_floating_exception(vrb_val[i], vrb_val[1], fpscr_0, vrt_val[i]);
+            std::tie(vrt_val[i], fpscr_0) = get_floating_exception(vrb_val[i], vrb_val[i], fpscr_0, vrt_val[i]);
         }
         fpscr_0.fi = 0;
         fpscr_0.fr = 0;
