@@ -244,7 +244,10 @@ RemoteGDB::Power64GdbRegCache::getRegs(ThreadContext *context)
         r.gpr[i] = htog(context->readIntReg(i), order);
 
     for (int i = 0; i < NumFloatArchRegs; i++)
-        r.fpr[i] = context->readFloatReg(i);
+        r.fpr[i] = context->readVecRegFlat(i).as<uint64_t>()[1];
+
+    for (int i = 0; i < NumVecRegs; i++)
+        r.vpr[i] = context->readVecRegFlat(i).as<__uint128_t>()[0];
 
     r.pc = htog(context->pcState().pc(), order);
     r.msr = 0; // MSR is privileged, hence not exposed here
@@ -253,6 +256,7 @@ RemoteGDB::Power64GdbRegCache::getRegs(ThreadContext *context)
     r.ctr = htog(context->readIntReg(INTREG_CTR), order);
     r.xer = htog((uint32_t)context->readIntReg(INTREG_XER), order);
     r.fpscr = htog((uint32_t)context->readIntReg(INTREG_FPSCR), order);
+    r.vscr = htog((uint32_t)context->readIntReg(INTREG_VSCR), order);
 }
 
 void
@@ -266,8 +270,17 @@ RemoteGDB::Power64GdbRegCache::setRegs(ThreadContext *context) const
     for (int i = 0; i < NumIntArchRegs; i++)
         context->setIntReg(i, gtoh(r.gpr[i], order));
 
-    for (int i = 0; i < NumFloatArchRegs; i++)
-        context->setFloatReg(i, r.fpr[i]);
+    for (int i = 0; i < NumFloatArchRegs; i++) {
+        auto vec_reg = context->readVecRegFlat(i);
+        vec_reg.as<uint64_t>()[1] = r.fpr[i];
+        context->setVecRegFlat(i, vec_reg);
+    }
+
+    for (int i = 0; i < NumVecRegs; i++) {
+        auto vec_reg = context->readVecRegFlat(i);
+        vec_reg.as<__uint128_t>()[0] = r.vpr[i];
+        context->setVecRegFlat(i, vec_reg);
+    }
 
     auto pc = context->pcState();
     pc.byteOrder(order);
@@ -279,6 +292,7 @@ RemoteGDB::Power64GdbRegCache::setRegs(ThreadContext *context) const
     context->setIntReg(INTREG_CTR, gtoh(r.ctr, order));
     context->setIntReg(INTREG_XER, gtoh(r.xer, order));
     context->setIntReg(INTREG_FPSCR, gtoh(r.fpscr, order));
+    context->setIntReg(INTREG_VSCR, gtoh(r.vscr, order));
 }
 
 BaseGdbRegCache*

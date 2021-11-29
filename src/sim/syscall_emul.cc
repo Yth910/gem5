@@ -467,8 +467,10 @@ unlinkFunc(SyscallDesc *desc, ThreadContext *tc, VPtr<> pathname)
 
     path = p->checkPathRedirect(path);
 
+    DPRINTF_SYSCALL(Verbose, "path: %s .\n", path);
     int result = unlink(path.c_str());
-    return (result == -1) ? -errno : result;
+    DPRINTF_SYSCALL(Verbose, "host result: %d errno:%d.\n", result, errno);
+    return (result == -1) ? errno : result;
 }
 
 SyscallReturn

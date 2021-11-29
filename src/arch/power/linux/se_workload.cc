@@ -453,7 +453,8 @@ SyscallDescTable<PowerISA::SEWorkload::SyscallABI> EmuLinux::syscallDescs = {
     { 343, "vmsplice" },
     { 344, "move_pages" },
     { 345, "getcpu" },
-    { 346, "epoll_pwait" }
+    { 346, "epoll_pwait" },
+    { 359, "getrandom", ignoreFunc }
 };
 
 } // namespace PowerISA

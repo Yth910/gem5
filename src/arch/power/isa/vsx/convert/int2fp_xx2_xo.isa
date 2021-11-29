@@ -571,7 +571,6 @@ format VsxFloatArithOp {
         */
 
         fp_before_cal(fpscr_0);
-        fesetround(FE_TOWARDZERO);
         __int128_t tmp;
         double rnd;
         int64_t max = 0xffffffff;
@@ -584,7 +583,7 @@ format VsxFloatArithOp {
                     fpscr_0.vxsnan = 1;
                 }
             } else {
-                rnd = trunc(vrb_val[i]);
+                rnd = bfp64_ROUND_TO_INTEGER_TRUNC(vrb_val[i]);
                 if (rnd > (float)max) {
                     tmp = max;
                     fpscr_0.vxcvi = 1;

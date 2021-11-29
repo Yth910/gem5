@@ -1,10 +1,14 @@
 format FloatConvertOp {
     846: fcfids({{
+        Fpscr fpscr_0 = FPSCR;
+        fp_before_cal(fpscr_0);
         int64_t src2 = Vb_sd[1];
         double dst = (float)src2;
         Vt_df[1] = dst;
     }});
     974: fcfidus({{
+        Fpscr fpscr_0 = FPSCR;
+        fp_before_cal(fpscr_0);
         uint64_t src2 = Vb_ud[1];
         double dst = (float)src2;
         Vt_df[1] = dst;

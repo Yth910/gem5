@@ -35,6 +35,7 @@
 
 #include "arch/power/regs/float.hh"
 #include "arch/power/regs/int.hh"
+#include "arch/power/regs/vec.hh"
 #include "arch/power/remote_gdb.hh"
 #include "base/remote_gdb.hh"
 
@@ -94,6 +95,8 @@ class RemoteGDB : public BaseRemoteGDB
             uint64_t ctr;
             uint32_t xer;
             uint32_t fpscr;
+            uint32_t vscr;
+            __uint128_t vpr[NumVecRegs];
         } r;
 
       public:

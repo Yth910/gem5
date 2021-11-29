@@ -949,7 +949,7 @@ class FloatOp : public PowerStaticInst
 		} else if (isInfinity(x * y) && isInfinity(z) && (isNegative(x * y) ^ isNegative(z))) {
 			ret = *(double *)&dQNan;
 		} else {
-			fp_before_cal(fpscr_flag);
+			fp_before_cal(fpscr);
 			tmp = (__float128)x * (__float128)y + (__float128)z;
 			ret = tmp;
 			fpscr_flag = get_floating_exception_0(fpscr_flag);
@@ -1014,7 +1014,7 @@ class FloatOp : public PowerStaticInst
 		} else if (isInfinity(x * y) && isInfinity(z) && (isNegative(x * y) ^ isNegative(z))) {
 			ret = *(double *)&dQNan;
 		} else {
-			fp_before_cal(fpscr_flag);
+			fp_before_cal(fpscr);
 			tmp = (__float128)x * (__float128)y + (__float128)z;
 			ret = (float)tmp;
 			fpscr_flag = get_floating_exception_0(fpscr_flag);
@@ -1280,19 +1280,15 @@ class FloatOp : public PowerStaticInst
 		double ret;
 		switch (fpscr.rn) {
             case 0x0:
-				fesetround(FE_TONEAREST);
                 ret = bfp64_ROUND_TO_INTEGER_NEAR(val);
                 break;
             case 0x1:
-				fesetround(FE_TOWARDZERO);
                 ret = bfp64_ROUND_TO_INTEGER_TRUNC(val);
                 break;
             case 0x2:
-				fesetround(FE_UPWARD);
                 ret = bfp64_ROUND_TO_INTEGER_CEIL(val);
                 break;
             case 0x3:
-				fesetround(FE_DOWNWARD);
                 ret = bfp64_ROUND_TO_INTEGER_FLOOR(val);
                 break;
         }
@@ -1317,19 +1313,15 @@ class FloatOp : public PowerStaticInst
 		double ret;
 		switch (fpscr.rn) {
             case 0x0:
-				fesetround(FE_TONEAREST);
                 ret = bfp32_ROUND_TO_INTEGER_NEAR(val);
                 break;
             case 0x1:
-				fesetround(FE_TOWARDZERO);
                 ret = bfp32_ROUND_TO_INTEGER_TRUNC(val);
                 break;
             case 0x2:
-				fesetround(FE_UPWARD);
                 ret = bfp32_ROUND_TO_INTEGER_CEIL(val);
                 break;
             case 0x3:
-				fesetround(FE_DOWNWARD);
                 ret = bfp32_ROUND_TO_INTEGER_FLOOR(val);
                 break;
         }

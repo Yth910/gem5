@@ -1,9 +1,10 @@
 format FloatConvertOp {
-    12: frsp({{ 
-        double src2 = Vb_df[1];
-        double tmp = (float)src2;
+    12: frsp({{
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
+
+        double src2 = Vb_df[1];
+        double tmp = (float)src2;
         fpscr_0.fr = 0;
         fpscr_0.fi = 0;
         //std::tie(tmp, fpscr_0) = get_floating_exception((float)tmp,
@@ -16,10 +17,11 @@ format FloatConvertOp {
         //Ft_sf = Fb_sf;
     }});
 
-    15: fctiwz({{ 
-        double tmp;
+    15: fctiwz({{
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
+
+        double tmp;
         fpscr_0.fr = 0;
         fpscr_0.fi = 0;
         double src2 = Vb_df[1];
@@ -36,10 +38,12 @@ format FloatConvertOp {
     }});
 
     814: fctid({{
-        double src2 = Vb_df[1];
-        double tmp = src2;
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
+
+        double src2 = Vb_df[1];
+
+        double tmp = src2;
         fpscr_0.fr = 0;
         fpscr_0.fi = 0;
         //std::tie(tmp, fpscr_0) = get_floating_exception(tmp,
@@ -52,10 +56,11 @@ format FloatConvertOp {
         //dst = src2;
     }});
 
-    815: fctidz({{ 
-        double tmp;
+    815: fctidz({{
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
+
+        double tmp;
         fpscr_0.fr = 0;
         fpscr_0.fi = 0;
         double src2 = Vb_df[1];
@@ -70,10 +75,11 @@ format FloatConvertOp {
     }});
 
     942: fctidu({{
-        double src2 = Vb_df[1];
-        double tmp = src2;
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
+
+        double src2 = Vb_df[1];
+        double tmp = src2;
         fpscr_0.fr = 0;
         fpscr_0.fi = 0;
         //std::tie(tmp, fpscr_0) = get_floating_exception(tmp,
@@ -86,10 +92,11 @@ format FloatConvertOp {
         //dst = src2;
     }});
 
-    943: fctiduz({{ 
-        double tmp;
+    943: fctiduz({{
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
+ 
+        double tmp;
         fpscr_0.fr = 0;
         fpscr_0.fi = 0;
         double src2 = Vb_df[1];
@@ -104,13 +111,14 @@ format FloatConvertOp {
     }});
 
     14: fctiw({{
-        double src2 = Vb_df[1];
-        double tmp = src2;
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
+
+        double src2 = Vb_df[1];
+        double tmp = src2;
         fpscr_0.fr = 0;
         fpscr_0.fi = 0;
-        
+
         int32_t i_tmp = tmp;
         uint64_t i_tmp2 = (((uint64_t)i_tmp << 32) | ((uint64_t)i_tmp & 0xffffffff));
         int64_t dst = i_tmp2;
@@ -118,6 +126,8 @@ format FloatConvertOp {
     }});
 
     142: fctiwu({{
+        Fpscr fpscr_0 = FPSCR;
+        fp_before_cal(fpscr_0);
         double src2 = Vb_df[1];
         uint32_t i_tmp = src2;
         uint64_t dst = ((uint64_t)i_tmp << 32) | (uint64_t)i_tmp;
@@ -125,6 +135,8 @@ format FloatConvertOp {
     }});
 
     143: fctiwuz({{
+        Fpscr fpscr_0 = FPSCR;
+        fp_before_cal(fpscr_0);
         double src2 = Vb_df[1];
         uint32_t i_tmp = bfp64_ROUND_TO_INTEGER_TRUNC(src2);
         uint64_t dst = ((uint64_t)i_tmp << 32) | i_tmp;
@@ -132,12 +144,16 @@ format FloatConvertOp {
     }});
 
     846: fcfid({{
+        Fpscr fpscr_0 = FPSCR;
+        fp_before_cal(fpscr_0);
         int64_t src2 = Vb_sd[1];
         double dst = src2;
         Vt_df[1] = dst;
     }});
 
     974: fcfidu({{
+        Fpscr fpscr_0 = FPSCR;
+        fp_before_cal(fpscr_0);
         uint64_t src2 = Vb_ud[1];
         double dst = src2;
         Vt_df[1] = dst;
