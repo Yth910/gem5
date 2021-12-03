@@ -419,6 +419,29 @@ format VsxFloatArithOp {
         FPSCR = fpscr_0;
         tc->setVecReg(vrt_id, vrt_reg);
     }});
+
+    409:xvabssp({{
+        ThreadContext *tc = xc->tcBase();
+        RegId src1_id(VecRegClass, XX_A + XX_BX * 32);
+        RegId src2_id(VecRegClass, XX_B + XX_BX * 32);
+        RegId dst_id(VecRegClass, XX_T + XX_TX * 32);
+        auto src1_reg = tc->readVecReg(src1_id);
+        auto src1_val = src1_reg.as<uint32_t>();
+        auto src2_reg = tc->readVecReg(src2_id);
+        auto src2_val = src2_reg.as<uint32_t>();
+        auto dst_reg = tc->readVecReg(dst_id);
+        auto dst_val = dst_reg.as<uint32_t>();
+        
+        /*
+        ALL PASSED.
+        */
+
+        for (int i = 0; i < 4; i++) {
+            dst_val[i] = src2_val[i] & 0x7fffffff;
+        }
+        
+        tc->setVecReg(dst_id, dst_reg);
+    }});
     
     489:xvnabsdp({{
         ThreadContext *tc = xc->tcBase();

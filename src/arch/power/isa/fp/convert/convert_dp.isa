@@ -7,14 +7,10 @@ format FloatConvertOp {
         double tmp = (float)src2;
         fpscr_0.fr = 0;
         fpscr_0.fi = 0;
-        //std::tie(tmp, fpscr_0) = get_floating_exception((float)tmp,
-        //    (float)tmp, fpscr_0, (float)tmp);
         fpscr_0.xx = 0;
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
         FPSCR = fpscr_0;
-        double dst = tmp;
-        Vt_df[1] = dst;
-        //Ft_sf = Fb_sf;
+        Vt_df[1] = tmp;
     }});
 
     15: fctiwz({{
@@ -26,34 +22,26 @@ format FloatConvertOp {
         fpscr_0.fi = 0;
         double src2 = Vb_df[1];
         tmp = bfp64_ROUND_TO_INTEGER_TRUNC(src2);
-        //std::tie(tmp, fpscr_0) = get_floating_exception(tmp,
-        //    tmp, fpscr_0, tmp);
-        fpscr_0.xx = 0;
-        fpscr_0 = vsx_set_class(tmp, fpscr_0);
         FPSCR = fpscr_0;
-        int32_t i_tmp = tmp;
+        int32_t i_tmp;
+        std::tie(i_tmp, fpscr_0) = bfp64_CONVERT_TO_INT32(tmp, fpscr_0);
         uint64_t i_tmp2 = (((uint64_t)i_tmp << 32) | ((uint64_t)i_tmp & 0xffffffff));
-        uint64_t dst = i_tmp2;
-        Vt_sd[1] = dst;
+        Vt_sd[1] = i_tmp2;
     }});
 
     814: fctid({{
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
-
-        double src2 = Vb_df[1];
-
-        double tmp = src2;
+        double tmp = Vb_df[1];
         fpscr_0.fr = 0;
         fpscr_0.fi = 0;
-        //std::tie(tmp, fpscr_0) = get_floating_exception(tmp,
-        //    tmp, fpscr_0, tmp);
+        
         fpscr_0.xx = 0;
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
         FPSCR = fpscr_0;
-        int64_t dst = tmp;
-        Vt_sd[1] = dst;
-        //dst = src2;
+        int64_t i_tmp;
+        std::tie(i_tmp, fpscr_0) = bfp64_CONVERT_TO_INT64(tmp, fpscr_0);
+        Vt_sd[1] = i_tmp;
     }});
 
     815: fctidz({{
@@ -65,30 +53,27 @@ format FloatConvertOp {
         fpscr_0.fi = 0;
         double src2 = Vb_df[1];
         tmp = bfp64_ROUND_TO_INTEGER_TRUNC(src2);
-        //std::tie(tmp, fpscr_0) = get_floating_exception(tmp,
-        //    tmp, fpscr_0, tmp);
         fpscr_0.xx = 0;
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
         FPSCR = fpscr_0;
-        int64_t dst = tmp;
-        Vt_sd[1] = dst;
+        int64_t i_tmp;
+        std::tie(i_tmp, fpscr_0) = bfp64_CONVERT_TO_INT64(tmp, fpscr_0);
+        Vt_sd[1] = i_tmp;
     }});
 
     942: fctidu({{
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
 
-        double src2 = Vb_df[1];
-        double tmp = src2;
+        double tmp = Vb_df[1];
         fpscr_0.fr = 0;
         fpscr_0.fi = 0;
-        //std::tie(tmp, fpscr_0) = get_floating_exception(tmp,
-        //    tmp, fpscr_0, tmp);
         fpscr_0.xx = 0;
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
         FPSCR = fpscr_0;
-        double dst = tmp;
-        Vt_ud[1] = dst;
+        int64_t i_tmp;
+        std::tie(i_tmp, fpscr_0) = bfp64_CONVERT_TO_UINT64(tmp, fpscr_0);
+        Vt_ud[1] = i_tmp;
         //dst = src2;
     }});
 
@@ -101,46 +86,47 @@ format FloatConvertOp {
         fpscr_0.fi = 0;
         double src2 = Vb_df[1];
         tmp = bfp64_ROUND_TO_INTEGER_TRUNC(src2);
-        //std::tie(tmp, fpscr_0) = get_floating_exception(tmp,
-        //    tmp, fpscr_0, tmp);
         fpscr_0.xx = 0;
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
         FPSCR = fpscr_0;
-        uint64_t dst = tmp;
-        Vt_ud[1] = dst;
+        uint64_t i_tmp;
+        std::tie(i_tmp, fpscr_0) = bfp64_CONVERT_TO_UINT64(tmp, fpscr_0);
+        Vt_ud[1] = i_tmp;
     }});
 
     14: fctiw({{
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
 
-        double src2 = Vb_df[1];
-        double tmp = src2;
+        double tmp = Vb_df[1];
         fpscr_0.fr = 0;
         fpscr_0.fi = 0;
 
-        int32_t i_tmp = tmp;
+        int32_t i_tmp;
+        std::tie(i_tmp, fpscr_0) = bfp64_CONVERT_TO_INT32(tmp, fpscr_0);
         uint64_t i_tmp2 = (((uint64_t)i_tmp << 32) | ((uint64_t)i_tmp & 0xffffffff));
-        int64_t dst = i_tmp2;
-        Vt_sd[1] = dst;
+        Vt_sd[1] = i_tmp2;
     }});
 
     142: fctiwu({{
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
-        double src2 = Vb_df[1];
-        uint32_t i_tmp = src2;
-        uint64_t dst = ((uint64_t)i_tmp << 32) | (uint64_t)i_tmp;
-        Vt_ud[1] = dst;
+        double tmp = Vb_df[1];
+        uint32_t i_tmp;
+        std::tie(i_tmp, fpscr_0) = bfp64_CONVERT_TO_UINT32(tmp, fpscr_0);
+        uint64_t i_tmp2 = ((uint64_t)i_tmp << 32) | (uint64_t)i_tmp;
+        Vt_ud[1] = i_tmp2;
     }});
 
     143: fctiwuz({{
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
         double src2 = Vb_df[1];
-        uint32_t i_tmp = bfp64_ROUND_TO_INTEGER_TRUNC(src2);
-        uint64_t dst = ((uint64_t)i_tmp << 32) | i_tmp;
-        Vt_ud[1] = dst;
+        double tmp = bfp64_ROUND_TO_INTEGER_TRUNC(src2);
+        uint32_t i_tmp;
+        std::tie(i_tmp, fpscr_0) = bfp64_CONVERT_TO_UINT32(tmp, fpscr_0);
+        uint64_t i_tmp2 = ((uint64_t)i_tmp << 32) | i_tmp;
+        Vt_ud[1] = i_tmp2;
     }});
 
     846: fcfid({{

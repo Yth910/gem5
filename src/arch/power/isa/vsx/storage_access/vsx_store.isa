@@ -20,7 +20,7 @@ format StoreIndexOp {
         RegId id(VecRegClass, XX_S + XX_SX * 32);
         auto reg = tc->readVecReg(id);
         auto val = reg.as<double>();
-        Mem_df = (float)val[1];
+        Mem_sf = (float)val[1];
     }});
 
     972: stxvd2x({{

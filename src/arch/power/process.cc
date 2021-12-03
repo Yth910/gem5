@@ -161,7 +161,7 @@ PowerProcess::argsInit(int pageSize)
     //Auxilliary vectors are loaded only for elf formatted executables.
     auto *elfObject = dynamic_cast<loader::ElfObject *>(objFile);
     if (elfObject) {
-        IntType features = HWCAP_FEATURE_32;// | HWCAP_FEATURE_HAS_VSX;
+        IntType features = HWCAP_FEATURE_32;
 
         // Check if running in 64-bit mode
         if (is64bit)

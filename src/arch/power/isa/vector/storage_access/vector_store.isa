@@ -12,43 +12,46 @@ format StoreIndexOp {
             Mem_ub = val[15 - eb];
         }
     }});
+}
 
+format VecStore2IndexOp {
     167: stvehx({{
         ThreadContext *tc = xc->tcBase();
         RegId id(VecRegClass, VRS + 32);
         auto reg = tc->readVecReg(id);
         auto val = reg.as<uint16_t>();
         Msr msr_v = tc->readIntReg(INTREG_MSR);
-        uint8_t eb = bits(EA, 3, 0);
-        EA &= (~0x1ULL);
+        uint8_t eb = bits(Ra + Rb, 3, 0);
         if (msr_v.le) {
             Mem_uh = val[eb];
         } else {
             Mem_uh = val[7 - eb];
         }
     }});
+}
 
+format VecStore4IndexOp {
     199: stvewx({{
         ThreadContext *tc = xc->tcBase();
         RegId id(VecRegClass, VRS + 32);
         auto reg = tc->readVecReg(id);
         auto val = reg.as<uint32_t>();
         Msr msr_v = tc->readIntReg(INTREG_MSR);
-        uint8_t eb = bits(EA, 3, 0);
-        EA &= (~0x3ULL);
+        uint8_t eb = bits(Ra + Rb, 3, 0);
         if (msr_v.le) {
             Mem_uw = val[eb];
         } else {
             Mem_uw = val[3 - eb];
         }
     }});
+}
 
+format VecStore16IndexOp {
     231: stvx({{
         ThreadContext *tc = xc->tcBase();
         RegId id(VecRegClass, VRS + 32);
         auto reg = tc->readVecReg(id);
         auto val = reg.as<__uint128_t>();
-        EA &= (~0x7ULL);
         Mem_uq = val[0];
     }});
 

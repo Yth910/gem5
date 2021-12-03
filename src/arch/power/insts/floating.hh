@@ -660,6 +660,127 @@ class FloatOp : public PowerStaticInst
         return (double)1.0 / sqrt(x);
     }
 
+    std::tuple<int64_t, Fpscr> bfp64_CONVERT_TO_INT64(double x, Fpscr fpscr) const
+    {
+        Fpscr fpscr_flag = 0;
+        __int128_t tmp;
+        int64_t ret;
+        if (isNan(x)) {
+            ret = 0x8000000000000000LL;
+            fpscr_flag.vxcvi = 1;
+            if (isSnan(x))
+                fpscr_flag.vxsnan = 1;
+        } else {
+            tmp = x;
+            ret = x;
+            
+            if (tmp > 0x7fffffffffffffffLL) {
+                ret = 0x7fffffffffffffffLL;
+                fpscr_flag.vxcvi = 1;
+                printf("convert si64:%f to %llx\n", x, ret);
+            }
+
+            __int128_t val = 0xffffffffffffffffULL;
+            val = val << 64;
+            val |= 0x8000000000000000ULL;
+            if (tmp < val) {
+                ret = 0x8000000000000000LL;
+                fpscr_flag.vxcvi = 1;
+                printf("convert si64:%f to %llx\n", x, ret);
+            }
+        }
+        fpscr = update_fpscr(fpscr, fpscr_flag);
+		return std::make_tuple(ret, fpscr);
+    }
+
+    std::tuple<uint64_t, Fpscr> bfp64_CONVERT_TO_UINT64(double x, Fpscr fpscr) const
+    {
+        Fpscr fpscr_flag = 0;
+        __int128_t tmp;
+        uint64_t ret;
+        if (isNan(x)) {
+            ret = 0x0000000000000000;
+            fpscr_flag.vxcvi = 1;
+            if (isSnan(x))
+                fpscr_flag.vxsnan = 1;
+        } else {
+            tmp = x;
+            ret = x;
+            if (tmp > 0xffffffffffffffffULL) {
+                ret = 0xffffffffffffffffULL;
+                fpscr_flag.vxcvi = 1;
+                printf("convert ui64:%f to %llx\n", x, ret);
+            }
+
+            if (tmp < 0) {
+                ret = 0;
+                fpscr_flag.vxcvi = 1;
+                printf("convert ui64:%f to %llx\n", x, ret);
+            }
+        }
+        fpscr = update_fpscr(fpscr, fpscr_flag);
+		return std::make_tuple(ret, fpscr);
+    }
+
+    std::tuple<int32_t, Fpscr> bfp64_CONVERT_TO_INT32(double x, Fpscr fpscr) const
+    {
+        Fpscr fpscr_flag = 0;
+        int64_t tmp;
+        int32_t ret;
+        if (isNan(x)) {
+            ret = 0x80000000;
+            fpscr_flag.vxcvi = 1;
+            if (isSnan(x))
+                fpscr_flag.vxsnan = 1;
+        } else {
+            tmp = x;
+            ret = x;
+            if (tmp > 0x7fffffff) {
+                ret = 0x7fffffff;
+                fpscr_flag.vxcvi = 1;
+                printf("convert si32:%f to %llx\n", x, ret);
+            }
+
+            if (tmp < -0x80000000LL) {
+                ret = 0x80000000;
+                fpscr_flag.vxcvi = 1;
+                printf("convert si32:%f to %llx\n", x, ret);
+            }
+        }
+        fpscr = update_fpscr(fpscr, fpscr_flag);
+		return std::make_tuple(ret, fpscr);
+    }
+
+    std::tuple<uint32_t, Fpscr> bfp64_CONVERT_TO_UINT32(double x, Fpscr fpscr) const
+    {
+        Fpscr fpscr_flag = 0;
+        int64_t tmp;
+        uint32_t ret;
+        if (isNan(x)) {
+            ret = 0x00000000;
+            fpscr_flag.vxcvi = 1;
+            if (isSnan(x))
+                fpscr_flag.vxsnan = 1;
+        } else {
+            tmp = x;
+            ret = x;
+           
+            if (tmp > 0xffffffff) {
+                ret = 0xffffffff;
+                fpscr_flag.vxcvi = 1;
+                printf("convert ui32:%f to %llx\n", x, ret);
+            }
+
+            if (tmp < 0) {
+                ret = 0;
+                fpscr_flag.vxcvi = 1;
+                printf("convert ui32:%f to %llx\n", x, ret);
+            }
+        }
+        fpscr = update_fpscr(fpscr, fpscr_flag);
+		return std::make_tuple(ret, fpscr);
+    }
+
 	std::tuple<__float128, Fpscr> bfp128_ADD(__float128 x, __float128 y, Fpscr fpscr) const
     {
 		Fpscr fpscr_flag = 0;
@@ -953,24 +1074,24 @@ class FloatOp : public PowerStaticInst
 			tmp = (__float128)x * (__float128)y + (__float128)z;
 			ret = tmp;
 			fpscr_flag = get_floating_exception_0(fpscr_flag);
-		}
 
-		if (fpscr_flag.fi) {
-			if (ret > 0.0) {
-				if ((__float128) ret - tmp > 0.0)
-					fpscr_flag.fr = 1;
-				if ((ret == x * y && z < 0.0) || (ret == z && x * y < 0.0)) {
-					fpscr_flag.fr = 1;
-				}
-			}
-			
-			if (ret < 0.0) {
-				if ((__float128) ret - tmp < 0.0)
-					fpscr_flag.fr = 1;
-				if ((ret == x * y && z > 0.0) || (ret == z && x * y > 0.0)) {
-					fpscr_flag.fr = 1;
-				}
-			}
+            if (fpscr_flag.fi) {
+                if (ret > 0.0) {
+                    if ((__float128) ret - tmp > 0.0)
+                        fpscr_flag.fr = 1;
+                    if ((ret == x * y && z < 0.0) || (ret == z && x * y < 0.0)) {
+                        fpscr_flag.fr = 1;
+                    }
+                }
+                
+                if (ret < 0.0) {
+                    if ((__float128) ret - tmp < 0.0)
+                        fpscr_flag.fr = 1;
+                    if ((ret == x * y && z > 0.0) || (ret == z && x * y > 0.0)) {
+                        fpscr_flag.fr = 1;
+                    }
+                }
+            }
 		}
 
 		fpscr = update_fpscr(fpscr, fpscr_flag);
@@ -1018,24 +1139,23 @@ class FloatOp : public PowerStaticInst
 			tmp = (__float128)x * (__float128)y + (__float128)z;
 			ret = (float)tmp;
 			fpscr_flag = get_floating_exception_0(fpscr_flag);
-		}
-
-		if (fpscr_flag.fi) {
-			if (ret > 0.0) {
-				if ((__float128) ret - tmp > 0.0)
-					fpscr_flag.fr = 1;
-				if ((ret == x * y && z < 0.0) || (ret == z && x * y < 0.0)) {
-					fpscr_flag.fr = 1;
-				}
-			}
-			
-			if (ret < 0.0) {
-				if ((__float128) ret - tmp < 0.0)
-					fpscr_flag.fr = 1;
-				if ((ret == x * y && z > 0.0) || (ret == z && x * y > 0.0)) {
-					fpscr_flag.fr = 1;
-				}
-			}
+            if (fpscr_flag.fi) {
+                if (ret > 0.0) {
+                    if ((__float128) ret - tmp > 0.0)
+                        fpscr_flag.fr = 1;
+                    if ((ret == x * y && z < 0.0) || (ret == z && x * y < 0.0)) {
+                        fpscr_flag.fr = 1;
+                    }
+                }
+                
+                if (ret < 0.0) {
+                    if ((__float128) ret - tmp < 0.0)
+                        fpscr_flag.fr = 1;
+                    if ((ret == x * y && z > 0.0) || (ret == z && x * y > 0.0)) {
+                        fpscr_flag.fr = 1;
+                    }
+                }
+            }
 		}
 
 		fpscr = update_fpscr(fpscr, fpscr_flag);

@@ -22,7 +22,7 @@
         Vt_ud[1] = dst;
     }});
     8: fcpsgn({{
-        uint64_t src1 = Va_ud[0];
+        uint64_t src1 = Va_ud[1];
         uint64_t src2 = Vb_ud[1];
         uint64_t dst = src2;
         dst = insertBits(dst, 63, src1<63:63>);

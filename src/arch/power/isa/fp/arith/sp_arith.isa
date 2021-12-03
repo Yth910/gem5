@@ -8,11 +8,11 @@ format FloatRCCheckOp {
         std::tie(tmp, fpscr_0) = bfp32_ADD(src1, src2, FPSCR);
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
         double dst = tmp;
-        Vt_df[1] = dst;
+        Vt_df[1] = (float)dst;
         FPSCR = fpscr_0;
-        //dst = src1 + src2;
         //ALL PASSED.
     }});
+
     20: fsubs({{
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
@@ -22,11 +22,11 @@ format FloatRCCheckOp {
         std::tie(tmp, fpscr_0) = bfp32_ADD(src1, bfp_NEGATE(src2), FPSCR);
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
         double dst = tmp;
-        Vt_df[1] = dst;
+        Vt_df[1] = (float)dst;
         FPSCR = fpscr_0;
-        //dst = src1 - src2;
         //ALL PASSED.
     }});
+
     25: fmuls({{
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
@@ -36,11 +36,11 @@ format FloatRCCheckOp {
         std::tie(tmp, fpscr_0) = bfp32_MULTIPLY(src1, src3, FPSCR);
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
         double dst = tmp;
-        Vt_df[1] = dst;
+        Vt_df[1] = (float)dst;
         FPSCR = fpscr_0;
-        //dst = src1 * src3;
         //ALL PASSED.
     }});
+
     18: fdivs({{
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
@@ -50,11 +50,11 @@ format FloatRCCheckOp {
         std::tie(tmp, fpscr_0) = bfp32_DIV(src1, src2, FPSCR);
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
         double dst = tmp;
-        Vt_df[1] = dst;
+        Vt_df[1] = (float)dst;
         FPSCR = fpscr_0;
-        //dst = src1 / src2;
         //ALL PASSED.
-        }});
+    }});
+
     29: fmadds({{
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
@@ -66,9 +66,10 @@ format FloatRCCheckOp {
             bfp32_MULTIPLY_ADD(src1, src3, src2, FPSCR);
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
         double dst = tmp;
-        Vt_df[1] = dst;
+        Vt_df[1] = (float)dst;
         FPSCR = fpscr_0;
-        //dst = (src1 * src3) + src2; }});
+    }});
+
     28: fmsubs({{
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
@@ -80,9 +81,10 @@ format FloatRCCheckOp {
             bfp32_MULTIPLY_ADD(src1, src3, bfp_NEGATE(src2), FPSCR);
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
         double dst = tmp;
-        Vt_df[1] = dst;
+        Vt_df[1] = (float)dst;
         FPSCR = fpscr_0;
-        //dst = (src1 * src3) - src2; }});
+    }});
+
     31: fnmadds({{
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
@@ -95,9 +97,10 @@ format FloatRCCheckOp {
         tmp = bfp_NEGATE(tmp);
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
         double dst = tmp;
-        Vt_df[1] = dst;
+        Vt_df[1] = (float)dst;
         FPSCR = fpscr_0;
-        //dst = -((src1 * src3) + src2); }});
+    }});
+
     30: fnmsubs({{
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
@@ -110,9 +113,10 @@ format FloatRCCheckOp {
         tmp = bfp_NEGATE(tmp);
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
         double dst = tmp;
-        Vt_df[1] = dst;
+        Vt_df[1] = (float)dst;
         FPSCR = fpscr_0;
-        //dst = -((src1 * src3) - src2); }});
+    }});
+
     22: fsqrts({{
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
@@ -120,6 +124,7 @@ format FloatRCCheckOp {
         double dst = sqrt(src2);
         Vt_df[1] = dst;
     }});
+
     24: fres({{
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
@@ -127,6 +132,7 @@ format FloatRCCheckOp {
         double dst = 1.0 / src2;
         Vt_df[1] = dst;
     }});
+
     26: frsqrtes({{
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);

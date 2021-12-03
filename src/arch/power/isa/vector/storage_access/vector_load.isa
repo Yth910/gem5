@@ -1,4 +1,4 @@
-format LoadIndexOp {
+format VecLoadIndexOp {
     7: lvebx({{
         ThreadContext *tc = xc->tcBase();
         RegId id(VecRegClass, VRT + 32);
@@ -9,7 +9,6 @@ format LoadIndexOp {
         ALL PASSED.
         */
 
-        EA &= (~0xfULL);
         val[0] = Mem_uq;
         tc->setVecReg(id, reg);
     }});
@@ -24,7 +23,6 @@ format LoadIndexOp {
         ALL PASSED.
         */
 
-        EA &= (~0xfULL);
         val[0] = Mem_uq;
         tc->setVecReg(id, reg);
     }});
@@ -39,7 +37,6 @@ format LoadIndexOp {
         ALL PASSED.
         */
 
-        EA &= (~0xfULL);
         val[0] = Mem_uq;
         tc->setVecReg(id, reg);
     }});
@@ -54,7 +51,6 @@ format LoadIndexOp {
         ALL PASSED.
         */
 
-        EA &= (~0xfULL);
         val[0] = Mem_uq;
         tc->setVecReg(id, reg);
     }});
@@ -69,7 +65,6 @@ format LoadIndexOp {
         ALL PASSED.
         */
 
-        EA &= (~0xfULL);
         val[0] = Mem_uq;
         tc->setVecReg(id, reg);
     }});
