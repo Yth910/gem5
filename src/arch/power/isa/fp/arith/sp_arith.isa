@@ -122,7 +122,7 @@ format FloatRCCheckOp {
         fp_before_cal(fpscr_0);
         double src2 = Vb_df[1];
         double dst = sqrt(src2);
-        Vt_df[1] = dst;
+        Vt_df[1] = (float)dst;
     }});
 
     24: fres({{
@@ -130,7 +130,7 @@ format FloatRCCheckOp {
         fp_before_cal(fpscr_0);
         double src2 = Vb_df[1];
         double dst = 1.0 / src2;
-        Vt_df[1] = dst;
+        Vt_df[1] = (float)dst;
     }});
 
     26: frsqrtes({{
@@ -138,6 +138,6 @@ format FloatRCCheckOp {
         fp_before_cal(fpscr_0);
         double src2 = Vb_df[1];
         double dst = 1.0 / sqrt(src2);
-        Vt_df[1] = dst;
+        Vt_df[1] = (float)dst;
     }});
 }
