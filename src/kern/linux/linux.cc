@@ -72,6 +72,9 @@ Linux::openSpecialFile(std::string path, Process *process,
     } else if (path.compare(0, 12 ,"/dev/urandom") == 0) {
         data = Linux::devRandom(process, tc);
         matched = true;
+    } else if (path.compare(0, 13 ,"/proc/loadavg") == 0) {
+        data = Linux::procLoadAvg(process, tc);
+        matched = true;
     }
 
     if (matched) {
@@ -109,6 +112,12 @@ std::string
 Linux::procSelfMaps(Process *process, ThreadContext *tc)
 {
     return process->memState->printVmaList();
+}
+
+std::string
+Linux::procLoadAvg(Process *process, ThreadContext *tc)
+{
+    return csprintf("3.86 2.10 1.64 3/1187 18870\n");
 }
 
 std::string

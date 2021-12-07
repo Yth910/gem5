@@ -862,7 +862,7 @@ openatFunc(SyscallDesc *desc, ThreadContext *tc,
     std::string used_path;
     std::vector<std::string> special_paths =
             { "/proc/meminfo/", "/system/", "/platform/", "/etc/passwd",
-              "/proc/self/maps", "/dev/urandom",
+              "/proc/self/maps", "/proc/loadavg","/dev/urandom",
               "/sys/devices/system/cpu/online" };
     for (auto entry : special_paths) {
         if (startswith(path, entry)) {

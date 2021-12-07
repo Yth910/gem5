@@ -253,6 +253,7 @@ class Linux : public OperatingSystem
     static std::string procSelfMaps(Process *process, ThreadContext *tc);
     static std::string cpuOnline(Process *process, ThreadContext *tc);
     static std::string devRandom(Process *process, ThreadContext *tc);
+    static std::string procLoadAvg(Process *process, ThreadContext *tc);
 
     // For futex system call
     static const unsigned TGT_FUTEX_WAIT                = 0;
