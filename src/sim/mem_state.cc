@@ -116,7 +116,7 @@ MemState::updateBrkRegion(Addr old_brk, Addr new_brk)
      * region unless we expand it out.
      */
     if (new_brk < old_brk) {
-        _brkPoint = new_brk;
+        //_brkPoint = new_brk;
         return;
     }
 

@@ -79,13 +79,16 @@ struct Result<PowerISA::SEWorkload::SyscallABI, SyscallReturn>
             return;
 
         PowerISA::Cr cr = tc->readIntReg(PowerISA::INTREG_CR);
+        int64_t ret_val;
         if (ret.successful()) {
             cr.cr0.so = 0;
+            ret_val = ret.encodedValue();
         } else {
             cr.cr0.so = 1;
+            ret_val = -ret.encodedValue();
         }
         tc->setIntReg(PowerISA::INTREG_CR, cr);
-        tc->setIntReg(PowerISA::ReturnValueReg, ret.encodedValue());
+        tc->setIntReg(PowerISA::ReturnValueReg, ret_val);
     }
 };
 

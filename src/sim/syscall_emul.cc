@@ -260,6 +260,9 @@ brkFunc(SyscallDesc *desc, ThreadContext *tc, VPtr<> new_brk)
     // change brk addr to first arg
     auto p = tc->getProcessPtr();
 
+    DPRINTF_SYSCALL(Verbose, "brk: new_brk: %#X\n",
+                    new_brk);
+
     std::shared_ptr<MemState> mem_state = p->memState;
     Addr brk_point = mem_state->getBrkPoint();
 
@@ -470,7 +473,7 @@ unlinkFunc(SyscallDesc *desc, ThreadContext *tc, VPtr<> pathname)
     DPRINTF_SYSCALL(Verbose, "path: %s .\n", path);
     int result = unlink(path.c_str());
     DPRINTF_SYSCALL(Verbose, "host result: %d errno:%d.\n", result, errno);
-    return (result == -1) ? errno : result;
+    return (result == -1) ? -errno : result;
 }
 
 SyscallReturn
@@ -1053,9 +1056,11 @@ chdirFunc(SyscallDesc *desc, ThreadContext *tc, VPtr<> pathname)
         char buf[PATH_MAX];
         tgt_cwd = realpath((p->tgtCwd + "/" + path).c_str(), buf);
     }
-    std::string host_cwd = p->checkPathRedirect(tgt_cwd);
 
-    tgt_cwd  = tgt_cwd + "/";
+    if (tgt_cwd[tgt_cwd.length() - 1] != '/')
+        tgt_cwd  = tgt_cwd + "/";
+
+    std::string host_cwd = p->checkPathRedirect(tgt_cwd);
 
     DPRINTF_SYSCALL(Verbose, "path: %s realpath: %s host cwd %s.\n",
         path, tgt_cwd.c_str(), host_cwd.c_str());
