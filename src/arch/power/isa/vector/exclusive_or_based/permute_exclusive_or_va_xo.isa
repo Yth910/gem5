@@ -1,14 +1,5 @@
 format IntArithOp {
     45: vpermxor({{
-        /*
-        do i = 0 to 15
-            indexA ← VR[VRC].byte[i].bit[0:3]
-            indexB ← VR[VRC].byte[i].bit[4:7]
-            src1 ← VR[VRA].byte[indexA]
-            src2 ← VR[VRB].byte[indexB]
-            VSR[VRT].byte[i] ← src1 ^ src2
-        end
-        */
         ThreadContext *tc = xc->tcBase();
         RegId vra_id(VecRegClass, VRA + 32);
         RegId vrb_id(VecRegClass, VRB + 32);
