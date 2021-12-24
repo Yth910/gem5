@@ -70,6 +70,19 @@ BranchOp::branchTarget(ThreadContext *tc) const
     return msr.sf ? addr : addr & UINT32_MAX;
 }
 
+PowerISA::PCState
+BranchOp::branchTarget(const PowerISA::PCState &branchPC) const
+{
+    Addr addr;
+
+    if (aa)
+        addr = li;
+    else
+        addr = branchPC.pc() + li;
+
+    return addr;
+}
+
 
 std::string
 BranchOp::generateDisassembly(
