@@ -85,6 +85,7 @@ decode PO default Unknown::unknown() {
             ##include "vector/floating/fp_vx_xo.isa"
             ##include "vector/exclusive_or_based/polynomial_vx_xo.isa"
             ##include "vector/exclusive_or_based/aes_vx_xo.isa"
+            ##include "vector/exclusive_or_based/sha_sigma_vx_xo.isa"
             // ###4: decode VX_XO IntArithOp###
             
             default:decode VC_XO {
