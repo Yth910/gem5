@@ -1,23 +1,13 @@
 format IntArithOp {
     //VSCR
     1604: mtvscr({{
-        ThreadContext *tc = xc->tcBase();
-        RegId vrb_id(VecRegClass, VRB + 32);
-        auto vrb_reg = tc->readVecReg(vrb_id);
-        auto vrb_val = vrb_reg.as<uint32_t>();
-        tc->setIntReg(INTREG_VSCR, vrb_val[0]);
+        VSCR = Vb_uw[0];
     }});
 
     1540: mfvscr({{
-        ThreadContext *tc = xc->tcBase();
-        RegId vrt_id(VecRegClass, VRT + 32);
-        auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt_val = vrt_reg.as<uint32_t>();
-
-        vrt_val[3] = 0;
-        vrt_val[2] = 0;
-        vrt_val[1] = 0;
-        vrt_val[0] = tc->readIntReg(INTREG_VSCR);
-        tc->setVecReg(vrt_id, vrt_reg);
+        Vt_uw[0] = VSCR;
+        Vt_uw[1] = 0;
+        Vt_uw[2] = 0;
+        Vt_uw[3] = 0;
     }});
 }

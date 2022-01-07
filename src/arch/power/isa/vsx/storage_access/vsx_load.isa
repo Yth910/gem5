@@ -1,73 +1,41 @@
 format LoadIndexOp {
     588: lxsdx({{
-        ThreadContext *tc = xc->tcBase();
-        RegId id(VecRegClass, XX_T + XX_TX * 32);
-        auto reg = tc->readVecReg(id);
-        auto val = reg.as<uint64_t>();
-        val[1] = Mem_ud;
-        val[0] = 0;
-        tc->setVecReg(id, reg);
+        VSt_ud[1] = Mem_ud;
+        VSt_ud[0] = 0;
     }});
 
     76: lxsiwax({{
-        ThreadContext *tc = xc->tcBase();
-        RegId id(VecRegClass, XX_T + XX_TX * 32);
-        auto reg = tc->readVecReg(id);
-        auto val = reg.as<int64_t>();
-        val[1] = Mem_sw;
-        val[0] = 0;
-        tc->setVecReg(id, reg);
+        VSt_ud[1] = Mem_sw;
+        VSt_ud[0] = 0;
     }});
 
     12: lxsiwzx({{
-        ThreadContext *tc = xc->tcBase();
-        RegId id(VecRegClass, XX_T + XX_TX * 32);
-        auto reg = tc->readVecReg(id);
-        auto val = reg.as<uint64_t>();
-        val[1] = Mem_uw;
-        val[0] = 0;
-        tc->setVecReg(id, reg);
+        VSt_ud[1] = Mem_uw;
+        VSt_ud[0] = 0;
     }});
 
     524: lxsspx({{
-        ThreadContext *tc = xc->tcBase();
-        RegId id(VecRegClass, XX_T + XX_TX * 32);
-        auto reg = tc->readVecReg(id);
-        auto val = reg.as<double>();
-        val[1] = Mem_sf;
-        val[0] = 0;
-        tc->setVecReg(id, reg);
+        VSt_df[1] = Mem_sf;
+        VSt_df[0] = 0;
     }});
 
     844: lxvd2x({{
-        ThreadContext *tc = xc->tcBase();
-        RegId id(VecRegClass, XX_T + XX_TX * 32);
-        auto reg = tc->readVecReg(id);
-        auto val = reg.as<uint64_t>();
-        val[0] = ((uint64_t *)&Mem_uq)[1];
-        val[1] = ((uint64_t *)&Mem_uq)[0];
-        tc->setVecReg(id, reg);
+        uint64_t *val = (uint64_t *)&Mem_uq;
+        VSt_ud[1] = val[0];
+        VSt_ud[0] = val[1];
     }});
 
     332: lxvdsx({{
-        ThreadContext *tc = xc->tcBase();
-        RegId id(VecRegClass, XX_T + XX_TX * 32);
-        auto reg = tc->readVecReg(id);
-        auto val = reg.as<uint64_t>();
-        val[0] = ((uint64_t *)&Mem_uq)[0];
-        val[1] = ((uint64_t *)&Mem_uq)[0];
-        tc->setVecReg(id, reg);
+        uint64_t *val = (uint64_t *)&Mem_uq;
+        VSt_ud[1] = val[0];
+        VSt_ud[0] = val[0];
     }});
 
     780: lxvw4x({{
-        ThreadContext *tc = xc->tcBase();
-        RegId id(VecRegClass, XX_T + XX_TX * 32);
-        auto reg = tc->readVecReg(id);
-        auto val = reg.as<uint32_t>();
-        val[0] = ((uint32_t *)&Mem_uq)[3];
-        val[1] = ((uint32_t *)&Mem_uq)[2];
-        val[2] = ((uint32_t *)&Mem_uq)[1];
-        val[3] = ((uint32_t *)&Mem_uq)[0];
-        tc->setVecReg(id, reg);
+        uint32_t *val = (uint32_t *)&Mem_uq;
+        VSt_ud[0] = val[3];
+        VSt_ud[1] = val[2];
+        VSt_ud[2] = val[1];
+        VSt_ud[3] = val[0];
     }});
 }

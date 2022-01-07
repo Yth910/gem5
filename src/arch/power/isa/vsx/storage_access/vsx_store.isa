@@ -1,45 +1,31 @@
 format StoreIndexOp {
     716: stxsdx({{
-        ThreadContext *tc = xc->tcBase();
-        RegId id(VecRegClass, XX_S + XX_SX * 32);
-        auto reg = tc->readVecReg(id);
-        auto val = reg.as<uint64_t>();
-        Mem_ud = val[1];
+        Mem_ud = VSs_ud[1];
     }});
 
     140: stxsiwx({{
-        ThreadContext *tc = xc->tcBase();
-        RegId id(VecRegClass, XX_S + XX_SX * 32);
-        auto reg = tc->readVecReg(id);
-        auto val = reg.as<uint32_t>();
-        Mem_uw = val[2];
+        Mem_uw = VSs_uw[2];
     }});
 
     652: stxsspx({{
-        ThreadContext *tc = xc->tcBase();
-        RegId id(VecRegClass, XX_S + XX_SX * 32);
-        auto reg = tc->readVecReg(id);
-        auto val = reg.as<double>();
-        Mem_sf = PowerISA::FloatOp::bfp32_CONVERT_FROM_BFP64(val[1]);
+        Mem_sf = PowerISA::FloatOp::bfp32_CONVERT_FROM_BFP64(VSs_df[1]);
     }});
 
     972: stxvd2x({{
-        ThreadContext *tc = xc->tcBase();
-        RegId id(VecRegClass, XX_S + XX_SX * 32);
-        auto reg = tc->readVecReg(id);
-        auto val = reg.as<uint64_t>();
-        ((uint64_t *)&Mem_uq)[0] = val[1];
-        ((uint64_t *)&Mem_uq)[1] = val[0];
+        __uint128_t mem_val;
+        uint64_t *ptr = (uint64_t *)&mem_val;
+        ptr[0] = VSs_ud[1];
+        ptr[1] = VSs_ud[0];
+        Mem_uq = mem_val;
     }});
 
     908: stxvw4x({{
-        ThreadContext *tc = xc->tcBase();
-        RegId id(VecRegClass, XX_S + XX_SX * 32);
-        auto reg = tc->readVecReg(id);
-        auto val = reg.as<uint32_t>();
-        ((uint32_t *)&Mem_uq)[0] = val[3];
-        ((uint32_t *)&Mem_uq)[1] = val[2];
-        ((uint32_t *)&Mem_uq)[2] = val[1];
-        ((uint32_t *)&Mem_uq)[3] = val[0];
+        __uint128_t mem_val;
+        uint32_t *ptr = (uint32_t *)&mem_val;
+        ptr[0] = VSs_uw[3];
+        ptr[1] = VSs_uw[2];
+        ptr[2] = VSs_uw[1];
+        ptr[3] = VSs_uw[0];
+        Mem_uq = mem_val;
     }});
 }

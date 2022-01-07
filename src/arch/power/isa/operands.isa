@@ -59,11 +59,18 @@ def operands {{
     'Ft': ('FloatReg', 'df', 'FRT', 'IsFloating', 5),
 
     # Vector Reg Operands
-    'Va': ('VecReg', 'vc', 'VRA', 'IsVector', 1),
-    'Vb': ('VecReg', 'vc', 'VRB', 'IsVector', 2),
-    'Vc': ('VecReg', 'vc', 'VRC', 'IsVector', 3),
-    'Vs': ('VecReg', 'vc', 'VRS', 'IsVector', 4),
-    'Vt': ('VecReg', 'vc', 'VRT', 'IsVector', 5),
+    'Va': ('VecReg', 'vc', 'VRA + 32', 'IsVector', 1),
+    'Vb': ('VecReg', 'vc', 'VRB + 32', 'IsVector', 2),
+    'Vc': ('VecReg', 'vc', 'VRC + 32', 'IsVector', 3),
+    'Vs': ('VecReg', 'vc', 'VRS + 32', 'IsVector', 4),
+    'Vt': ('VecReg', 'vc', 'VRT + 32', 'IsVector', 5),
+
+    # Vector Scalar eXtention Reg Operands
+    'VSa': ('VecReg', 'vc', '32 * XX_AX + XX_A', 'IsVector', 1),
+    'VSb': ('VecReg', 'vc', '32 * XX_BX + XX_B', 'IsVector', 2),
+    'VSc': ('VecReg', 'vc', '32 * XX_CX + XX_C', 'IsVector', 3),
+    'VSs': ('VecReg', 'vc', '32 * XX_SX + XX_S', 'IsVector', 4),
+    'VSt': ('VecReg', 'vc', '32 * XX_TX + XX_T', 'IsVector', 5),
 
     # Memory Operand
     'Mem': ('Mem', 'ud', None, (None, 'IsLoad', 'IsStore'), 8),
@@ -82,6 +89,9 @@ def operands {{
 
     # Setting as IntReg so things are stored as an integer, not double
     'FPSCR': ('IntReg', 'uw', 'INTREG_FPSCR', 'IsFloating', 9),
+
+    # Setting as IntReg so things are stored as an integer, not double
+    'VSCR': ('IntReg', 'uw', 'INTREG_VSCR', 'IsInteger', 9),
 
     # Registers for linked loads and stores
     'Rsv': ('IntReg', 'uw', 'INTREG_RSV', 'IsInteger', 9),

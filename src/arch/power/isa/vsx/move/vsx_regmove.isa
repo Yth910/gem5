@@ -4,7 +4,7 @@
         RegId id(VecRegClass, XX_S + XX_SX * 32);
         auto reg = tc->readVecReg(id);
         auto val = reg.as<uint64_t>();
-        Ra_sd = val[1];
+        Ra_sd = VSs_sd[1];
     }});
 
     115:mfvsrwz({{
@@ -13,6 +13,7 @@
         auto reg = tc->readVecReg(id);
         auto val = reg.as<uint32_t>();
         Ra_ud = val[2];
+        Ra_ud = VSs_uw[2];
     }});
 
     179:mtvsrd({{
@@ -23,6 +24,7 @@
         val[1] = Ra_sd;
         val[0] = 0;
         tc->setVecReg(id, reg);
+        VSt_sd[1] = Ra_sd;
     }});
 
     211:mtvsrwa({{
@@ -33,6 +35,7 @@
         val[1] = Ra_sw;
         val[0] = 0;
         tc->setVecReg(id, reg);
+        VSt_sd[1] = Ra_sw;
     }});
 
     243:mtvsrwz({{
@@ -43,5 +46,6 @@
         val[1] = Ra_uw;
         val[0] = 0;
         tc->setVecReg(id, reg);
+        VSt_ud[1] = Ra_uw;
     }});
  }

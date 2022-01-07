@@ -1,11 +1,10 @@
 format StoreIndexOp {
     135: stvebx({{
         ThreadContext *tc = xc->tcBase();
-        RegId id(VecRegClass, VRS + 32);
-        auto reg = tc->readVecReg(id);
-        auto val = reg.as<uint8_t>();
         Msr msr_v = tc->readIntReg(INTREG_MSR);
         uint8_t eb = bits(EA, 3, 0);
+        __uint128_t val_128 = Vs_uq[0];
+        uint8_t *val = (uint8_t *)&val_128;
         if (msr_v.le) {
             Mem_ub = val[eb];
         } else {
@@ -17,11 +16,10 @@ format StoreIndexOp {
 format VecStore2IndexOp {
     167: stvehx({{
         ThreadContext *tc = xc->tcBase();
-        RegId id(VecRegClass, VRS + 32);
-        auto reg = tc->readVecReg(id);
-        auto val = reg.as<uint16_t>();
         Msr msr_v = tc->readIntReg(INTREG_MSR);
         uint8_t eb = bits(Ra + Rb, 3, 0);
+        __uint128_t val_128 = Vs_uq[0];
+        uint8_t *val = (uint8_t *)&val_128;
         if (msr_v.le) {
             Mem_uh = val[eb];
         } else {
@@ -33,11 +31,10 @@ format VecStore2IndexOp {
 format VecStore4IndexOp {
     199: stvewx({{
         ThreadContext *tc = xc->tcBase();
-        RegId id(VecRegClass, VRS + 32);
-        auto reg = tc->readVecReg(id);
-        auto val = reg.as<uint32_t>();
         Msr msr_v = tc->readIntReg(INTREG_MSR);
         uint8_t eb = bits(Ra + Rb, 3, 0);
+        __uint128_t val_128 = Vs_uq[0];
+        uint8_t *val = (uint8_t *)&val_128;
         if (msr_v.le) {
             Mem_uw = val[eb];
         } else {
@@ -48,19 +45,10 @@ format VecStore4IndexOp {
 
 format VecStore16IndexOp {
     231: stvx({{
-        ThreadContext *tc = xc->tcBase();
-        RegId id(VecRegClass, VRS + 32);
-        auto reg = tc->readVecReg(id);
-        auto val = reg.as<__uint128_t>();
-        Mem_uq = val[0];
+        Mem_uq = Vs_uq[0];
     }});
 
     487: stvxl({{
-        ThreadContext *tc = xc->tcBase();
-        RegId id(VecRegClass, VRS + 32);
-        auto reg = tc->readVecReg(id);
-        auto val = reg.as<__uint128_t>();
-        EA &= (~0x7ULL);
-        Mem_uq = val[0];
+        Mem_uq = Vs_uq[0];
     }});
 }

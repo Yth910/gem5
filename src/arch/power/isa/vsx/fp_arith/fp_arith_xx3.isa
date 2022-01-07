@@ -1,33 +1,18 @@
 format VsxFloatArithOp {
     32:xsadddp({{
-        ThreadContext *tc = xc->tcBase();
-        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
-        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
-        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
-        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
-        auto vra_reg = tc->readVecReg(vra_id);
-        auto vra_val = vra_reg.as<double>();
-        auto vrb_reg = tc->readVecReg(vrb_id);
-        auto vrb_val = vrb_reg.as<double>();
-        auto vrc_reg = tc->readVecReg(vrc_id);
-        auto vrc_val = vrc_reg.as<double>();
-        auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt_val = vrt_reg.as<double>();
         Fpscr fpscr_0 = FPSCR;
 
         /*
         ALL PASSED.
         */
-
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp64_ADD(vra_val[1], vrb_val[1], fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp64_ADD(VSa_df[1], VSb_df[1], fpscr_0);
 
         fpscr_0 = vsx_set_class((double)tmp, fpscr_0);
-        vrt_val[1] = tmp;
+        VSt_df[1] = tmp;
 
         
         FPSCR = fpscr_0;
-        tc->setVecReg(vrt_id, vrt_reg);
     }});
     0:xsaddsp({{
         ThreadContext *tc = xc->tcBase();

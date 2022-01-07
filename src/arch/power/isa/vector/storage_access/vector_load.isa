@@ -1,85 +1,29 @@
 format VecLoadIndexOp {
     7: lvebx({{
-        ThreadContext *tc = xc->tcBase();
-        RegId id(VecRegClass, VRT + 32);
-        auto reg = tc->readVecReg(id);
-        auto val = reg.as<__uint128_t>();
-
-        /*
-        ALL PASSED.
-        */
-
-        val[0] = Mem_uq;
-        tc->setVecReg(id, reg);
+        Vt_uq[0] = Mem_uq;
     }});
 
     39: lvehx({{
-        ThreadContext *tc = xc->tcBase();
-        RegId id(VecRegClass, VRT + 32);
-        auto reg = tc->readVecReg(id);
-        auto val = reg.as<__uint128_t>();
-
-        /*
-        ALL PASSED.
-        */
-
-        val[0] = Mem_uq;
-        tc->setVecReg(id, reg);
+        Vt_uq[0] = Mem_uq;
     }});
 
     71: lvewx({{
-        ThreadContext *tc = xc->tcBase();
-        RegId id(VecRegClass, VRT + 32);
-        auto reg = tc->readVecReg(id);
-        auto val = reg.as<__uint128_t>();
-
-        /*
-        ALL PASSED.
-        */
-
-        val[0] = Mem_uq;
-        tc->setVecReg(id, reg);
+        Vt_uq[0] = Mem_uq;
     }});
 
     103: lvx({{
-        ThreadContext *tc = xc->tcBase();
-        RegId id(VecRegClass, VRT + 32);
-        auto reg = tc->readVecReg(id);
-        auto val = reg.as<__uint128_t>();
-
-        /*
-        ALL PASSED.
-        */
-
-        val[0] = Mem_uq;
-        tc->setVecReg(id, reg);
+        Vt_uq[0] = Mem_uq;
     }});
 
     359: lvxl({{
-        ThreadContext *tc = xc->tcBase();
-        RegId id(VecRegClass, VRT + 32);
-        auto reg = tc->readVecReg(id);
-        auto val = reg.as<__uint128_t>();
-
-        /*
-        ALL PASSED.
-        */
-
-        val[0] = Mem_uq;
-        tc->setVecReg(id, reg);
+        Vt_uq[0] = Mem_uq;
     }});
 
     6: lvsl({{
         uint8_t sh = bits(EA, 3, 0);
-        ThreadContext *tc = xc->tcBase();
-        RegId id(VecRegClass, VRT + 32);
-        auto reg = tc->readVecReg(id);
-        auto val = reg.as<uint8_t>();
+        __uint128_t val_128;
+        uint8_t *val = (uint8_t *)&val_128;
         Mem_uq;
-
-        /*
-        ALL PASSED.
-        */
 
         uint8_t bytes[] = {
             0x1f, 0x1e, 0x1d, 0x1c, 0x1b, 0x1a, 0x19, 0x18, 
@@ -91,20 +35,14 @@ format VecLoadIndexOp {
         for(auto i = 0; i < 16; i++) {
             val[i] = bytes[16 + (i - sh)];
         }
-        tc->setVecReg(id, reg);
+        Vt_uq[0] = val_128;
     }});
 
     38: lvsr({{
         uint8_t sh = bits(EA, 3, 0);
-        ThreadContext *tc = xc->tcBase();
-        RegId id(VecRegClass, VRT + 32);
-        auto reg = tc->readVecReg(id);
-        auto val = reg.as<uint8_t>();
+        __uint128_t val_128;
+        uint8_t *val = (uint8_t *)&val_128;
         Mem_uq;
-
-        /*
-        ALL PASSED.
-        */
 
         uint8_t bytes[] = {
             0x1f, 0x1e, 0x1d, 0x1c, 0x1b, 0x1a, 0x19, 0x18, 
@@ -115,6 +53,6 @@ format VecLoadIndexOp {
 
         for(auto i = 0; i < 16; i++)
             val[i] = bytes[(i + sh)];
-        tc->setVecReg(id, reg);
+        Vt_uq[0] = val_128;
     }});
 }
