@@ -80,7 +80,6 @@ decode PO default Unknown::unknown() {
             ##include "vector/permute_formatting/merge_vx_xo.isa"
             ##include "vector/permute_formatting/splat_vx_xo.isa"
             ##include "vector/permute_formatting/shift_vx_xo.isa"
-            ##include "vector/permute_formatting/extract_vx_xo.isa"
             ##include "vector/bit_manipulation/bit_vx_xo.isa"
             ##include "vector/floating/fp_vx_xo.isa"
             ##include "vector/exclusive_or_based/polynomial_vx_xo.isa"
