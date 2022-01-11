@@ -1,118 +1,13 @@
 format IntArithOp {
-    44: vsldoi({{                                            // wwf
-        /*
-            vsrc.qword[0] ← VSR[VRA+32]
-            vsrc.qword[1] ← VSR[VRB+32]
-            VSR[VRT+32] ← src.byte[SHB:SHB+15]
-        */
-        ThreadContext *tc = xc->tcBase();
-        RegId vra_id(VecRegClass, VRA + 32);                
-        RegId vrb_id(VecRegClass, VRB + 32);                
-        RegId vrt_id(VecRegClass, VRT + 32);                
-        auto vra_reg = tc->readVecReg(vra_id);
-        auto vra = vra_reg.as<uint64_t>();
-        auto vrb_reg = tc->readVecReg(vrb_id);
-        auto vrb = vrb_reg.as<uint64_t>();
-        auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt = vrt_reg.as<uint8_t>();
-
-        /*
-        ALL PASSED.
-        */
-        
-        uint64_t vsrc[4];               
+    44: vsldoi({{
+        uint64_t vsrc[4];
         uint8_t *ppp = (uint8_t *)vsrc;
-        vsrc[0] = vrb[0];
-        vsrc[1] = vrb[1];
-        vsrc[2] = vra[0];
-        vsrc[3] = vra[1];
-        //for(int i = 0, j = 0; i < SHB + 16; i++, j++)
-        //    vrt[i % 16] = ppp[j];
-
+        vsrc[0] = Vb_ud[0];
+        vsrc[1] = Vb_ud[1];
+        vsrc[2] = Va_ud[0];
+        vsrc[3] = Va_ud[1];
         for (int i = 0; i < 16; i++) {
-            vrt[i] = ppp[(i + (16 - SHB))];
+            Vt_ub[i] = ppp[(i + (16 - SHB))];
         }
-
-        //printf("vector: SHB= %d  Vt = %x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x\n", \
-                                    SHB,vrt[0],vrt[1],vrt[2],vrt[3],vrt[4],vrt[5],vrt[6],vrt[7], \
-                                    vrt[8],vrt[9],vrt[10],vrt[11],vrt[12],vrt[13],vrt[14],vrt[15]);
-                            
-        tc->setVecReg(vrt_id, vrt_reg);
-    }});
-
-    24: vextdubvlx({{                                            // wwf
-        /*
-            index ← GPR[RC].bit[59:63]
-            vsrc.qword[0] ← VSR[VRA+32]
-            vsrc.qword[1] ← VSR[VRB+32]
-            VSR[VRT+32].dword[0] ← EXTZ64(vsrc.byte[index])
-            VSR[VRT+32].dword[1] ← 0x0000_0000_0000_0000
-        */
-        ThreadContext *tc = xc->tcBase();
-        RegId vra_id(VecRegClass, VRA + 32);                
-        RegId vrb_id(VecRegClass, VRB + 32);
-        RegId vrt_id(VecRegClass, VRT + 32);                
-        auto vra_reg = tc->readVecReg(vra_id);
-        auto vra = vra_reg.as<uint64_t>();
-        auto vrb_reg = tc->readVecReg(vrb_id);
-        auto vrb = vrb_reg.as<uint64_t>();
-        auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt = vrt_reg.as<uint64_t>();
-
-        /*
-        ISA 3.1
-        */
-        
-        uint64_t vsrc[4];
-        uint8_t  *ppp, index = Rc_ud & 0x1F;
-        vsrc[0] = vrb[0];
-        vsrc[1] = vrb[1];
-        vsrc[2] = vra[0];
-        vsrc[3] = vra[1];
-        ppp = (uint8_t*)&vsrc[0];
-        vrt[0] = zext<8>(ppp[31 - index]);
-        vrt[1] = 0x00;
-        
-        //printf("vector: Rc= %llx   [59:63] index = %d   data=%x\n", Rc_ud, index, *ppp);
-        
-        tc->setVecReg(vrt_id, vrt_reg);
-    }});
-
-    25: vextdubvrx({{                                            // wwf
-        /*
-            index ← GPR[RC].bit[59:63]
-            vsrc.qword[0] ← VSR[VRA+32]
-            vsrc.qword[1] ← VSR[VRB+32]
-            VSR[VRT+32].dword[0] ← EXTZ64(vsrc.byte[31-index])
-            VSR[VRT+32].dword[1] ← 0x0000_0000_0000_0000
-        */
-        ThreadContext *tc = xc->tcBase();
-        RegId vra_id(VecRegClass, VRA + 32);                
-        RegId vrb_id(VecRegClass, VRB + 32);
-        RegId vrt_id(VecRegClass, VRT + 32);                
-        auto vra_reg = tc->readVecReg(vra_id);
-        auto vra = vra_reg.as<uint64_t>();
-        auto vrb_reg = tc->readVecReg(vrb_id);
-        auto vrb = vrb_reg.as<uint64_t>();
-        auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt = vrt_reg.as<uint64_t>();
-
-        /*
-        ISA 3.1
-        */
-        
-        uint64_t vsrc[4];
-        uint8_t  *ppp, index = Rc_ud & 0x1F;
-        vsrc[0] = vrb[0];
-        vsrc[1] = vrb[1];
-        vsrc[2] = vra[0];
-        vsrc[3] = vra[1];
-        ppp = (uint8_t*)&vsrc[0];
-        vrt[0] = zext<8>(ppp[index]);
-        vrt[1] = 0x00;
-        
-        //printf("vector: Rc= %llx   [59:63] 31-index = %d   data=%x\n", Rc_ud, 31-index, ppp[31-index]);
-        
-        tc->setVecReg(vrt_id, vrt_reg);
     }});
 }
