@@ -212,8 +212,8 @@ format VsxFloatArithOp {
         tc->setVecReg(vrt_id, vrt_reg);
     }});
     
-    235:xvrdpic({{ //test failed after changing format
-                   //but test passed without changing format
+    235:xvrdpic({{ //test failed after refactoring
+                   //but test passed without refactoring
         ThreadContext *tc = xc->tcBase();
         RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
         RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
@@ -395,8 +395,8 @@ format VsxFloatArithOp {
         //tc->setVecReg(vrt_id, vrt_reg);
     }});
     
-    171:xvrspic({{ //test failed after changing format,
-                   //but test passed without changing format
+    171:xvrspic({{ //test failed after refactoring,
+                   //but test passed without refactering
         ThreadContext *tc = xc->tcBase();
         RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
         RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);

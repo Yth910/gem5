@@ -36,7 +36,7 @@ format VsxFloatArithOp {
         fpscr_0.fi = 0;
 
         //std::tie(tmp, fpscr_0) = get_floating_exception(VSb_sf[1],
-                                   VSb_sf[1], fpscr_0, (float)tmp);
+                                   //VSb_sf[1], fpscr_0, (float)tmp);
         fpscr_0 = update_fpscr(fpscr_0, fpscr_0);
         fpscr_0 = vsx_set_class((double)tmp, fpscr_0);
         VSt_df[1] = tmp;
