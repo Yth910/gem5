@@ -34,102 +34,34 @@ format VsxFloatArithOp {
     }});
     
     107:xsrdpic({{
-        /*
-        ThreadContext *tc = xc->tcBase();
-        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
-        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
-        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
-        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
-        auto vra_reg = tc->readVecReg(vra_id);
-        auto vra_val = vra_reg.as<double>();
-        auto vrb_reg = tc->readVecReg(vrb_id);
-        auto vrb_val = vrb_reg.as<double>();
-        auto vrc_reg = tc->readVecReg(vrc_id);
-        auto vrc_val = vrc_reg.as<double>();
-        auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt_val = vrt_reg.as<double>();
-        */
         Fpscr fpscr_0 = FPSCR;
 
-        /*
-        ALL PASSED.
-        */
-
-        /* CODE SEG 1 */
         double tmp;
         fp_before_cal(fpscr_0);
-        /* CODE SEG 1 END */
-        /* CODE SEG 2 */
         std::tie(tmp, fpscr_0) = round_current(VSb_df[1], fpscr_0);
-        /* CODE SEG 2 END */
-        /* CODE SEG 3 */
         std::tie(tmp, fpscr_0) = get_floating_exception(VSb_df[1],
                                  VSb_df[1], fpscr_0, tmp);
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
-        /* CODE SEG 3 END */
         VSt_df[1] = tmp;
         FPSCR = fpscr_0;
-        //tc->setVecReg(vrt_id, vrt_reg);
     }});
     
     121:xsrdpim({{
-        /*
-        ThreadContext *tc = xc->tcBase();
-        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
-        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
-        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
-        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
-        auto vra_reg = tc->readVecReg(vra_id);
-        auto vra_val = vra_reg.as<double>();
-        auto vrb_reg = tc->readVecReg(vrb_id);
-        auto vrb_val = vrb_reg.as<double>();
-        auto vrc_reg = tc->readVecReg(vrc_id);
-        auto vrc_val = vrc_reg.as<double>();
-        auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt_val = vrt_reg.as<double>();
-        */
         Fpscr fpscr_0 = FPSCR;
 
-        /*
-        ALL PASSED.
-        */
-
-        /* CODE SEG 1 */
         double tmp;
         fp_before_cal(fpscr_0);
         tmp = bfp64_ROUND_TO_INTEGER_FLOOR(VSb_df[1]);
         std::tie(tmp, fpscr_0) = get_floating_exception(VSb_df[1],
                                  VSb_df[1], fpscr_0, tmp);
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
-        /* CODE SEG 3 END */
         VSt_df[1] = tmp;
         FPSCR = fpscr_0;
-        //tc->setVecReg(vrt_id, vrt_reg);
     }});
     
     105:xsrdpip({{
-        /*
-        ThreadContext *tc = xc->tcBase();
-        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
-        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
-        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
-        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
-        auto vra_reg = tc->readVecReg(vra_id);
-        auto vra_val = vra_reg.as<double>();
-        auto vrb_reg = tc->readVecReg(vrb_id);
-        auto vrb_val = vrb_reg.as<double>();
-        auto vrc_reg = tc->readVecReg(vrc_id);
-        auto vrc_val = vrc_reg.as<double>();
-        auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt_val = vrt_reg.as<double>();
-        */
         Fpscr fpscr_0 = FPSCR;
 
-        /*
-        ALL PASSED.
-        */
-
-        /* CODE SEG 1 */
         double tmp;
         fp_before_cal(fpscr_0);
         tmp = bfp64_ROUND_TO_INTEGER_CEIL(VSb_df[1]);
@@ -138,32 +70,11 @@ format VsxFloatArithOp {
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
         VSt_df[1] = tmp;
         FPSCR = fpscr_0;
-        //tc->setVecReg(vrt_id, vrt_reg);
     }});
     
     89:xsrdpiz({{
-        /*
-        ThreadContext *tc = xc->tcBase();
-        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
-        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
-        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
-        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
-        auto vra_reg = tc->readVecReg(vra_id);
-        auto vra_val = vra_reg.as<double>();
-        auto vrb_reg = tc->readVecReg(vrb_id);
-        auto vrb_val = vrb_reg.as<double>();
-        auto vrc_reg = tc->readVecReg(vrc_id);
-        auto vrc_val = vrc_reg.as<double>();
-        auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt_val = vrt_reg.as<double>();
-        */
         Fpscr fpscr_0 = FPSCR;
 
-        /*
-        ALL PASSED.
-        */
-
-        /* CODE SEG 1 */
         double tmp;
         fp_before_cal(fpscr_0);
         tmp = bfp64_ROUND_TO_INTEGER_TRUNC(VSb_df[1]);
@@ -172,9 +83,7 @@ format VsxFloatArithOp {
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
         
         VSt_df[1] = tmp;
-        /* CODE SEG 3 END */
         FPSCR = fpscr_0;
-        //tc->setVecReg(vrt_id, vrt_reg);
     }});
 
     201:xvrdpi({{  //test failed
@@ -246,26 +155,7 @@ format VsxFloatArithOp {
     }});
     
     249:xvrdpim({{
-        /*
-        ThreadContext *tc = xc->tcBase();
-        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
-        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
-        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
-        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
-        auto vra_reg = tc->readVecReg(vra_id);
-        auto vra_val = vra_reg.as<double>();
-        auto vrb_reg = tc->readVecReg(vrb_id);
-        auto vrb_val = vrb_reg.as<double>();
-        auto vrc_reg = tc->readVecReg(vrc_id);
-        auto vrc_val = vrc_reg.as<double>();
-        auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt_val = vrt_reg.as<double>();
-        */
         Fpscr fpscr_0 = FPSCR;
-
-        /*
-        ALL PASSED.
-        */
         double tmp;
         fp_before_cal(fpscr_0);
 
@@ -279,30 +169,10 @@ format VsxFloatArithOp {
         fpscr_0.fi = 0;
         fpscr_0.fr = 0;
         FPSCR = fpscr_0;
-        //tc->setVecReg(vrt_id, vrt_reg);
     }});
     
     233:xvrdpip({{
-        /*
-        ThreadContext *tc = xc->tcBase();
-        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
-        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
-        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
-        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
-        auto vra_reg = tc->readVecReg(vra_id);
-        auto vra_val = vra_reg.as<double>();
-        auto vrb_reg = tc->readVecReg(vrb_id);
-        auto vrb_val = vrb_reg.as<double>();
-        auto vrc_reg = tc->readVecReg(vrc_id);
-        auto vrc_val = vrc_reg.as<double>();
-        auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt_val = vrt_reg.as<double>();
-        */
         Fpscr fpscr_0 = FPSCR;
-
-        /*
-        ALL PASSED.
-        */
         double tmp;
         fp_before_cal(fpscr_0);
 
@@ -316,30 +186,11 @@ format VsxFloatArithOp {
         fpscr_0.fi = 0;
         fpscr_0.fr = 0;
         FPSCR = fpscr_0;
-        //tc->setVecReg(vrt_id, vrt_reg);
     }});
     
     217:xvrdpiz({{
-        /*
-        ThreadContext *tc = xc->tcBase();
-        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
-        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
-        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
-        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
-        auto vra_reg = tc->readVecReg(vra_id);
-        auto vra_val = vra_reg.as<double>();
-        auto vrb_reg = tc->readVecReg(vrb_id);
-        auto vrb_val = vrb_reg.as<double>();
-        auto vrc_reg = tc->readVecReg(vrc_id);
-        auto vrc_val = vrc_reg.as<double>();
-        auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt_val = vrt_reg.as<double>();
-        */
         Fpscr fpscr_0 = FPSCR;
 
-        /*
-        ALL PASSED.
-        */
         double tmp;
         fp_before_cal(fpscr_0);
 
@@ -353,35 +204,13 @@ format VsxFloatArithOp {
         fpscr_0.fi = 0;
         fpscr_0.fr = 0;
         FPSCR = fpscr_0;
-        //tc->setVecReg(vrt_id, vrt_reg);
     }});
     
     137:xvrspi({{
-        /*
-        ThreadContext *tc = xc->tcBase();
-        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
-        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
-        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
-        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
-        auto vra_reg = tc->readVecReg(vra_id);
-        auto vra_val = vra_reg.as<float>();
-        auto vrb_reg = tc->readVecReg(vrb_id);
-        auto vrb_val = vrb_reg.as<float>();
-        auto vrc_reg = tc->readVecReg(vrc_id);
-        auto vrc_val = vrc_reg.as<float>();
-        auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt_val = vrt_reg.as<float>();
-        */
         Fpscr fpscr_0 = FPSCR;
-
-        /*
-        ALL PASSED.
-        */
 
         float tmp;
         fp_before_cal(fpscr_0);
-        /* CODE SEG 1 END */
-        /* CODE SEG 2 */
         for (auto i = 0; i < 4; i++) {
             VSt_sf[i] = bfp32_ROUND_TO_INTEGER_NEAR(VSb_sf[i]);
             std::tie(tmp, fpscr_0) = get_floating_exception(VSb_sf[i],
@@ -390,9 +219,7 @@ format VsxFloatArithOp {
         }
         fpscr_0.fi = 0;
         fpscr_0.fr = 0;
-        /* CODE SEG 3 END */
         FPSCR = fpscr_0;
-        //tc->setVecReg(vrt_id, vrt_reg);
     }});
     
     171:xvrspic({{ //test failed after refactoring,
@@ -429,26 +256,7 @@ format VsxFloatArithOp {
     }});
     
     185:xvrspim({{
-        /*
-        ThreadContext *tc = xc->tcBase();
-        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
-        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
-        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
-        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
-        auto vra_reg = tc->readVecReg(vra_id);
-        auto vra_val = vra_reg.as<float>();
-        auto vrb_reg = tc->readVecReg(vrb_id);
-        auto vrb_val = vrb_reg.as<float>();
-        auto vrc_reg = tc->readVecReg(vrc_id);
-        auto vrc_val = vrc_reg.as<float>();
-        auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt_val = vrt_reg.as<float>();
-        */
         Fpscr fpscr_0 = FPSCR;
-
-        /*
-        ALL PASSED.
-        */
         float tmp;
         fp_before_cal(fpscr_0);
 
@@ -462,30 +270,10 @@ format VsxFloatArithOp {
         fpscr_0.fi = 0;
         fpscr_0.fr = 0;
         FPSCR = fpscr_0;
-        //tc->setVecReg(vrt_id, vrt_reg);
     }});
     
     169:xvrspip({{
-        /*
-        ThreadContext *tc = xc->tcBase();
-        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
-        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
-        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
-        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
-        auto vra_reg = tc->readVecReg(vra_id);
-        auto vra_val = vra_reg.as<float>();
-        auto vrb_reg = tc->readVecReg(vrb_id);
-        auto vrb_val = vrb_reg.as<float>();
-        auto vrc_reg = tc->readVecReg(vrc_id);
-        auto vrc_val = vrc_reg.as<float>();
-        auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt_val = vrt_reg.as<float>();
-        */
         Fpscr fpscr_0 = FPSCR;
-
-        /*
-        ALL PASSED.
-        */
         float tmp;
         fp_before_cal(fpscr_0);
 
@@ -499,30 +287,10 @@ format VsxFloatArithOp {
         fpscr_0.fi = 0;
         fpscr_0.fr = 0;
         FPSCR = fpscr_0;
-        //tc->setVecReg(vrt_id, vrt_reg);
     }});
     
     153:xvrspiz({{
-        /*
-        ThreadContext *tc = xc->tcBase();
-        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
-        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
-        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
-        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
-        auto vra_reg = tc->readVecReg(vra_id);
-        auto vra_val = vra_reg.as<float>();
-        auto vrb_reg = tc->readVecReg(vrb_id);
-        auto vrb_val = vrb_reg.as<float>();
-        auto vrc_reg = tc->readVecReg(vrc_id);
-        auto vrc_val = vrc_reg.as<float>();
-        auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt_val = vrt_reg.as<float>();
-        */
         Fpscr fpscr_0 = FPSCR;
-
-        /*
-        ALL PASSED.
-        */
         float tmp;
         fp_before_cal(fpscr_0);
 
@@ -537,6 +305,5 @@ format VsxFloatArithOp {
         fpscr_0.fi = 0;
         fpscr_0.fr = 0;
         FPSCR = fpscr_0;
-        //tc->setVecReg(vrt_id, vrt_reg);
     }});
 }
