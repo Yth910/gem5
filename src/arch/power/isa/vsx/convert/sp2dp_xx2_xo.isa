@@ -1,5 +1,6 @@
 format VsxFloatArithOp {
     329:xscvspdp({{
+        /*
         ThreadContext *tc = xc->tcBase();
         RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
         RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
@@ -13,18 +14,19 @@ format VsxFloatArithOp {
         auto vrc_val = vrc_reg.as<uint64_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
         auto vrt_val = vrt_reg.as<double>();
+        */
         Fpscr fpscr_0 = FPSCR;
 
         /*
         ALL PASSED.
-        double check why vrb_val[1]
+        double check why VSb_sf[1]
         */
 
         /* CODE SEG 1 */
         double tmp;
         fpscr_0 = fp_before_cal(fpscr_0);
         /* CODE SEG 1 END */
-        tmp = (vrb_val[3]);
+        tmp = (VSb_sf[3]);
         if (isSnan(tmp)) {
             fpscr_0.vxsnan = 1;
             tmp = SnantoQnan(tmp);
@@ -33,16 +35,18 @@ format VsxFloatArithOp {
         fpscr_0.fr = 0;
         fpscr_0.fi = 0;
 
-        //std::tie(tmp, fpscr_0) = get_floating_exception(vrb_val[1], vrb_val[1], fpscr_0, (float)tmp);
+        //std::tie(tmp, fpscr_0) = get_floating_exception(VSb_sf[1],
+                                   VSb_sf[1], fpscr_0, (float)tmp);
         fpscr_0 = update_fpscr(fpscr_0, fpscr_0);
         fpscr_0 = vsx_set_class((double)tmp, fpscr_0);
-        vrt_val[1] = tmp;
+        VSt_df[1] = tmp;
         /* CODE SEG 3 END */
         FPSCR = fpscr_0;
-        tc->setVecReg(vrt_id, vrt_reg);
+        //tc->setVecReg(vrt_id, vrt_reg);
     }});
 
     331:xscvspdpn({{
+        /*
         ThreadContext *tc = xc->tcBase();
         RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
         RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
@@ -56,29 +60,31 @@ format VsxFloatArithOp {
         auto vrc_val = vrc_reg.as<uint64_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
         auto vrt_val = vrt_reg.as<double>();
+        */
         Fpscr fpscr_0 = FPSCR;
 
         /*
         ALL PASSED.
-        double check why vrb_val[1]
+        double check why VSb_sf[1]
         */
 
         /* CODE SEG 1 */
         double tmp;
         //fp_before_cal(fpscr_0);
         /* CODE SEG 1 END */
-        tmp = vrb_val[3];
+        tmp = VSb_sf[3];
 
         //std::tie(tmp, fpscr_0) = get_floating_exception(vrb_val[1], vrb_val[1], fpscr_0, (float)tmp);
         //fpscr_0 = vsx_set_class((double)tmp, fpscr_0);
         //vrt_val[1] = vrb_val[1];
-        vrt_val[1] = tmp;
+        VSt_df[1] = tmp;
         /* CODE SEG 3 END */
         FPSCR = fpscr_0;
-        tc->setVecReg(vrt_id, vrt_reg);
+        //tc->setVecReg(vrt_id, vrt_reg);
     }});
 
     457:xvcvspdp({{
+        /*
         ThreadContext *tc = xc->tcBase();
         RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
         RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
@@ -92,21 +98,22 @@ format VsxFloatArithOp {
         auto vrc_val = vrc_reg.as<uint64_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
         auto vrt_val = vrt_reg.as<double>();
+        */
         Fpscr fpscr_0 = FPSCR;
 
         /*
         ALL PASSED.
-        double check why vrb_val[1]
+        double check why VSb_sf[1]
         */
 
         /* CODE SEG 1 */
         fpscr_0 = fp_before_cal(fpscr_0);
         /* CODE SEG 1 END */
         for (int i = 0; i < 2; i++) {
-            vrt_val[i] = (vrb_val[i * 2 + 1]);
-            if (isSnan(vrt_val[i])) {
+            VSt_df[i] = (VSb_sf[i * 2 + 1]);
+            if (isSnan(VSt_df[i])) {
                 fpscr_0.vxsnan = 1;
-                vrt_val[i] = SnantoQnan(vrt_val[i]);
+                VSt_df[i] = SnantoQnan(VSt_df[i]);
             }
         }
         fpscr_0.fr = 0;
@@ -117,6 +124,6 @@ format VsxFloatArithOp {
         //vrt_val[1] = vrb_val[1];
         /* CODE SEG 3 END */
         FPSCR = fpscr_0;
-        tc->setVecReg(vrt_id, vrt_reg);
+        //tc->setVecReg(vrt_id, vrt_reg);
     }});
 }
