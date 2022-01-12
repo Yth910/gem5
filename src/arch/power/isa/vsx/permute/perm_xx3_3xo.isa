@@ -1,65 +1,18 @@
 format IntArithOp {                         
-    10: xxpermdi({{                                            // wwf
-        /*
-            VSR[32×TX+T].dword[0] ← VSR[32×AX+A].dword[DM.bit[0]]
-            VSR[32×TX+T].dword[1] ← VSR[32×BX+B].dword[DM.bit[1]]
-        */
-        ThreadContext *tc = xc->tcBase();
-        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
-        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
-        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
-        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
-        auto vra_reg = tc->readVecReg(vra_id);
-        auto vra = vra_reg.as<uint64_t>();
-        auto vrb_reg = tc->readVecReg(vrb_id);
-        auto vrb = vrb_reg.as<uint64_t>();
-        auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt = vrt_reg.as<uint64_t>();
-
-        /*
-        ALL PASSED.
-        */
-        
+    10: xxpermdi({{
         int t1 = (DM >> 1) & 0x1;
         int t2 = DM & 0x1;
-        vrt[1] = vra[1 - t1];
-        vrt[0] = vrb[1 - t2];
-        
-        
-        tc->setVecReg(vrt_id, vrt_reg);
-        }});
-                                
-    2: xxsldwi({{                                            // wwf
-        /*
-            source.qword[0] ← VSR[32×AX+A]
-            source.qword[1] ← VSR[32×BX+B]
-            VSR[32×TX+T] ← source.word[SHW:SHW+3]
-        */
-        ThreadContext *tc = xc->tcBase();
-        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
-        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
-        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
-        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T); 
-        auto vra_reg = tc->readVecReg(vra_id);
-        auto vra = vra_reg.as<uint32_t>();
-        auto vrb_reg = tc->readVecReg(vrb_id);
-        auto vrb = vrb_reg.as<uint32_t>();
-        auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt = vrt_reg.as<uint32_t>();
+        VSt_ud[1] = VSa_ud[1 - t1];
+        VSt_ud[0] = VSb_ud[1 - t2];
+    }});
 
-        /*
-        ALL PASSED.
-        */
-        
+    2: xxsldwi({{
         uint32_t source[8];
-        int i;
-        for(i = 0; i < 4; i++)
-            source[i] = vrb[i];
-        for(i = 0; i < 4; i++)
-            source[i + 4] = vra[i];
-        for(i = 0; i < 4; i++)
-            vrt[3 - i] = source[7 - (i + SHW)];		        
-        
-        tc->setVecReg(vrt_id, vrt_reg);
+        for(int i = 0; i < 4; i++)
+            source[i] = VSb_uw[i];
+        for(int i = 0; i < 4; i++)
+            source[i + 4] = VSa_uw[i];
+        for(int i = 0; i < 4; i++)
+            VSt_uw[3 - i] = source[7 - (i + SHW)];
     }});
 }
