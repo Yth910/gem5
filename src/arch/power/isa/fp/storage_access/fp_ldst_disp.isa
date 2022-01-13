@@ -1,43 +1,43 @@
 format LoadDispOp {
     48: lfs({{
         double dst = Mem_sf;
-        Vt_df[1] = dst;
+        Ft_df[1] = dst;
     }});
     50: lfd({{
         double dst = Mem_df;
-        Vt_df[1] = dst;
+        Ft_df[1] = dst;
     }});
 }
 
 format LoadDispUpdateOp {
     49: lfsu({{
         double dst = Mem_sf;
-        Vt_df[1] = dst;
+        Ft_df[1] = dst;
     }});
     51: lfdu({{
         double dst = Mem_df;
-        Vt_df[1] = dst;
+        Ft_df[1] = dst;
     }});
 }
 
 format StoreDispOp {
     52: stfs({{
-        double dst = Vs_df[1];
+        double dst = Fs_df[1];
         Mem_sf = dst;
     }});
     54: stfd({{
-        double dst = Vs_df[1];
+        double dst = Fs_df[1];
         Mem_df = dst;
     }});
 }
 
 format StoreDispUpdateOp {
     53: stfsu({{
-        double dst = Vs_df[1];
+        double dst = Fs_df[1];
         Mem_sf = dst;
         }});
     55: stfdu({{
-        double dst = Vs_df[1];
+        double dst = Fs_df[1];
         Mem_df = dst;
     }});
 }

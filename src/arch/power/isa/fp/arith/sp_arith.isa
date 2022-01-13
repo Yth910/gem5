@@ -3,141 +3,137 @@ format FloatRCCheckOp {
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
         double tmp;
-        double src1 = Va_df[1];
-        double src2 = Vb_df[1];
+        double src1 = Fa_df[1];
+        double src2 = Fb_df[1];
         std::tie(tmp, fpscr_0) = bfp32_ADD(src1, src2, FPSCR);
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
         double dst = tmp;
-        Vt_df[1] = (float)dst;
+        Ft_df[1] = (float)dst;
         FPSCR = fpscr_0;
-        //ALL PASSED.
     }});
 
     20: fsubs({{
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
         double tmp;
-        double src1 = Va_df[1];
-        double src2 = Vb_df[1];
+        double src1 = Fa_df[1];
+        double src2 = Fb_df[1];
         std::tie(tmp, fpscr_0) = bfp32_ADD(src1, bfp_NEGATE(src2), FPSCR);
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
         double dst = tmp;
-        Vt_df[1] = (float)dst;
+        Ft_df[1] = (float)dst;
         FPSCR = fpscr_0;
-        //ALL PASSED.
     }});
 
     25: fmuls({{
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
         double tmp;
-        double src1 = Va_df[1];
-        double src3 = Vc_df[1];
+        double src1 = Fa_df[1];
+        double src3 = Fc_df[1];
         std::tie(tmp, fpscr_0) = bfp32_MULTIPLY(src1, src3, FPSCR);
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
         double dst = tmp;
-        Vt_df[1] = (float)dst;
+        Ft_df[1] = (float)dst;
         FPSCR = fpscr_0;
-        //ALL PASSED.
     }});
 
     18: fdivs({{
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
         double tmp;
-        double src1 = Va_df[1];
-        double src2 = Vb_df[1];
+        double src1 = Fa_df[1];
+        double src2 = Fb_df[1];
         std::tie(tmp, fpscr_0) = bfp32_DIV(src1, src2, FPSCR);
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
         double dst = tmp;
-        Vt_df[1] = (float)dst;
+        Ft_df[1] = (float)dst;
         FPSCR = fpscr_0;
-        //ALL PASSED.
     }});
 
-    29: fmadds({{
+    29: fmadds({{ //fpscr mismatch
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
         double tmp;
-        double src1 = Va_df[1];
-        double src2 = Vb_df[1];
-        double src3 = Vc_df[1];
+        double src1 = Fa_df[1];
+        double src2 = Fb_df[1];
+        double src3 = Fc_df[1];
         std::tie(tmp, fpscr_0) =
             bfp32_MULTIPLY_ADD(src1, src3, src2, FPSCR);
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
         double dst = tmp;
-        Vt_df[1] = (float)dst;
+        Ft_df[1] = (float)dst;
         FPSCR = fpscr_0;
     }});
 
-    28: fmsubs({{
+    28: fmsubs({{ //fpscr mismatch
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
         double tmp;
-        double src1 = Va_df[1];
-        double src2 = Vb_df[1];
-        double src3 = Vc_df[1];
+        double src1 = Fa_df[1];
+        double src2 = Fb_df[1];
+        double src3 = Fc_df[1];
         std::tie(tmp, fpscr_0) =
             bfp32_MULTIPLY_ADD(src1, src3, bfp_NEGATE(src2), FPSCR);
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
         double dst = tmp;
-        Vt_df[1] = (float)dst;
+        Ft_df[1] = (float)dst;
         FPSCR = fpscr_0;
     }});
 
-    31: fnmadds({{
+    31: fnmadds({{ //fpscr mismatch
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
         double tmp;
-        double src1 = Va_df[1];
-        double src2 = Vb_df[1];
-        double src3 = Vc_df[1];
+        double src1 = Fa_df[1];
+        double src2 = Fb_df[1];
+        double src3 = Fc_df[1];
         std::tie(tmp, fpscr_0) =
             bfp32_MULTIPLY_ADD(src1, src3, src2, FPSCR);
         tmp = bfp_NEGATE(tmp);
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
         double dst = tmp;
-        Vt_df[1] = (float)dst;
+        Ft_df[1] = (float)dst;
         FPSCR = fpscr_0;
     }});
 
-    30: fnmsubs({{
+    30: fnmsubs({{ //fpscr mismatch
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
         double tmp;
-        double src1 = Va_df[1];
-        double src2 = Vb_df[1];
-        double src3 = Vc_df[1];
+        double src1 = Fa_df[1];
+        double src2 = Fb_df[1];
+        double src3 = Fc_df[1];
         std::tie(tmp, fpscr_0) =
             bfp32_MULTIPLY_ADD(src1, src3, bfp_NEGATE(src2), FPSCR);
         tmp = bfp_NEGATE(tmp);
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
         double dst = tmp;
-        Vt_df[1] = (float)dst;
+        Ft_df[1] = (float)dst;
         FPSCR = fpscr_0;
     }});
 
-    22: fsqrts({{
+    22: fsqrts({{ //fpscr mismatch
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
-        double src2 = Vb_df[1];
+        double src2 = Fb_df[1];
         double dst = sqrt(src2);
-        Vt_df[1] = (float)dst;
+        Ft_df[1] = (float)dst;
     }});
 
-    24: fres({{
+    24: fres({{ //precision mismatch
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
-        double src2 = Vb_df[1];
+        double src2 = Fb_df[1];
         double dst = 1.0 / src2;
-        Vt_df[1] = (float)dst;
+        Ft_df[1] = (float)dst;
     }});
 
-    26: frsqrtes({{
+    26: frsqrtes({{ //precision mismatch
         Fpscr fpscr_0 = FPSCR;
         fp_before_cal(fpscr_0);
-        double src2 = Vb_df[1];
+        double src2 = Fb_df[1];
         double dst = 1.0 / sqrt(src2);
-        Vt_df[1] = (float)dst;
+        Ft_df[1] = (float)dst;
     }});
 }

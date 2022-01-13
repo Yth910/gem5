@@ -19,7 +19,7 @@ format VecStore2IndexOp {
         Msr msr_v = tc->readIntReg(INTREG_MSR);
         uint8_t eb = bits(Ra + Rb, 3, 0);
         __uint128_t val_128 = Vs_uq[0];
-        uint8_t *val = (uint8_t *)&val_128;
+        uint16_t *val = (uint16_t *)&val_128;
         if (msr_v.le) {
             Mem_uh = val[eb];
         } else {
@@ -34,7 +34,7 @@ format VecStore4IndexOp {
         Msr msr_v = tc->readIntReg(INTREG_MSR);
         uint8_t eb = bits(Ra + Rb, 3, 0);
         __uint128_t val_128 = Vs_uq[0];
-        uint8_t *val = (uint8_t *)&val_128;
+        uint32_t *val = (uint32_t *)&val_128;
         if (msr_v.le) {
             Mem_uw = val[eb];
         } else {

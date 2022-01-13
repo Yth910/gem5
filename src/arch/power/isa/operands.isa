@@ -52,11 +52,11 @@ def operands {{
     'Rt': ('IntReg', 'ud', 'RT', 'IsInteger', 5),
 
     # General Purpose Floating Point Reg Operands
-    'Fa': ('FloatReg', 'df', 'FRA', 'IsFloating', 1),
-    'Fb': ('FloatReg', 'df', 'FRB', 'IsFloating', 2),
-    'Fc': ('FloatReg', 'df', 'FRC', 'IsFloating', 3),
-    'Fs': ('FloatReg', 'df', 'FRS', 'IsFloating', 4),
-    'Ft': ('FloatReg', 'df', 'FRT', 'IsFloating', 5),
+    'Fa': ('VecReg', 'vc', 'FRA', 'IsVector', 1),
+    'Fb': ('VecReg', 'vc', 'FRB', 'IsVector', 2),
+    'Fc': ('VecReg', 'vc', 'FRC', 'IsVector', 3),
+    'Fs': ('VecReg', 'vc', 'FRS', 'IsVector', 4),
+    'Ft': ('VecReg', 'vc', 'FRT', 'IsVector', 5),
 
     # Vector Reg Operands
     'Va': ('VecReg', 'vc', 'VRA + 32', 'IsVector', 1),

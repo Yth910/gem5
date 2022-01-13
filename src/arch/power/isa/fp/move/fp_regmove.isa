@@ -11,12 +11,12 @@ format FloatRCCheckOp {
 
     583: mffs({{
         uint64_t dst = FPSCR;
-        Vt_ud[1] = dst;
+        Ft_ud[1] = dst;
     }});
 
     default: decode XFL_XO {
         711: mtfsf({{
-            uint64_t src2 = Vb_ud[1];
+            uint64_t src2 = Fb_ud[1];
             if (L_FIELD == 1) { FPSCR = src2; }
             else {
                 for (int i = 0; i < 8; ++i) {
