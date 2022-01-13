@@ -592,102 +592,73 @@ format VsxFloatArithOp {
         FPSCR = fpscr_0;
     }});
 
-    61: xstdivdp({{
-		// TODO if (MSR.VEC == 0) ???
-		ThreadContext *tc = xc->tcBase();
-		RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
-        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
-		auto vra_reg = tc->readVecReg(vra_id); auto vra_val = vra_reg.as<double>();
-		auto vrb_reg = tc->readVecReg(vrb_id); auto vrb_val = vrb_reg.as<double>();
+    // UNTESTED
+  61: xstdivdp({{
+        uint32_t fe_flag = 0;
+        uint32_t fg_flag = 0;
+        const uint64_t *pVala = reinterpret_cast<const uint64_t *>(&VSa_df[1]);
+        const uint64_t *pValb = reinterpret_cast<const uint64_t *>(&VSb_df[1]);
+        int16_t e_a = ((*pVala >> (64-12)) & 0x00000000000007FF) - 1023;
+        int16_t e_b = ((*pValb >> (64-12)) & 0x00000000000007FF) - 1023;
+        fe_flag = fe_flag | isNan(VSa_df[1]) | isInfinity(VSa_df[1]) |
+            isNan(VSb_df[1]) | isInfinity(VSb_df[1]) |
+            (e_b <= -1022) |
+            (e_b >=  1021) |
+            (!isZero(VSa_df[1]) & ((e_a - e_b) >=   1023)) |
+            (!isZero(VSa_df[1]) & ((e_a - e_b) <= -1021)) |
+            (!isZero(VSa_df[1]) & (e_a <= -970));
+        fg_flag = fg_flag | isInfinity(VSa_df[1]) | isInfinity(VSb_df[1]) |
+            isZero(VSb_df[1]) | isDenormalized(VSb_df[1]);
+        
+        CR = insertCRField(CR, BF, ((1 << 3) | (fg_flag << 2) | (fe_flag << 1)));
+    }}); 
 
-		// uint32_t eq_flag = 0;
-		// uint32_t gt_flag = 0;
-		uint32_t fe_flag = 0;
-		uint32_t fg_flag = 0;
-		// uint32_t fl_flag = 0;
+    // UNTESTED
+    125: xvtdivdp({{
+        uint32_t fe_flag = 0;
+        uint32_t fg_flag = 0;
 
-		
-			uint64_t *pVala = reinterpret_cast<uint64_t *>(&vra_val[1]);
-			uint64_t *pValb = reinterpret_cast<uint64_t *>(&vrb_val[1]);
-			int16_t e_a = ((*pVala >> (64-12)) & 0x00000000000007FF) - 1023;
-			int16_t e_b = ((*pValb >> (64-12)) & 0x00000000000007FF) - 1023;
-			fe_flag = fe_flag | isNan(vra_val[1]) | isInfinity(vra_val[1]) |
-				isNan(vrb_val[1]) | isInfinity(vrb_val[1]) |
-				(e_b <= -1022) |
-				(e_b >=  1021) |
-				(!isZero(vra_val[1]) & ((e_a - e_b) >=	1023)) |
-				(!isZero(vra_val[1]) & ((e_a - e_b) <= -1021)) |
-				(!isZero(vra_val[1]) & (e_a <= -970));
-			fg_flag = fg_flag | isInfinity(vra_val[1]) | isInfinity(vrb_val[1]) |
-				isZero(vrb_val[1]) | isDenormalized(vrb_val[1]);
-		
-		CR = insertCRField(CR, BF, ((1 << 3) | (fg_flag << 2) | (fe_flag << 1)));
-	}}); 
+        for (auto i = 0; i < 2; i++) {
+            const uint64_t *pVala = reinterpret_cast<const uint64_t *>(&VSa_df[i]);
+            const uint64_t *pValb = reinterpret_cast<const uint64_t *>(&VSb_df[i]);
+            int16_t e_a = ((*pVala >> (64-12)) & 0x00000000000007FF) - 1023;
+            int16_t e_b = ((*pValb >> (64-12)) & 0x00000000000007FF) - 1023;
+            fe_flag = fe_flag | isNan(VSa_df[i]) | isInfinity(VSa_df[i]) |
+                isNan(VSb_df[i]) | isInfinity(VSb_df[i]) |
+                (e_b <= -1022) |
+                (e_b >=  1021) |
+                (!isZero(VSa_df[i]) & ((e_a - e_b) >=   1023)) |
+                (!isZero(VSa_df[i]) & ((e_a - e_b) <= -1021)) |
+                (!isZero(VSa_df[i]) & (e_a <= -970));
+            fg_flag = fg_flag | isInfinity(VSa_df[i]) | isInfinity(VSb_df[i]) |
+                isZero(VSb_df[i]) | isDenormalized(VSb_df[i]);
+        }
 
-	125: xvtdivdp({{
-		// TODO if (MSR.VEC == 0) ???
-		ThreadContext *tc = xc->tcBase();
-		RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
-        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
-		auto vra_reg = tc->readVecReg(vra_id); auto vra_val = vra_reg.as<double>();
-		auto vrb_reg = tc->readVecReg(vrb_id); auto vrb_val = vrb_reg.as<double>();
+        CR = insertCRField(CR, BF, ((1 << 3) | (fg_flag << 2) | (fe_flag << 1)));
+    }}); 
 
-		// uint32_t eq_flag = 0;
-		// uint32_t gt_flag = 0;
-		uint32_t fe_flag = 0;
-		uint32_t fg_flag = 0;
-		// uint32_t fl_flag = 0;
+    // UNTESTED
+    93: xvtdivsp({{
+        uint32_t fe_flag = 0;
+        uint32_t fg_flag = 0;
 
-		for (auto i = 0; i < 2; i++) {
-			uint64_t *pVala = reinterpret_cast<uint64_t *>(&vra_val[i]);
-			uint64_t *pValb = reinterpret_cast<uint64_t *>(&vrb_val[i]);
-			int16_t e_a = ((*pVala >> (64-12)) & 0x00000000000007FF) - 1023;
-			int16_t e_b = ((*pValb >> (64-12)) & 0x00000000000007FF) - 1023;
-			fe_flag = fe_flag | isNan(vra_val[i]) | isInfinity(vra_val[i]) |
-				isNan(vrb_val[i]) | isInfinity(vrb_val[i]) |
-				(e_b <= -1022) |
-				(e_b >=  1021) |
-				(!isZero(vra_val[i]) & ((e_a - e_b) >=	1023)) |
-				(!isZero(vra_val[i]) & ((e_a - e_b) <= -1021)) |
-				(!isZero(vra_val[i]) & (e_a <= -970));
-			fg_flag = fg_flag | isInfinity(vra_val[i]) | isInfinity(vrb_val[i]) |
-				isZero(vrb_val[i]) | isDenormalized(vrb_val[i]);
-		}
+        for (auto i = 0; i < 4; i++) {
+            const uint32_t *pVala = reinterpret_cast<const uint32_t *>(&VSa_sf[i]);
+            const uint32_t *pValb = reinterpret_cast<const uint32_t *>(&VSb_sf[i]);
+            int8_t e_a = ((*pVala >> 24) & 0x0000007F) - 127;
+            int8_t e_b = ((*pValb >> 24) & 0x0000007F) - 127;
+            fe_flag = fe_flag | isNan(VSa_sf[i]) | isInfinity(VSa_sf[i]) |
+                isNan(VSb_sf[i]) | isInfinity(VSb_sf[i]) |
+                (e_b <= -126) |
+                (e_b >=  125) |
+                (!isZero(VSa_sf[i]) & ((e_a - e_b) >=   127)) |
+                (!isZero(VSa_sf[i]) & ((e_a - e_b) <= -125)) |
+                (!isZero(VSa_sf[i]) & (e_a <= -103));
+            fg_flag = fg_flag | isInfinity(VSa_sf[i]) | isInfinity(VSb_sf[i]) |
+                isZero(VSb_sf[i]) | isDenormalized(VSb_sf[i]);
+        }
 
-		CR = insertCRField(CR, BF, ((1 << 3) | (fg_flag << 2) | (fe_flag << 1)));
-	}}); 
-
-	93: xvtdivsp({{
-		// TODO if (MSR.VEC == 0) ???
-		ThreadContext *tc = xc->tcBase();
-		RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
-        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
-		auto vra_reg = tc->readVecReg(vra_id); auto vra_val = vra_reg.as<float>();
-		auto vrb_reg = tc->readVecReg(vrb_id); auto vrb_val = vrb_reg.as<float>();
-
-		// uint32_t eq_flag = 0;
-		// uint32_t gt_flag = 0;
-		uint32_t fe_flag = 0;
-		uint32_t fg_flag = 0;
-		// uint32_t fl_flag = 0;
-
-		for (auto i = 0; i < 4; i++) {
-			uint32_t *pVala = reinterpret_cast<uint32_t *>(&vra_val[i]);
-			uint32_t *pValb = reinterpret_cast<uint32_t *>(&vrb_val[i]);
-			int8_t e_a = ((*pVala >> 24) & 0x0000007F) - 127;
-			int8_t e_b = ((*pValb >> 24) & 0x0000007F) - 127;
-			fe_flag = fe_flag | isNan(vra_val[i]) | isInfinity(vra_val[i]) |
-				isNan(vrb_val[i]) | isInfinity(vrb_val[i]) |
-				(e_b <= -126) |
-				(e_b >=  125) |
-				(!isZero(vra_val[i]) & ((e_a - e_b) >=	127)) |
-				(!isZero(vra_val[i]) & ((e_a - e_b) <= -125)) |
-				(!isZero(vra_val[i]) & (e_a <= -103));
-			fg_flag = fg_flag | isInfinity(vra_val[i]) | isInfinity(vrb_val[i]) |
-				isZero(vrb_val[i]) | isDenormalized(vrb_val[i]);
-		}
-
-		CR = insertCRField(CR, BF, ((1 << 3) | (fg_flag << 2) | (fe_flag << 1)));
-	}}); 
+        CR = insertCRField(CR, BF, ((1 << 3) | (fg_flag << 2) | (fe_flag << 1)));
+    }}); 
 
 }
