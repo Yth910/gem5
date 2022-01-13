@@ -1,41 +1,26 @@
 format VsxFloatArithOp {
     344:xscvdpsxds({{
-        ThreadContext *tc = xc->tcBase();
-        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
-        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
-        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
-        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
-        auto vra_reg = tc->readVecReg(vra_id);
-        auto vra_val = vra_reg.as<uint64_t>();
-        auto vrb_reg = tc->readVecReg(vrb_id);
-        auto vrb_val = vrb_reg.as<double>();
-        auto vrc_reg = tc->readVecReg(vrc_id);
-        auto vrc_val = vrc_reg.as<uint64_t>();
-        auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt_val = vrt_reg.as<int64_t>();
         Fpscr fpscr_0 = FPSCR;
         Fpscr fpscr_1 = FPSCR;
 
-        /*
-        ALL PASSED.
-        */
-
         int64_t tmp;
         fpscr_0 = fp_before_cal(fpscr_0);
-        tmp = vrb_val[1];
-        std::tie(tmp, fpscr_0) = get_floating_exception(vrb_val[1], vrb_val[1], fpscr_0, (double)tmp);
+        tmp = VSb_df[1];
+        std::tie(tmp, fpscr_0) =
+        get_floating_exception(VSb_df[1], VSb_df[1],
+                                fpscr_0, (double)tmp);
 
         int64_t max = (int64_t)0x7fffffffffffffffULL;
         int64_t min = (int64_t)0x8000000000000000ULL;
         bool check_fi = true;
 
-        if (vrb_val[1] > (double)max) {
+        if (VSb_df[1] > (double)max) {
             fpscr_0.vxcvi = 1;
             tmp = max;
             fpscr_0.xx = fpscr_1.xx;
             fpscr_0.fi = fpscr_1.fi;
             check_fi = false;
-        } else if (vrb_val[1] < (double)min) {
+        } else if (VSb_df[1] < (double)min) {
             fpscr_0.vxcvi = 1;
             tmp = min;
             fpscr_0.xx = fpscr_1.xx;
@@ -43,115 +28,80 @@ format VsxFloatArithOp {
             check_fi = false;
         }
 
-        if (isNan(vrb_val[1])) {
+        if (isNan(VSb_df[1])) {
             fpscr_0.vxcvi = 1;
             tmp = min;
         }
         
-        if (check_fi && !isNan(vrb_val[1]) && !isInfinity(vrb_val[1])) {
-            if ((double)tmp != vrb_val[1])
+        if (check_fi && !isNan(VSb_df[1]) && !isInfinity(VSb_df[1])) {
+            if ((double)tmp != VSb_df[1])
                 fpscr_0.fi = 1;
         }
 
-        vrt_val[1] = tmp;
+        VSt_sd[1] = tmp;
         FPSCR = fpscr_0;
-        tc->setVecReg(vrt_id, vrt_reg);
     }});
 
     472:xvcvdpsxds({{
-        ThreadContext *tc = xc->tcBase();
-        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
-        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
-        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
-        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
-        auto vra_reg = tc->readVecReg(vra_id);
-        auto vra_val = vra_reg.as<uint64_t>();
-        auto vrb_reg = tc->readVecReg(vrb_id);
-        auto vrb_val = vrb_reg.as<double>();
-        auto vrc_reg = tc->readVecReg(vrc_id);
-        auto vrc_val = vrc_reg.as<uint64_t>();
-        auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt_val = vrt_reg.as<int64_t>();
         Fpscr fpscr_0 = FPSCR;
         Fpscr fpscr_1 = FPSCR;
-
-        /*
-        ALL PASSED.
-        */
 
         int64_t tmp;
         fpscr_0 = fp_before_cal(fpscr_0);
         
         for (int i = 0; i < 2; i++) {
-            tmp = vrb_val[i];
-            std::tie(tmp, fpscr_0) = get_floating_exception(vrb_val[i], vrb_val[i], fpscr_0, (double)tmp);
+            tmp = VSb_df[i];
+            std::tie(tmp, fpscr_0) =
+            get_floating_exception(VSb_df[i], VSb_df[i],
+                                   fpscr_0, (double)tmp);
             int64_t max = (int64_t)0x7fffffffffffffffULL;
             int64_t min = (int64_t)0x8000000000000000ULL;
             bool check_fi = true;
 
-            if (vrb_val[i] > (double)max) {
+            if (VSb_df[i] > (double)max) {
                 fpscr_0.vxcvi = 1;
                 tmp = max;
                 fpscr_0.xx = fpscr_1.xx;
                 
-            } else if (vrb_val[i] < (double)min) {
+            } else if (VSb_df[i] < (double)min) {
                 fpscr_0.vxcvi = 1;
                 tmp = min;
                 fpscr_0.xx = fpscr_1.xx;
             }
 
-            if (isNan(vrb_val[i])) {
+            if (isNan(VSb_df[i])) {
                 fpscr_0.vxcvi = 1;
                 tmp = min;
             }
 
-            vrt_val[i] = tmp;
+            VSt_sd[i] = tmp;
             fpscr_0.fi = fpscr_1.fi;
         }
         FPSCR = fpscr_0;
-        tc->setVecReg(vrt_id, vrt_reg);
     }});
 
     88:xscvdpsxws({{
-        ThreadContext *tc = xc->tcBase();
-        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
-        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
-        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
-        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
-        auto vra_reg = tc->readVecReg(vra_id);
-        auto vra_val = vra_reg.as<uint64_t>();
-        auto vrb_reg = tc->readVecReg(vrb_id);
-        auto vrb_val = vrb_reg.as<double>();
-        auto vrc_reg = tc->readVecReg(vrc_id);
-        auto vrc_val = vrc_reg.as<uint64_t>();
-        auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt_val = vrt_reg.as<int32_t>();
         Fpscr fpscr_0 = FPSCR;
         Fpscr fpscr_1 = FPSCR;
 
-        /*
-        ALL PASSED.
-        */
-
-
         uint32_t tmp;
         fpscr_0 = fp_before_cal(fpscr_0);
-        //double check. undefined reg fields.
-        tmp = vrb_val[1];
-        std::tie(tmp, fpscr_0) = get_floating_exception(vrb_val[1], vrb_val[1], fpscr_0, (double)tmp);
-        //fpscr_0 = vsx_set_class((double)vrt_val[0], fpscr_0);
+        tmp = VSb_df[1];
+        std::tie(tmp, fpscr_0) =
+        get_floating_exception(VSb_df[1], VSb_df[1],
+                               fpscr_0, (double)tmp);
 
         int32_t max = 0x7fffffff;
         int32_t min = 0x80000000;
         bool check_fi = true;
         
-        if (vrb_val[1] > (double)max) {
+        if (VSb_df[1] > (double)max) {
             fpscr_0.vxcvi = 1;
             tmp = max;
             fpscr_0.xx = fpscr_1.xx;
             fpscr_0.fi = fpscr_1.fi;
             check_fi = false;
-        } else if (vrb_val[1] < (double)min) {
+        } else if (VSb_df[1] < (double)min) {
             fpscr_0.vxcvi = 1;
             tmp = min;
             fpscr_0.xx = fpscr_1.xx;
@@ -159,106 +109,70 @@ format VsxFloatArithOp {
             check_fi = false;
         }
 
-        if (isNan(vrb_val[1])) {
+        if (isNan(VSb_df[1])) {
             fpscr_0.vxcvi = 1;
             tmp = min;
         }
         
-        if (check_fi && !isNan(vrb_val[1]) && !isInfinity(vrb_val[1])) {
-            if ((double)tmp != vrb_val[1])
+        if (check_fi && !isNan(VSb_df[1]) && !isInfinity(VSb_df[1])) {
+            if ((double)tmp != VSb_df[1])
                 fpscr_0.fi = 1;
         }
 
-        vrt_val[2] = tmp;
-        vrt_val[3] = tmp;
+        VSt_sw[2] = tmp;
+        VSt_sw[3] = tmp;
         FPSCR = fpscr_0;
-        tc->setVecReg(vrt_id, vrt_reg);
     }});
 
     216:xvcvdpsxws({{
-        ThreadContext *tc = xc->tcBase();
-        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
-        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
-        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
-        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
-        auto vra_reg = tc->readVecReg(vra_id);
-        auto vra_val = vra_reg.as<uint64_t>();
-        auto vrb_reg = tc->readVecReg(vrb_id);
-        auto vrb_val = vrb_reg.as<double>();
-        auto vrc_reg = tc->readVecReg(vrc_id);
-        auto vrc_val = vrc_reg.as<uint64_t>();
-        auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt_val = vrt_reg.as<int32_t>();
         Fpscr fpscr_0 = FPSCR;
         Fpscr fpscr_1 = FPSCR;
 
-        /*
-        ALL PASSED.
-        */
-
-
-        uint32_t tmp;
+        int32_t tmp;
         fpscr_0 = fp_before_cal(fpscr_0);
-        //double check. undefined reg fields.
-        
         for (int i = 0; i < 2; i++) {
-            tmp = vrb_val[i];
-            std::tie(tmp, fpscr_0) = get_floating_exception(vrb_val[1], vrb_val[1], fpscr_0, (double)tmp);
+            tmp = VSb_df[i];
+            std::tie(tmp, fpscr_0) =
+            get_floating_exception(VSb_df[1], VSb_df[1],
+                                    fpscr_0, (double)tmp);
             //fpscr_0 = vsx_set_class((double)vrt_val[0], fpscr_0);
 
             int32_t max = 0x7fffffff;
             int32_t min = 0x80000000;
             
-            if (vrb_val[1] > (double)max) {
+            if (VSb_df[1] > (double)max) {
                 fpscr_0.vxcvi = 1;
                 tmp = max;
                 fpscr_0.xx = fpscr_1.xx;
-            } else if (vrb_val[1] < (double)min) {
+            } else if (VSb_df[1] < (double)min) {
                 fpscr_0.vxcvi = 1;
                 tmp = min;
                 fpscr_0.xx = fpscr_1.xx;
             }
 
-            if (isNan(vrb_val[1])) {
+            if (isNan(VSb_df[1])) {
                 fpscr_0.vxcvi = 1;
                 tmp = min;
             }
             
             fpscr_0.fi = fpscr_1.fi;
 
-            vrt_val[i * 2] = tmp;
-            vrt_val[i * 2 + 1] = tmp;
+            VSt_sw[i * 2] = tmp;
+            VSt_sw[i * 2 + 1] = tmp;
         }
         FPSCR = fpscr_0;
-        tc->setVecReg(vrt_id, vrt_reg);
     }});
 
     328:xscvdpuxds({{
-        ThreadContext *tc = xc->tcBase();
-        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
-        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
-        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
-        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
-        auto vra_reg = tc->readVecReg(vra_id);
-        auto vra_val = vra_reg.as<uint64_t>();
-        auto vrb_reg = tc->readVecReg(vrb_id);
-        auto vrb_val = vrb_reg.as<double>();
-        auto vrc_reg = tc->readVecReg(vrc_id);
-        auto vrc_val = vrc_reg.as<uint64_t>();
-        auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt_val = vrt_reg.as<uint64_t>();
         Fpscr fpscr_0 = FPSCR;
         Fpscr fpscr_1 = FPSCR;
 
-        /*
-        ALL PASSED.
-        */
-
         uint64_t tmp;
         fpscr_0 = fp_before_cal(fpscr_0);
-        //double check. undefined reg fields.
-        tmp = vrb_val[1];
-        std::tie(tmp, fpscr_0) = get_floating_exception(vrb_val[1], vrb_val[1], fpscr_0, (double)tmp);
+        tmp = VSb_df[1];
+        std::tie(tmp, fpscr_0) =
+        get_floating_exception(VSb_df[1], VSb_df[1],
+                                fpscr_0, (double)tmp);
 
         uint64_t max = 0xffffffffffffffffULL;
         bool check_fi = true;
@@ -269,7 +183,7 @@ format VsxFloatArithOp {
             fpscr_0.xx = fpscr_1.xx;
             fpscr_0.fi = fpscr_1.fi;
             check_fi = false;
-        } else if ((int64_t)vrb_val[1] < 0) {
+        } else if ((int64_t)VSb_df[1] < 0) {
             fpscr_0.vxcvi = 1;
             tmp = 0;
             fpscr_0.xx = fpscr_1.xx;
@@ -277,49 +191,31 @@ format VsxFloatArithOp {
             check_fi = false;
         }
 
-        if (isNan(vrb_val[1])) {
+        if (isNan(VSb_df[1])) {
             fpscr_0.vxcvi = 1;
         }
         
-        if (check_fi && !isNan(vrb_val[1]) && !isInfinity(vrb_val[1])) {
-            if ((double)tmp != vrb_val[1])
+        if (check_fi && !isNan(VSb_df[1]) && !isInfinity(VSb_df[1])) {
+            if ((double)tmp != VSb_df[1])
                 fpscr_0.fi = 1;
         }
 
-        vrt_val[1] = tmp;
-        vrt_val[0] = 0;
+        VSt_ud[1] = tmp;
+        VSt_ud[0] = 0;
         FPSCR = fpscr_0;
-        tc->setVecReg(vrt_id, vrt_reg);
     }});
 
     456:xvcvdpuxds({{
-        ThreadContext *tc = xc->tcBase();
-        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
-        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
-        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
-        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
-        auto vra_reg = tc->readVecReg(vra_id);
-        auto vra_val = vra_reg.as<uint64_t>();
-        auto vrb_reg = tc->readVecReg(vrb_id);
-        auto vrb_val = vrb_reg.as<double>();
-        auto vrc_reg = tc->readVecReg(vrc_id);
-        auto vrc_val = vrc_reg.as<uint64_t>();
-        auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt_val = vrt_reg.as<uint64_t>();
         Fpscr fpscr_0 = FPSCR;
         Fpscr fpscr_1 = FPSCR;
 
-        /*
-        ALL PASSED.
-        */
-
         uint64_t tmp;
         fpscr_0 = fp_before_cal(fpscr_0);
-        //double check. undefined reg fields.
-        
         for (int i = 0; i < 2; i++) {
-            tmp = vrb_val[i];
-            std::tie(tmp, fpscr_0) = get_floating_exception(vrb_val[i], vrb_val[i], fpscr_0, (double)tmp);
+            tmp = VSb_df[i];
+            std::tie(tmp, fpscr_0) =
+            get_floating_exception(VSb_df[i], VSb_df[i],
+                                    fpscr_0, (double)tmp);
 
             uint64_t max = 0xffffffffffffffffULL;
             
@@ -327,25 +223,25 @@ format VsxFloatArithOp {
                 fpscr_0.vxcvi = 1;
                 tmp = max;
                 fpscr_0.xx = fpscr_1.xx;
-            } else if ((int64_t)vrb_val[i] < 0) {
+            } else if ((int64_t)VSb_df[i] < 0) {
                 fpscr_0.vxcvi = 1;
                 tmp = 0;
                 fpscr_0.xx = fpscr_1.xx;
             }
 
-            if (isNan(vrb_val[i])) {
+            if (isNan(VSb_df[i])) {
                 fpscr_0.vxcvi = 1;
             }
 
-            vrt_val[i] = tmp;
+            VSt_ud[i] = tmp;
         }
 
         fpscr_0.fi = fpscr_1.fi;
         FPSCR = fpscr_0;
-        tc->setVecReg(vrt_id, vrt_reg);
     }});
 
     72:xscvdpuxws({{
+        /*
         ThreadContext *tc = xc->tcBase();
         RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
         RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
@@ -359,6 +255,7 @@ format VsxFloatArithOp {
         auto vrc_val = vrc_reg.as<uint64_t>();
         auto vrt_reg = tc->readVecReg(vrt_id);
         auto vrt_val = vrt_reg.as<uint32_t>();
+        */
         Fpscr fpscr_0 = FPSCR;
         Fpscr fpscr_1 = FPSCR;
 
@@ -368,8 +265,10 @@ format VsxFloatArithOp {
 
         int64_t tmp;
         fpscr_0 = fp_before_cal(fpscr_0);
-        tmp = vrb_val[1];
-        std::tie(tmp, fpscr_0) = get_floating_exception(vrb_val[1], vrb_val[1], fpscr_0, (double)tmp);
+        tmp = VSb_df[1];
+        std::tie(tmp, fpscr_0) =
+        get_floating_exception(VSb_df[1], VSb_df[1],
+                                fpscr_0, (double)tmp);
         int64_t max = 0xffffffff;
         bool check_fi = true;
         
@@ -387,48 +286,33 @@ format VsxFloatArithOp {
             check_fi = false;
         }
 
-        if (isNan(vrb_val[1])) {
+        if (isNan(VSb_df[1])) {
             fpscr_0.vxcvi = 1;
         }
         
-        if (check_fi && !isNan(vrb_val[1]) && !isInfinity(vrb_val[1])) {
-            if ((double)tmp != vrb_val[1])
+        if (check_fi && !isNan(VSb_df[1]) && !isInfinity(VSb_df[1])) {
+            if ((double)tmp != VSb_df[1])
                 fpscr_0.fi = 1;
         }
 
-        vrt_val[2] = tmp;
-        vrt_val[3] = tmp;
+        VSt_uw[2] = tmp;
+        VSt_uw[3] = tmp;
         FPSCR = fpscr_0;
-        tc->setVecReg(vrt_id, vrt_reg);
+        //tc->setVecReg(vrt_id, vrt_reg);
     }});
 
     200:xvcvdpuxws({{
-        ThreadContext *tc = xc->tcBase();
-        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
-        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
-        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
-        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
-        auto vra_reg = tc->readVecReg(vra_id);
-        auto vra_val = vra_reg.as<uint64_t>();
-        auto vrb_reg = tc->readVecReg(vrb_id);
-        auto vrb_val = vrb_reg.as<double>();
-        auto vrc_reg = tc->readVecReg(vrc_id);
-        auto vrc_val = vrc_reg.as<uint64_t>();
-        auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt_val = vrt_reg.as<uint32_t>();
         Fpscr fpscr_0 = FPSCR;
         Fpscr fpscr_1 = FPSCR;
-
-        /*
-        ALL PASSED.
-        */
 
         int64_t tmp;
         fpscr_0 = fp_before_cal(fpscr_0);
         
         for (int i = 0; i < 2; i++) {
-            tmp = vrb_val[i];
-            std::tie(tmp, fpscr_0) = get_floating_exception(vrb_val[i], vrb_val[i], fpscr_0, (double)tmp);
+            tmp = VSb_df[i];
+            std::tie(tmp, fpscr_0) =
+            get_floating_exception(VSb_df[i], VSb_df[i],
+                                    fpscr_0, (double)tmp);
             int64_t max = 0xffffffff;
 
             if (tmp > max) {
@@ -443,15 +327,14 @@ format VsxFloatArithOp {
                 
             }
 
-            if (isNan(vrb_val[i])) {
+            if (isNan(VSb_df[i])) {
                 fpscr_0.vxcvi = 1;
             }
 
-            vrt_val[i * 2] = tmp;
-            vrt_val[i * 2 + 1] = tmp;
+            VSt_uw[i * 2] = tmp;
+            VSt_uw[i * 2 + 1] = tmp;
         }
         fpscr_0.fi = fpscr_1.fi;
         FPSCR = fpscr_0;
-        tc->setVecReg(vrt_id, vrt_reg);
     }});
 }

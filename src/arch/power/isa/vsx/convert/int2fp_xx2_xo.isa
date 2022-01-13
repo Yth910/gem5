@@ -1,429 +1,236 @@
 format VsxFloatArithOp {
     376:xscvsxddp({{
-        ThreadContext *tc = xc->tcBase();
-        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
-        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
-        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
-        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
-        auto vra_reg = tc->readVecReg(vra_id);
-        auto vra_val = vra_reg.as<uint64_t>();
-        auto vrb_reg = tc->readVecReg(vrb_id);
-        auto vrb_val = vrb_reg.as<int64_t>();
-        auto vrc_reg = tc->readVecReg(vrc_id);
-        auto vrc_val = vrc_reg.as<uint64_t>();
-        auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt_val = vrt_reg.as<double>();
         Fpscr fpscr_0 = FPSCR;
 
-        /*
-        ALL PASSED.
-        */
-
-        /* CODE SEG 1 */
         double tmp;
-        //fp_before_cal(fpscr_0);
         std::feclearexcept(FE_ALL_EXCEPT);
-        tmp = vrb_val[1];
-        std::tie(vrt_val[1], fpscr_0) = get_floating_exception(vrb_val[1], vrb_val[1], fpscr_0, tmp);
+        tmp = VSb_sd[1];
+        std::tie(VSt_df[1], fpscr_0) =
+        get_floating_exception(VSb_sd[1],
+            VSb_sd[1], fpscr_0, tmp);
         fpscr_0 = vsx_set_class((double)tmp, fpscr_0);
         
         if (!isNan(tmp) && !isInfinity(tmp)) {
             if (tmp > 0.0) {
-                if ((__float128)tmp > (__float128)vrb_val[1])
+                if ((__float128)tmp > (__float128)VSb_sd[1])
                     fpscr_0.fr = 1;
                 else
                     fpscr_0.fr = 0;
             } else {
-                if ((__float128)tmp < (__float128)vrb_val[1])
+                if ((__float128)tmp < (__float128)VSb_sd[1])
                     fpscr_0.fr = 1;
                 else
                     fpscr_0.fr = 0;
             }
         }
-
-	vrt_val[1] = tmp;
+    VSt_df[1] = tmp;
         FPSCR = fpscr_0;
-        tc->setVecReg(vrt_id, vrt_reg);
     }});
 
     504:xvcvsxddp({{
-        ThreadContext *tc = xc->tcBase();
-        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
-        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
-        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
-        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
-        auto vra_reg = tc->readVecReg(vra_id);
-        auto vra_val = vra_reg.as<uint64_t>();
-        auto vrb_reg = tc->readVecReg(vrb_id);
-        auto vrb_val = vrb_reg.as<int64_t>();
-        auto vrc_reg = tc->readVecReg(vrc_id);
-        auto vrc_val = vrc_reg.as<uint64_t>();
-        auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt_val = vrt_reg.as<double>();
         Fpscr fpscr_0 = FPSCR;
         Fpscr fpscr_1 = FPSCR;
 
-        /*
-        ALL PASSED.
-        */
-
-        /* CODE SEG 1 */
-        //fp_before_cal(fpscr_0);
+        double tmp;
         std::feclearexcept(FE_ALL_EXCEPT);
         
         for (int i = 0; i < 2; i++) {
-            vrt_val[i] = vrb_val[i];
-            std::tie(vrt_val[i], fpscr_0) = get_floating_exception(vrb_val[i], vrb_val[i], fpscr_0, vrt_val[i]);
+            VSt_df[i] = VSb_sd[i];
+            std::tie(tmp, fpscr_0) =
+            get_floating_exception(VSb_sd[i], VSb_sd[i],
+                                     fpscr_0, VSt_df[i]);
+            VSt_df[i] = tmp;
         }
         fpscr_0.fi = fpscr_1.fi;
         FPSCR = fpscr_0;
-        tc->setVecReg(vrt_id, vrt_reg);
     }});
 
     312:xscvsxdsp({{
-        ThreadContext *tc = xc->tcBase();
-        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
-        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
-        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
-        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
-        auto vra_reg = tc->readVecReg(vra_id);
-        auto vra_val = vra_reg.as<uint64_t>();
-        auto vrb_reg = tc->readVecReg(vrb_id);
-        auto vrb_val = vrb_reg.as<int64_t>();
-        auto vrc_reg = tc->readVecReg(vrc_id);
-        auto vrc_val = vrc_reg.as<uint64_t>();
-        auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt_val = vrt_reg.as<double>();
         Fpscr fpscr_0 = FPSCR;
 
-        /*
-        ALL PASSED.
-        */
-
-        /* CODE SEG 1 */
         double tmp;
         fp_before_cal(fpscr_0);
-        /* CODE SEG 1 END */
-        tmp = (float)vrb_val[1];
-        std::tie(tmp, fpscr_0) = get_floating_exception((float)vrb_val[1], (float)vrb_val[1], fpscr_0, (float)tmp);
+        tmp = (float)VSb_sd[1];
+        std::tie(tmp, fpscr_0) =
+        get_floating_exception((float)VSb_sd[1],
+            (float)VSb_sd[1], fpscr_0, (float)tmp);
         fpscr_0 = vsx_set_class((double)tmp, fpscr_0);
         
         if (!isNan(tmp) && !isInfinity(tmp)) {
             if (tmp > 0.0) {
-                if ((__int128_t)tmp > (__int128_t)vrb_val[1])
+                if ((__int128_t)tmp > (__int128_t)VSb_sd[1])
                     fpscr_0.fr = 1;
                 else
                     fpscr_0.fr = 0;
             } else {
-                if ((__int128_t)tmp < (__int128_t)vrb_val[1])
+                if ((__int128_t)tmp < (__int128_t)VSb_sd[1])
                     fpscr_0.fr = 1;
                 else
                     fpscr_0.fr = 0;
             }
         }
 
-        vrt_val[1] = tmp;
+        VSt_df[1] = tmp;
 
-        /* CODE SEG 3 */
-        //code seg 3
-        /* CODE SEG 3 END */
         FPSCR = fpscr_0;
-        tc->setVecReg(vrt_id, vrt_reg);
     }});
 
     440:xvcvsxdsp({{
-        ThreadContext *tc = xc->tcBase();
-        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
-        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
-        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
-        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
-        auto vra_reg = tc->readVecReg(vra_id);
-        auto vra_val = vra_reg.as<uint64_t>();
-        auto vrb_reg = tc->readVecReg(vrb_id);
-        auto vrb_val = vrb_reg.as<int64_t>();
-        auto vrc_reg = tc->readVecReg(vrc_id);
-        auto vrc_val = vrc_reg.as<uint64_t>();
-        auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt_val = vrt_reg.as<float>();
         Fpscr fpscr_0 = FPSCR;
         Fpscr fpscr_1 = FPSCR;
 
-        /*
-        ALL PASSED.
-        */
-
-        /* CODE SEG 1 */
+        float tmp;
         fp_before_cal(fpscr_0);
-        /* CODE SEG 1 END */
         for (int i = 0; i < 2; i++) {
-            vrt_val[i * 2 + 1] = (float)vrb_val[i];
-            vrt_val[i * 2] = (float)vrb_val[i];
-            std::tie(vrt_val[0], fpscr_0) = get_floating_exception((float)vrb_val[i], (float)vrb_val[i], fpscr_0, (float)vrt_val[i]);
+            VSt_sf[i * 2 + 1] = (float)VSb_sd[i];
+            VSt_sf[i * 2] = (float)VSb_sd[i];
+            std::tie(tmp, fpscr_0) =
+            get_floating_exception((float)VSb_sd[i],
+                (float)VSb_sd[i], fpscr_0, (float)VSt_sf[i]);
+            VSt_sf[0] = tmp;
         }
         fpscr_0.fi = fpscr_1.fi;
         FPSCR = fpscr_0;
-        tc->setVecReg(vrt_id, vrt_reg);
     }});
     
     248:xvcvsxwdp({{
-        ThreadContext *tc = xc->tcBase();
-        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
-        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
-        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
-        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
-        auto vra_reg = tc->readVecReg(vra_id);
-        auto vra_val = vra_reg.as<uint64_t>();
-        auto vrb_reg = tc->readVecReg(vrb_id);
-        auto vrb_val = vrb_reg.as<int32_t>();
-        auto vrc_reg = tc->readVecReg(vrc_id);
-        auto vrc_val = vrc_reg.as<uint64_t>();
-        auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt_val = vrt_reg.as<double>();
         Fpscr fpscr_0 = FPSCR;
         Fpscr fpscr_1 = FPSCR;
 
-        /*
-        ALL PASSED.
-        */
-
-        /* CODE SEG 1 */
-        //fp_before_cal(fpscr_0);
+        double tmp;
         std::feclearexcept(FE_ALL_EXCEPT);
         
         for (int i = 0; i < 2; i++) {
-            vrt_val[i] = vrb_val[2 * i];
-            std::tie(vrt_val[i], fpscr_0) = get_floating_exception(vrb_val[i], vrb_val[i], fpscr_0, vrt_val[i]);
+            VSt_df[i] = VSb_sw[2 * i + 1];
+            std::tie(tmp, fpscr_0) =
+            get_floating_exception(VSb_sw[i],
+                VSb_sw[i], fpscr_0, VSt_df[i]);
+            VSt_df[i] = tmp;
         }
         fpscr_0.fi = fpscr_1.fi;
         FPSCR = fpscr_0;
-        tc->setVecReg(vrt_id, vrt_reg);
     }});
     
     184:xvcvsxwsp({{
-        ThreadContext *tc = xc->tcBase();
-        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
-        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
-        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
-        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
-        auto vra_reg = tc->readVecReg(vra_id);
-        auto vra_val = vra_reg.as<uint64_t>();
-        auto vrb_reg = tc->readVecReg(vrb_id);
-        auto vrb_val = vrb_reg.as<int32_t>();
-        auto vrc_reg = tc->readVecReg(vrc_id);
-        auto vrc_val = vrc_reg.as<uint64_t>();
-        auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt_val = vrt_reg.as<float>();
         Fpscr fpscr_0 = FPSCR;
         Fpscr fpscr_1 = FPSCR;
 
-        /*
-        ALL PASSED.
-        */
-
-        /* CODE SEG 1 */
-        //fp_before_cal(fpscr_0);
+        float tmp;
         std::feclearexcept(FE_ALL_EXCEPT);
         
         for (int i = 0; i < 4; i++) {
-            vrt_val[i] = vrb_val[i];
-            std::tie(vrt_val[i], fpscr_0) = get_floating_exception(vrb_val[i], vrb_val[i], fpscr_0, (float)vrt_val[i]);
+            VSt_sf[i] = VSb_sw[i];
+            std::tie(tmp, fpscr_0) =
+            get_floating_exception(VSb_sw[i],
+                VSb_sw[i], fpscr_0, (float)VSt_sf[i]);
+            VSt_sf[i] = tmp;
         }
         fpscr_0.fi = fpscr_1.fi;
         FPSCR = fpscr_0;
-        tc->setVecReg(vrt_id, vrt_reg);
     }});
 
     360:xscvuxddp({{
-        ThreadContext *tc = xc->tcBase();
-        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
-        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
-        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
-        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
-        auto vra_reg = tc->readVecReg(vra_id);
-        auto vra_val = vra_reg.as<uint64_t>();
-        auto vrb_reg = tc->readVecReg(vrb_id);
-        auto vrb_val = vrb_reg.as<uint64_t>();
-        auto vrc_reg = tc->readVecReg(vrc_id);
-        auto vrc_val = vrc_reg.as<uint64_t>();
-        auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt_val = vrt_reg.as<double>();
         Fpscr fpscr_0 = FPSCR;
 
-        /*
-        ALL PASSED.
-        */
-
-        /* CODE SEG 1 */
         double tmp;
-        //fp_before_cal(fpscr_0);
         std::feclearexcept(FE_ALL_EXCEPT);
-        /* CODE SEG 1 END */
-        tmp = vrb_val[1];
-        std::tie(tmp, fpscr_0) = get_floating_exception(vrb_val[1], vrb_val[1], fpscr_0, tmp);
+        tmp = VSb_ud[1];
+        std::tie(tmp, fpscr_0) =
+        get_floating_exception(VSb_ud[1],
+            VSb_ud[1], fpscr_0, tmp);
         fpscr_0 = vsx_set_class((double)tmp, fpscr_0);
 
         if (!isNan(tmp) && !isInfinity(tmp)) {
             if (tmp > 0.0) {
-                if ((__float128)tmp > (__float128)vrb_val[1])
+                if ((__float128)tmp > (__float128)VSb_ud[1])
                     fpscr_0.fr = 1;
                 else
                     fpscr_0.fr = 0;
             } else {
-                if ((__float128)tmp < (__float128)vrb_val[1])
+                if ((__float128)tmp < (__float128)VSb_ud[1])
                     fpscr_0.fr = 1;
                 else
                     fpscr_0.fr = 0;
             }
         }
-        //vrt_val[1] = vrb_val[1];
-        vrt_val[1] = tmp;
-        /* CODE SEG 3 */
-        //code seg 3
-        /* CODE SEG 3 END */
+        VSt_df[1] = tmp;
         FPSCR = fpscr_0;
-        tc->setVecReg(vrt_id, vrt_reg);
     }});
 
     488:xvcvuxddp({{
-        ThreadContext *tc = xc->tcBase();
-        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
-        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
-        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
-        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
-        auto vra_reg = tc->readVecReg(vra_id);
-        auto vra_val = vra_reg.as<uint64_t>();
-        auto vrb_reg = tc->readVecReg(vrb_id);
-        auto vrb_val = vrb_reg.as<uint64_t>();
-        auto vrc_reg = tc->readVecReg(vrc_id);
-        auto vrc_val = vrc_reg.as<uint64_t>();
-        auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt_val = vrt_reg.as<double>();
         Fpscr fpscr_0 = FPSCR;
         Fpscr fpscr_1 = FPSCR;
 
-        /*
-        ALL PASSED.
-        */
-
+        double tmp;
         std::feclearexcept(FE_ALL_EXCEPT);
 
         for (int i = 0; i < 2; i++) {
-            vrt_val[i] = vrb_val[i];
-            std::tie(vrt_val[i], fpscr_0) = get_floating_exception(vrb_val[i], vrb_val[i], fpscr_0, vrt_val[i]);
+            VSt_df[i] = VSb_ud[i];
+            std::tie(tmp, fpscr_0) =
+            get_floating_exception(VSb_ud[i],
+                VSb_ud[i], fpscr_0, VSt_df[i]);
+            VSt_df[i] = tmp;
         }
         
         fpscr_0.fi = fpscr_1.fi;
         FPSCR = fpscr_0;
-        tc->setVecReg(vrt_id, vrt_reg);
     }});
 
     296:xscvuxdsp({{
-        ThreadContext *tc = xc->tcBase();
-        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
-        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
-        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
-        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
-        auto vra_reg = tc->readVecReg(vra_id);
-        auto vra_val = vra_reg.as<uint64_t>();
-        auto vrb_reg = tc->readVecReg(vrb_id);
-        auto vrb_val = vrb_reg.as<uint64_t>();
-        auto vrc_reg = tc->readVecReg(vrc_id);
-        auto vrc_val = vrc_reg.as<uint64_t>();
-        auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt_val = vrt_reg.as<double>();
         Fpscr fpscr_0 = FPSCR;
 
-        /*
-        ALL PASSED.
-        */
-
-        /* CODE SEG 1 */
         double tmp;
         fp_before_cal(fpscr_0);
-        /* CODE SEG 1 END */
-        tmp = (float)vrb_val[1];
-        std::tie(tmp, fpscr_0) = get_floating_exception((float)vrb_val[1], (float)vrb_val[1], fpscr_0, (float)tmp);
+        tmp = (float)VSb_ud[1];
+        std::tie(tmp, fpscr_0) =
+        get_floating_exception((float)VSb_ud[1],
+            (float)VSb_ud[1], fpscr_0, (float)tmp);
         fpscr_0 = vsx_set_class((double)tmp, fpscr_0);
         
         if (!isNan(tmp) && !isInfinity(tmp)) {
-            if ((__uint128_t)tmp > (__uint128_t)vrb_val[1])
+            if ((__uint128_t)tmp > (__uint128_t)VSb_ud[1])
                 fpscr_0.fr = 1;
             else
                 fpscr_0.fr = 0;
         }
-        vrt_val[1] = tmp;
-        /* CODE SEG 3 */
-        //code seg 3
-        /* CODE SEG 3 END */
+        VSt_df[1] = tmp;
         FPSCR = fpscr_0;
-        tc->setVecReg(vrt_id, vrt_reg);
     }});
 
     424:xvcvuxdsp({{
-        ThreadContext *tc = xc->tcBase();
-        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
-        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
-        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
-        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
-        auto vra_reg = tc->readVecReg(vra_id);
-        auto vra_val = vra_reg.as<uint64_t>();
-        auto vrb_reg = tc->readVecReg(vrb_id);
-        auto vrb_val = vrb_reg.as<uint64_t>();
-        auto vrc_reg = tc->readVecReg(vrc_id);
-        auto vrc_val = vrc_reg.as<uint64_t>();
-        auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt_val = vrt_reg.as<float>();
         Fpscr fpscr_0 = FPSCR;
         Fpscr fpscr_1 = FPSCR;
 
-        /*
-        ALL PASSED.
-        */
-
+        float tmp;
         fp_before_cal(fpscr_0);
         for (int i = 0; i < 2; i++) {
-            vrt_val[i * 2 + 1] = (float)vrb_val[i];
-            vrt_val[i * 2] = (float)vrb_val[i];
-            std::tie(vrt_val[i], fpscr_0) = get_floating_exception((float)vrb_val[i], (float)vrb_val[i], fpscr_0, (float)vrt_val[i]);
+            VSt_sf[i * 2 + 1] = (float)VSb_ud[i];
+            VSt_sf[i * 2] = (float)VSb_ud[i];
+            std::tie(tmp, fpscr_0) =
+            get_floating_exception((float)VSb_ud[i],
+                (float)VSb_ud[i], fpscr_0, (float)VSt_sf[i]);
+            VSt_sf[i] = tmp;
         }
         fpscr_0.fi = fpscr_1.fi;
         FPSCR = fpscr_0;
-        tc->setVecReg(vrt_id, vrt_reg);
     }});
 
     408:xvcvspsxds({{
-        ThreadContext *tc = xc->tcBase();
-        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
-        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
-        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
-        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
-        auto vra_reg = tc->readVecReg(vra_id);
-        auto vra_val = vra_reg.as<uint64_t>();
-        auto vrb_reg = tc->readVecReg(vrb_id);
-        auto vrb_val = vrb_reg.as<float>();
-        auto vrc_reg = tc->readVecReg(vrc_id);
-        auto vrc_val = vrc_reg.as<uint64_t>();
-        auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt_val = vrt_reg.as<int64_t>();
         Fpscr fpscr_0 = FPSCR;
-
-        /*
-        ALL PASSED.
-        */
 
         __int128_t tmp;
         double rnd;
         int64_t max = 0x7fffffffffffffffULL;
         int64_t min = 0x8000000000000000ULL;
         for (int i = 0; i < 2; i++) {
-            if (isNan(vrb_val[i * 2 + 1])) {
+            if (isNan(VSb_sf[i * 2 + 1])) {
                 tmp = min;
                 fpscr_0.vxcvi = 1;
-                if (isSnan(vrb_val[i * 2 + 1])) {
+                if (isSnan(VSb_sf[i * 2 + 1])) {
                     fpscr_0.vxsnan = 1;
                 }
             } else {
-                rnd = trunc(vrb_val[i * 2 + 1]);
+                rnd = trunc(VSb_sf[i * 2 + 1]);
                 if (rnd > (float)max) {
                     tmp = max;
                     fpscr_0.vxcvi = 1;
@@ -431,52 +238,34 @@ format VsxFloatArithOp {
                     tmp = min;
                     fpscr_0.vxcvi = 1;
                 } else {
-                    if (rnd != vrb_val[i * 2 + 1]) {
+                    if (rnd != VSb_sf[i * 2 + 1]) {
                         fpscr_0.xx = 1;
                     }
                     tmp = rnd;
                 }
             }
-            vrt_val[i] = tmp;
+            VSt_sd[i] = tmp;
         }
         fpscr_0 = update_fpscr(fpscr_0, fpscr_0);
         FPSCR = fpscr_0;
-        tc->setVecReg(vrt_id, vrt_reg);
     }});
 
     152:xvcvspsxws({{
-        ThreadContext *tc = xc->tcBase();
-        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
-        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
-        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
-        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
-        auto vra_reg = tc->readVecReg(vra_id);
-        auto vra_val = vra_reg.as<uint64_t>();
-        auto vrb_reg = tc->readVecReg(vrb_id);
-        auto vrb_val = vrb_reg.as<float>();
-        auto vrc_reg = tc->readVecReg(vrc_id);
-        auto vrc_val = vrc_reg.as<uint64_t>();
-        auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt_val = vrt_reg.as<int32_t>();
         Fpscr fpscr_0 = FPSCR;
-
-        /*
-        fpscr.
-        */
 
         __int128_t tmp;
         double rnd;
         int32_t max = 0x7fffffff;
         int32_t min = 0x80000000;
         for (int i = 0; i < 4; i++) {
-            if (isNan(vrb_val[i])) {
+            if (isNan(VSb_sf[i])) {
                 tmp = min;
                 fpscr_0.vxcvi = 1;
-                if (isSnan(vrb_val[i])) {
+                if (isSnan(VSb_sf[i])) {
                     fpscr_0.vxsnan = 1;
                 }
             } else {
-                rnd = trunc(vrb_val[i]);
+                rnd = trunc(VSb_sf[i]);
                 if (rnd > (float)max) {
                     tmp = max;
                     fpscr_0.vxcvi = 1;
@@ -484,52 +273,34 @@ format VsxFloatArithOp {
                     tmp = min;
                     fpscr_0.vxcvi = 1;
                 } else {
-                    if (rnd != vrb_val[i]) {
+                    if (rnd != VSb_sf[i]) {
                         fpscr_0.xx = 1;
                     }
                     tmp = rnd;
                 }
             }
-            vrt_val[i] = tmp;
+            VSt_sw[i] = tmp;
         }
         fpscr_0 = update_fpscr(fpscr_0, fpscr_0);
         FPSCR = fpscr_0;
-        tc->setVecReg(vrt_id, vrt_reg);
     }});
 
     392:xvcvspuxds({{
-        ThreadContext *tc = xc->tcBase();
-        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
-        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
-        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
-        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
-        auto vra_reg = tc->readVecReg(vra_id);
-        auto vra_val = vra_reg.as<uint64_t>();
-        auto vrb_reg = tc->readVecReg(vrb_id);
-        auto vrb_val = vrb_reg.as<float>();
-        auto vrc_reg = tc->readVecReg(vrc_id);
-        auto vrc_val = vrc_reg.as<uint64_t>();
-        auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt_val = vrt_reg.as<uint64_t>();
         Fpscr fpscr_0 = FPSCR;
-
-        /*
-        ALL PASSED.
-        */
 
         __int128_t tmp;
         double rnd;
         uint64_t max = 0xffffffffffffffffULL;
         uint64_t min = 0;
         for (int i = 0; i < 2; i++) {
-            if (isNan(vrb_val[i * 2 + 1])) {
+            if (isNan(VSb_sf[i * 2 + 1])) {
                 tmp = min;
                 fpscr_0.vxcvi = 1;
-                if (isSnan(vrb_val[i * 2 + 1])) {
+                if (isSnan(VSb_sf[i * 2 + 1])) {
                     fpscr_0.vxsnan = 1;
                 }
             } else {
-                rnd = trunc(vrb_val[i * 2 + 1]);
+                rnd = trunc(VSb_sf[i * 2 + 1]);
                 if (rnd > (float)max) {
                     tmp = max;
                     fpscr_0.vxcvi = 1;
@@ -537,38 +308,20 @@ format VsxFloatArithOp {
                     tmp = min;
                     fpscr_0.vxcvi = 1;
                 } else {
-                    if (rnd != vrb_val[i * 2 + 1]) {
+                    if (rnd != VSb_sf[i * 2 + 1]) {
                         fpscr_0.xx = 1;
                     }
                     tmp = rnd;
                 }
             }
-            vrt_val[i] = tmp;
+            VSt_ud[i] = tmp;
         }
         fpscr_0 = update_fpscr(fpscr_0, fpscr_0);
         FPSCR = fpscr_0;
-        tc->setVecReg(vrt_id, vrt_reg);
     }});
 
     136:xvcvspuxws({{
-        ThreadContext *tc = xc->tcBase();
-        RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
-        RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
-        RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
-        RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
-        auto vra_reg = tc->readVecReg(vra_id);
-        auto vra_val = vra_reg.as<uint64_t>();
-        auto vrb_reg = tc->readVecReg(vrb_id);
-        auto vrb_val = vrb_reg.as<float>();
-        auto vrc_reg = tc->readVecReg(vrc_id);
-        auto vrc_val = vrc_reg.as<uint64_t>();
-        auto vrt_reg = tc->readVecReg(vrt_id);
-        auto vrt_val = vrt_reg.as<uint32_t>();
         Fpscr fpscr_0 = FPSCR;
-
-        /*
-        ALL PASSED.
-        */
 
         fp_before_cal(fpscr_0);
         __int128_t tmp;
@@ -576,14 +329,14 @@ format VsxFloatArithOp {
         int64_t max = 0xffffffff;
         int64_t min = 0;
         for (int i = 0; i < 4; i++) {
-            if (isNan(vrb_val[i])) {
+            if (isNan(VSb_sf[i])) {
                 tmp = min;
                 fpscr_0.vxcvi = 1;
-                if (isSnan(vrb_val[i])) {
+                if (isSnan(VSb_sf[i])) {
                     fpscr_0.vxsnan = 1;
                 }
             } else {
-                rnd = bfp64_ROUND_TO_INTEGER_TRUNC(vrb_val[i]);
+                rnd = bfp64_ROUND_TO_INTEGER_TRUNC(VSb_sf[i]);
                 if (rnd > (float)max) {
                     tmp = max;
                     fpscr_0.vxcvi = 1;
@@ -591,77 +344,49 @@ format VsxFloatArithOp {
                     tmp = min;
                     fpscr_0.vxcvi = 1;
                 } else {
-                    if (rnd != vrb_val[i]) {
+                    if (rnd != VSb_sf[i]) {
                         fpscr_0.xx = 1;
                     }
                     tmp = rnd;
                 }
             }
-            vrt_val[i] = tmp;
+            VSt_uw[i] = tmp;
         }
         fpscr_0 = update_fpscr(fpscr_0, fpscr_0);
         FPSCR = fpscr_0;
-        tc->setVecReg(vrt_id, vrt_reg);
     }});
 
 232:xvcvuxwdp({{
-         ThreadContext *tc = xc->tcBase();
-         RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
-         RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
-         RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
-         RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
-         auto vra_reg = tc->readVecReg(vra_id);
-         auto vra_val = vra_reg.as<uint64_t>();
-         auto vrb_reg = tc->readVecReg(vrb_id);
-         auto vrb_val = vrb_reg.as<uint32_t>();
-         auto vrc_reg = tc->readVecReg(vrc_id);
-         auto vrc_val = vrc_reg.as<uint64_t>();
-         auto vrt_reg = tc->readVecReg(vrt_id);
-         auto vrt_val = vrt_reg.as<double>();
          Fpscr fpscr_0 = FPSCR;
          Fpscr fpscr_1 = FPSCR;
-         /*
-         ALL PASSED.
-         */
+         double tmp;
          std::feclearexcept(FE_ALL_EXCEPT);
          for (int i = 0; i < 2; i++) {
-             vrt_val[i] = vrb_val[i * 2 + 1];
-		std::tie(vrt_val[i], fpscr_0)=get_floating_exception(vrb_val[i],
-       	             vrb_val[i],
- 					fpscr_0, vrt_val[i]);
+             VSt_df[i] = VSb_uw[i * 2 + 1];
+
+        std::tie(tmp, fpscr_0)=
+        get_floating_exception(VSb_uw[i],
+            VSb_uw[i], fpscr_0, VSt_df[i]);
+        VSt_df[i] = tmp;
          }
          fpscr_0.fi = fpscr_1.fi;
          FPSCR = fpscr_0;
-         tc->setVecReg(vrt_id, vrt_reg);
      }});
 168:xvcvuxwsp({{
-         ThreadContext *tc = xc->tcBase();
-         RegId vra_id(VecRegClass, 32 * XX_AX + XX_A);
-         RegId vrb_id(VecRegClass, 32 * XX_BX + XX_B);
-         RegId vrc_id(VecRegClass, 32 * XX_CX + XX_C);
-         RegId vrt_id(VecRegClass, 32 * XX_TX + XX_T);
-         auto vra_reg = tc->readVecReg(vra_id);
-         auto vra_val = vra_reg.as<uint64_t>();
-         auto vrb_reg = tc->readVecReg(vrb_id);
-         auto vrb_val = vrb_reg.as<uint32_t>();
-         auto vrc_reg = tc->readVecReg(vrc_id);
-         auto vrc_val = vrc_reg.as<uint64_t>();
-         auto vrt_reg = tc->readVecReg(vrt_id);
-         auto vrt_val = vrt_reg.as<float>();
          Fpscr fpscr_0 = FPSCR;
          Fpscr fpscr_1 = FPSCR;
-         /*
-         ALL PASSED.
-         */
+
+         float tmp;
          std::feclearexcept(FE_ALL_EXCEPT);
          for (int i = 0; i < 4; i++) {
-             vrt_val[i] = vrb_val[i];
-            std::tie(vrt_val[i], fpscr_0) = get_floating_exception(vrb_val[i], 
-              vrb_val[i], fpscr_0, vrt_val[i]);
+             VSt_sf[i] = VSb_uw[i];
+        std::tie(tmp, fpscr_0) =
+        get_floating_exception(VSb_uw[i],
+             VSb_uw[i], fpscr_0, VSt_sf[i]);
+        VSt_sf[i] = tmp;
          }
          fpscr_0.fi = fpscr_1.fi;
          FPSCR = fpscr_0;
-         tc->setVecReg(vrt_id, vrt_reg);
      }});
 
 
