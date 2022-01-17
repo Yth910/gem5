@@ -8,11 +8,18 @@ format IntArithOp {
     }});
 
     268: vmrglb({{
+        __uint128_t vra_128 = Va_uq[0];
+        __uint128_t vrb_128 = Vb_uq[0];
+        __uint128_t vrt_128 = Vt_uq[0];
+        uint8_t *vra_val = (uint8_t *)&vra_128;
+        uint8_t *vrb_val = (uint8_t *)&vrb_128;
+        uint8_t *vrt_val = (uint8_t *)&vrt_128;
         for(int i = 0; i < 8; i++)
         {
-            Vt_ub[i * 2] = Vb_ub[i];
-            Vt_ub[i * 2 + 1] = Va_ub[i];
+            vrt_val[i * 2] = vrb_val[i];
+            vrt_val[i * 2 + 1] = vra_val[i];
         }
+        Vt_uq[0] = vrt_128;
     }});
 
     76: vmrghh({{
@@ -24,11 +31,18 @@ format IntArithOp {
     }});
 
     332: vmrglh({{
+        __uint128_t vra_128 = Va_uq[0];
+        __uint128_t vrb_128 = Vb_uq[0];
+        __uint128_t vrt_128 = Vt_uq[0];
+        uint16_t *vra_val = (uint16_t *)&vra_128;
+        uint16_t *vrb_val = (uint16_t *)&vrb_128;
+        uint16_t *vrt_val = (uint16_t *)&vrt_128;
         for(int i = 0; i < 4; i++)
         {
-            Vt_uh[i * 2] = Vb_uh[i];
-            Vt_uh[i * 2 + 1] = Va_uh[i];
+            vrt_val[i * 2] = vrb_val[i];
+            vrt_val[i * 2 + 1] = vra_val[i];
         }
+        Vt_uq[0] = vrt_128;
     }});
 
     140: vmrghw({{
@@ -39,10 +53,17 @@ format IntArithOp {
     }});
 
     396: vmrglw({{
-        Vt_uw[0] = Vb_uw[0];
-        Vt_uw[1] = Va_uw[0];
-        Vt_uw[2] = Vb_uw[1];
-        Vt_uw[3] = Va_uw[1];
+        __uint128_t vra_128 = Va_uq[0];
+        __uint128_t vrb_128 = Vb_uq[0];
+        __uint128_t vrt_128 = Vt_uq[0];
+        uint32_t *vra_val = (uint32_t *)&vra_128;
+        uint32_t *vrb_val = (uint32_t *)&vrb_128;
+        uint32_t *vrt_val = (uint32_t *)&vrt_128;
+        vrt_val[0] = vrb_val[0];
+        vrt_val[1] = vra_val[0];
+        vrt_val[2] = vrb_val[1];
+        vrt_val[3] = vra_val[1];
+        Vt_uq[0] = vrt_128;
     }});
 
     1932: vmrgew({{
