@@ -1,26 +1,41 @@
 format IntArithOp {
     524: vspltb({{
+        __uint128_t vrb_128 = Vb_uq[0];
+        __uint128_t vrt_128 = Vt_uq[0];
+        uint8_t *vrb_val = (uint8_t *)&vrb_128;
+        uint8_t *vrt_val = (uint8_t *)&vrt_128;
         uint8_t n = (UIM12_15 << 3) & 0xF8;
         for(int i = 0; i < 16; i++)
         {
-            Vt_ub[i] = Vb_ub[15 - UIM12_15];
+            vrt_val[i] = vrb_val[15 - UIM12_15];
         }
+        Vt_uq[0] = vrt_128;
     }});
 
     588: vsplth({{
+        __uint128_t vrb_128 = Vb_uq[0];
+        __uint128_t vrt_128 = Vt_uq[0];
+        uint16_t *vrb_val = (uint16_t *)&vrb_128;
+        uint16_t *vrt_val = (uint16_t *)&vrt_128;
         uint8_t n = (UIM13_15 << 4) & 0xF0;
         for(int i = 0; i < 8; i++)
         {
-            Vt_uh[i] = Vb_uh[7 - UIM13_15];
+            vrt_val[i] = vrb_val[7 - UIM13_15];
         }
+        Vt_uq[0] = vrt_128;
     }});
 
     652: vspltw({{
+        __uint128_t vrb_128 = Vb_uq[0];
+        __uint128_t vrt_128 = Vt_uq[0];
+        uint32_t *vrb_val = (uint32_t *)&vrb_128;
+        uint32_t *vrt_val = (uint32_t *)&vrt_128;
         uint8_t n = (UIM14_15 << 5) & 0xF0;
         for(int i = 0; i < 4; i++)
         {
-            Vt_uw[i] = Vb_uw[3 - UIM14_15];
+            vrt_val[i] = vrb_val[3 - UIM14_15];
         }
+        Vt_uq[0] = vrt_128;
     }});
 
     780: vspltisb({{

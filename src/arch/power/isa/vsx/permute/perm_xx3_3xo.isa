@@ -1,9 +1,18 @@
 format IntArithOp {                         
     10: xxpermdi({{
+        __uint128_t vra_128 = VSa_uq[0];
+        __uint128_t vrb_128 = VSb_uq[0];
+        __uint128_t vrt_128 = VSt_uq[0];
+        uint64_t *vra_val = (uint64_t *)&vra_128;
+        uint64_t *vrb_val = (uint64_t *)&vrb_128;
+        uint64_t *vrt_val = (uint64_t *)&vrt_128;
+
         int t1 = (DM >> 1) & 0x1;
         int t2 = DM & 0x1;
-        VSt_ud[1] = VSa_ud[1 - t1];
-        VSt_ud[0] = VSb_ud[1 - t2];
+        vrt_val[1] = vra_val[1 - t1];
+        vrt_val[0] = vrb_val[1 - t2];
+
+        VSt_uq[0] = vrt_128;
     }});
 
     2: xxsldwi({{

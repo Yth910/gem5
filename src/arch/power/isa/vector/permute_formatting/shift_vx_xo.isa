@@ -1,30 +1,44 @@
 format IntArithOp {
     452: vsl({{
-        uint8_t sh = bits(Vb_ub[15], 2, 0);
+        __uint128_t vra_128 = Va_uq[0];
+        __uint128_t vrb_128 = Vb_uq[0];
+        __uint128_t vrt_128 = Vt_uq[0];
+        __uint128_t *vra_val = (__uint128_t *)&vra_128;
+        uint8_t *vrb_val = (uint8_t *)&vrb_128;
+        __uint128_t *vrt_val = (__uint128_t *)&vrt_128;
+        uint8_t sh = bits(vrb_val[15], 2, 0);
         bool t = true, flag;
-        for(int i = 0; i < 15; i++) {
-            flag = (bits(Vb_ub[i], 2, 0) == sh);
+        for(int i = 0; i < 16; i++) {
+            flag = (bits(vrb_val[i], 2, 0) == sh);
             t = t & flag;
         }
         if (t) {
-            Vt_uq[0] = (Va_uq[0] << sh);
+            vrt_val[0] = (vra_val[0] << sh);
         } else {
             // VSR[VRT+32] ← UNDEFINED
         }
+        Vt_uq[0] = vrt_128;
     }});
 
     708: vsr({{
-        uint8_t sh = bits(Vb_ub[15], 2, 0);
+        __uint128_t vra_128 = Va_uq[0];
+        __uint128_t vrb_128 = Vb_uq[0];
+        __uint128_t vrt_128 = Vt_uq[0];
+        __uint128_t *vra_val = (__uint128_t *)&vra_128;
+        uint8_t *vrb_val = (uint8_t *)&vrb_128;
+        __uint128_t *vrt_val = (__uint128_t *)&vrt_128;
+        uint8_t sh = bits(vrb_val[15], 2, 0);
         bool t = true, flag;
-        for(int i = 0; i < 15; i++) {
-            flag = (bits(Vb_ub[i], 2, 0) == sh);
+        for(int i = 0; i < 16; i++) {
+            flag = (bits(vrb_val[i], 2, 0) == sh);
             t = t & flag;
         }
         if (t) {
-            Vt_uq[0] = (Va_uq[0] >> sh);
+            vrt_val[0] = (vra_val[0] >> sh);
         } else {
             // VSR[VRT+32] ← UNDEFINED
         }
+        Vt_uq[0] = vrt_128;
     }});
 
     1036: vslo({{

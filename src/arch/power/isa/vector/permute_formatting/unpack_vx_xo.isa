@@ -1,97 +1,137 @@
 format IntArithOp {
     526: vupkhsb({{
+        __uint128_t vrb_128 = Vb_uq[0];
+        __uint128_t vrt_128 = Vt_uq[0];
+        uint8_t *vrb_val = (uint8_t *)&vrb_128;
+        uint16_t *vrt_val = (uint16_t *)&vrt_128;
         uint64_t val;
         int16_t num;
         for(int i = 0; i < 8; i++) {
-            val = Vb_ub[i + 8];
+            val = vrb_val[i + 8];
             val = sext<8>(val);
             num = val & 0xFFFF;
-            Vt_uh[i] = num;
+            vrt_val[i] = num;
         }
+        Vt_uq[0] = vrt_128;
     }});
 
     654: vupklsb({{
+        __uint128_t vrb_128 = Vb_uq[0];
+        __uint128_t vrt_128 = Vt_uq[0];
+        uint8_t *vrb_val = (uint8_t *)&vrb_128;
+        uint16_t *vrt_val = (uint16_t *)&vrt_128;
         uint64_t val;
         int16_t num;
         for(int i = 0; i < 8; i++) {
-            val = Vb_ub[i];
+            val = vrb_val[i];
             val = sext<8>(val);
             num = val & 0xFFFF;
-            Vt_uh[i] = num;
+            vrt_val[i] = num;
         }
+        Vt_uq[0] = vrt_128;
     }});
 
     590: vupkhsh({{
+        __uint128_t vrb_128 = Vb_uq[0];
+        __uint128_t vrt_128 = Vt_uq[0];
+        uint16_t *vrb_val = (uint16_t *)&vrb_128;
+        uint32_t *vrt_val = (uint32_t *)&vrt_128;
         uint64_t val;
         int32_t num;
         for(int i = 0; i < 4; i++) {
-            val = Vb_uh[i + 4];
+            val = vrb_val[i + 4];
             val = sext<16>(val);
             num = val & 0xFFFFFFFF;
-            Vt_uw[i] = num;
+            vrt_val[i] = num;
         }
+        Vt_uq[0] = vrt_128;
     }});
 
     718: vupklsh({{
+        __uint128_t vrb_128 = Vb_uq[0];
+        __uint128_t vrt_128 = Vt_uq[0];
+        uint16_t *vrb_val = (uint16_t *)&vrb_128;
+        uint32_t *vrt_val = (uint32_t *)&vrt_128;
         uint64_t val;
         int32_t num;
         for(int i = 0; i < 4; i++) {
-            val = Vb_uh[i];
+            val = vrb_val[i];
             val = sext<16>(val);
             num = val & 0xFFFFFFFF;
-            Vt_uw[i] = num;
+            vrt_val[i] = num;
         }
+        Vt_uq[0] = vrt_128;
     }});
 
     1614: vupkhsw({{
+        __uint128_t vrb_128 = Vb_uq[0];
+        __uint128_t vrt_128 = Vt_uq[0];
+        uint32_t *vrb_val = (uint32_t *)&vrb_128;
+        uint64_t *vrt_val = (uint64_t *)&vrt_128;
         uint64_t val;
         int64_t num;
         for(int i = 0; i < 2; i++) {
-            val = Vb_uw[i + 2];
+            val = vrb_val[i + 2];
             val = sext<32>(val);
             num = val & 0xFFFFFFFFFFFFFFFF;
-            Vt_ud[i] = num;
+            vrt_val[i] = num;
         }
+        Vt_uq[0] = vrt_128;
     }});
 
     1742: vupklsw({{
+        __uint128_t vrb_128 = Vb_uq[0];
+        __uint128_t vrt_128 = Vt_uq[0];
+        uint32_t *vrb_val = (uint32_t *)&vrb_128;
+        uint64_t *vrt_val = (uint64_t *)&vrt_128;
         uint64_t val;
         int64_t num;
         for(int i = 0; i < 2; i++) {
-            val = Vb_uw[i];
+            val = vrb_val[i];
             val = sext<32>(val);
             num = val & 0xFFFFFFFFFFFFFFFF;
-            Vt_ud[i] = num;
+            vrt_val[i] = num;
         }
+        Vt_uq[0] = vrt_128;
     }});
 
     846: vupkhpx({{
+        __uint128_t vrb_128 = Vb_uq[0];
+        __uint128_t vrt_128 = Vt_uq[0];
+        uint16_t *vrb_val = (uint16_t *)&vrb_128;
+        uint32_t *vrt_val = (uint32_t *)&vrt_128;
         uint16_t tmp;
         for(int i = 0; i < 4; i++) {
-            tmp = Vb_uh[i + 4];
-            Vt_uw[i] = insertBits(Vt_uw[i], 31, 24,
+            tmp = vrb_val[i + 4];
+            vrt_val[i] = insertBits(vrt_val[i], 31, 24,
                                   sext<1>(bits(tmp, 15, 15)) & 0xFF);
-            Vt_uw[i] = insertBits(Vt_uw[i], 23, 16,
+            vrt_val[i] = insertBits(vrt_val[i], 23, 16,
                                   zext<5>(bits(tmp, 14, 10)) & 0xFF);
-            Vt_uw[i] = insertBits(Vt_uw[i], 15,  8,
+            vrt_val[i] = insertBits(vrt_val[i], 15,  8,
                                   zext<5>(bits(tmp,  9,  5)) & 0xFF);
-            Vt_uw[i] = insertBits(Vt_uw[i],  7,  0,
+            vrt_val[i] = insertBits(vrt_val[i],  7,  0,
                                   zext<5>(bits(tmp,  4,  0)) & 0xFF);
         }
+        Vt_uq[0] = vrt_128;
     }});
 
     974: vupklpx({{
+        __uint128_t vrb_128 = Vb_uq[0];
+        __uint128_t vrt_128 = Vt_uq[0];
+        uint16_t *vrb_val = (uint16_t *)&vrb_128;
+        uint32_t *vrt_val = (uint32_t *)&vrt_128;
         uint16_t tmp;
         for(int i = 0; i < 4; i++) {
-            tmp = Vb_uh[i];
-            Vt_uw[i] = insertBits(Vt_uw[i], 31, 24,
+            tmp = vrb_val[i];
+            vrt_val[i] = insertBits(vrt_val[i], 31, 24,
                                   sext<1>(bits(tmp, 15, 15)) & 0xFF);
-            Vt_uw[i] = insertBits(Vt_uw[i], 23, 16,
+            vrt_val[i] = insertBits(vrt_val[i], 23, 16,
                                   zext<5>(bits(tmp, 14, 10)) & 0xFF);
-            Vt_uw[i] = insertBits(Vt_uw[i], 15,  8,
+            vrt_val[i] = insertBits(vrt_val[i], 15,  8,
                                   zext<5>(bits(tmp,  9,  5)) & 0xFF);
-            Vt_uw[i] = insertBits(Vt_uw[i],  7,  0,
+            vrt_val[i] = insertBits(vrt_val[i],  7,  0,
                                   zext<5>(bits(tmp,  4,  0)) & 0xFF);
         }
+        Vt_uq[0] = vrt_128;
     }});
 }
