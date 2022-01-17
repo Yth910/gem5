@@ -24,9 +24,7 @@ format VsxFloatArithOp {
         uint64_t *pa, *pb;
         pa = (uint64_t *)&VSa_df[1];
         pb = (uint64_t *)&VSb_df[1];
-        printf("%llx, %llx\n", *pa, *pb);
         std::tie(reg_fpscr, c) = bfp64_COMPARE_ORDER(VSa_df[1], VSb_df[1], reg_fpscr);
-        printf("c = %x\n", c);
         FPSCR = reg_fpscr;
         CR = insertCRField(CR, BF, c);
     }}); 
@@ -56,9 +54,7 @@ format VsxFloatArithOp {
         uint64_t *pa, *pb;
         pa = (uint64_t *)&VSa_df[1];
         pb = (uint64_t *)&VSb_df[1];
-        printf("%llx, %llx\n", *pa, *pb);
         std::tie(reg_fpscr, c) = bfp64_COMPARE_UNORDER(VSa_df[1], VSb_df[1], reg_fpscr);
-        printf("c = %x\n", c);
 
         FPSCR = reg_fpscr;
         CR = insertCRField(CR, BF, c);

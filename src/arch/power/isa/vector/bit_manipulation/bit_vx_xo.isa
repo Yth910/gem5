@@ -1,18 +1,24 @@
 format IntArithOp {
     1292: vgbbd({{
-        for (int i = 0; i < 2; ++i) {
+        __uint128_t vrb_128 = Vb_uq[0];
+        __uint128_t vrt_128 = Vt_uq[0];
+        uint8_t *vrb_val = (uint8_t *)&vrb_128;
+        uint8_t *vrt_val = (uint8_t *)&vrt_128;
+
+        for (int i = 0; i < 2; i++) {
             uint8_t mask = 1 << 7;
-            for (int j = 0; j < 8; ++j) {
+            for (int j = 0; j < 8; j++) {
                 int dst_ind = (1-i) * 8 + (7-j);
-                Vt_ub[dst_ind] = 0;
-                for (int k = 0; k < 8; ++k) {
+                vrt_val[dst_ind] = 0;
+                for (int k = 0; k < 8; k++) {
                     int src_ind = (1-i) * 8 + (7-k);
-                    Vt_ub[dst_ind] <<= 1;
-                    Vt_ub[dst_ind] |= (Vb_ub[src_ind] & mask) ? 1 : 0;
+                    vrt_val[dst_ind] <<= 1;
+                    vrt_val[dst_ind] |= ((vrb_val[src_ind] & mask) ? 1 : 0);
                 }
                 mask >>= 1;
             }
         }
+        Vt_uq[0] = vrt_128;
     }});
 
     1794: vclzb({{
