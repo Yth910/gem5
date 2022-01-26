@@ -1,6 +1,7 @@
 format VsxFloatArithOp {
     345:xsabsdp({{
         VSt_ud[1] = VSb_ud[1] & 0x7fffffffffffffffULL;
+        VSt_ud[0] = 0;
     }});
 
     473:xvabsdp({{
@@ -11,10 +12,12 @@ format VsxFloatArithOp {
 
     361:xsnabsdp({{
         VSt_ud[1] = VSb_ud[1] | 0x8000000000000000ULL;
+        VSt_ud[0] = 0;
     }});
     
     377:xsnegdp({{
         VSt_ud[1] = VSb_ud[1] ^ 0x8000000000000000ULL;
+        VSt_ud[0] = 0;
     }});
 
     90:xsredp({{ //precision mismatch
@@ -29,6 +32,7 @@ format VsxFloatArithOp {
         fpscr_0.xx = 0;
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
         VSt_df[1] = tmp;
+        VSt_df[0] = 0;
         FPSCR = fpscr_0;
     }});
     
@@ -43,6 +47,7 @@ format VsxFloatArithOp {
         fpscr_0.xx = 0;
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
         VSt_df[1] = tmp;
+        VSt_df[0] = 0;
         FPSCR = fpscr_0;
     }});
     
@@ -58,10 +63,11 @@ format VsxFloatArithOp {
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
 
         VSt_df[1] = tmp;
+        VSt_df[0] = 0;
         FPSCR = fpscr_0;
     }});
     
-    74:xsrsqrtedp({{ //precision mismatch fpscr mismatch
+    74:xsrsqrtedp({{ //precision mismatch
         Fpscr fpscr_0 = FPSCR;
         double tmp;
         tmp = bfp64_RECIPROCAL_SQRT_ESTIMATE(VSb_df[1]);
@@ -73,10 +79,11 @@ format VsxFloatArithOp {
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
 
         VSt_df[1] = tmp;
+        VSt_df[0] = 0;
         FPSCR = fpscr_0;
     }});
     
-    10:xsrsqrtesp({{
+    10:xsrsqrtesp({{ //precision mismatch
         Fpscr fpscr_0 = FPSCR;
         double tmp;
         tmp = (float)bfp32_RECIPROCAL_SQRT_ESTIMATE(VSb_df[1]);
@@ -86,6 +93,7 @@ format VsxFloatArithOp {
         fpscr_0.xx = 0;
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
         VSt_df[1] = tmp;
+        VSt_df[0] = 0;
         FPSCR = fpscr_0;
     }});
     
@@ -101,6 +109,7 @@ format VsxFloatArithOp {
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
         
         VSt_df[1] = tmp;
+        VSt_df[0] = 0;
         FPSCR = fpscr_0;
     }});
     
@@ -116,10 +125,11 @@ format VsxFloatArithOp {
         fpscr_0.xx = 0;
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
         VSt_df[1] = tmp;
+        VSt_df[0] = 0;
         FPSCR = fpscr_0;
     }});
     
-    139:xvsqrtsp({{ 
+    139:xvsqrtsp({{  //fpscr mismatch
         Fpscr fpscr_0 = FPSCR;
         for (auto i = 0; i < 4; i++) {
             /* CODE SEG 2 */
@@ -133,7 +143,7 @@ format VsxFloatArithOp {
         FPSCR = fpscr_0;
     }});
     
-    203:xvsqrtdp({{
+    203:xvsqrtdp({{  //fpscr mismatch
         Fpscr fpscr_0 = FPSCR;
         for (auto i = 0; i < 2; i++) {
             /* CODE SEG 2 */

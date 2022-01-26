@@ -6,8 +6,8 @@ format VsxFloatArithOp {
         std::feclearexcept(FE_ALL_EXCEPT);
         tmp = VSb_sd[1];
         std::tie(VSt_df[1], fpscr_0) =
-        get_floating_exception(VSb_sd[1],
-            VSb_sd[1], fpscr_0, tmp);
+        get_floating_exception(tmp,
+            tmp, fpscr_0, tmp);
         fpscr_0 = vsx_set_class((double)tmp, fpscr_0);
         
         if (!isNan(tmp) && !isInfinity(tmp)) {
@@ -23,7 +23,8 @@ format VsxFloatArithOp {
                     fpscr_0.fr = 0;
             }
         }
-    VSt_df[1] = tmp;
+        VSt_df[1] = tmp;
+        VSt_df[0] = 0;
         FPSCR = fpscr_0;
     }});
 
@@ -35,10 +36,10 @@ format VsxFloatArithOp {
         std::feclearexcept(FE_ALL_EXCEPT);
         
         for (int i = 0; i < 2; i++) {
-            VSt_df[i] = VSb_sd[i];
+            tmp = VSb_sd[i];
             std::tie(tmp, fpscr_0) =
-            get_floating_exception(VSb_sd[i], VSb_sd[i],
-                                     fpscr_0, VSt_df[i]);
+            get_floating_exception(tmp, tmp,
+                                     fpscr_0, tmp);
             VSt_df[i] = tmp;
         }
         fpscr_0.fi = fpscr_1.fi;
@@ -71,6 +72,7 @@ format VsxFloatArithOp {
         }
 
         VSt_df[1] = tmp;
+        VSt_df[0] = 0;
 
         FPSCR = fpscr_0;
     }});
@@ -82,12 +84,12 @@ format VsxFloatArithOp {
         float tmp;
         fp_before_cal(fpscr_0);
         for (int i = 0; i < 2; i++) {
-            VSt_sf[i * 2 + 1] = (float)VSb_sd[i];
-            VSt_sf[i * 2] = (float)VSb_sd[i];
+            tmp = (float)VSb_sd[i];
             std::tie(tmp, fpscr_0) =
             get_floating_exception((float)VSb_sd[i],
-                (float)VSb_sd[i], fpscr_0, (float)VSt_sf[i]);
-            VSt_sf[0] = tmp;
+                (float)VSb_sd[i], fpscr_0, tmp);
+            VSt_sf[i * 2 + 1] = tmp;
+            VSt_sf[i * 2] = tmp;
         }
         fpscr_0.fi = fpscr_1.fi;
         FPSCR = fpscr_0;
@@ -99,12 +101,12 @@ format VsxFloatArithOp {
 
         double tmp;
         std::feclearexcept(FE_ALL_EXCEPT);
-        
+
         for (int i = 0; i < 2; i++) {
-            VSt_df[i] = VSb_sw[2 * i + 1];
+            tmp = VSb_sw[2 * i + 1];
             std::tie(tmp, fpscr_0) =
             get_floating_exception(VSb_sw[i],
-                VSb_sw[i], fpscr_0, VSt_df[i]);
+                VSb_sw[i], fpscr_0, tmp);
             VSt_df[i] = tmp;
         }
         fpscr_0.fi = fpscr_1.fi;
@@ -119,10 +121,10 @@ format VsxFloatArithOp {
         std::feclearexcept(FE_ALL_EXCEPT);
         
         for (int i = 0; i < 4; i++) {
-            VSt_sf[i] = VSb_sw[i];
+            tmp = VSb_sw[i];
             std::tie(tmp, fpscr_0) =
             get_floating_exception(VSb_sw[i],
-                VSb_sw[i], fpscr_0, (float)VSt_sf[i]);
+                VSb_sw[i], fpscr_0, tmp);
             VSt_sf[i] = tmp;
         }
         fpscr_0.fi = fpscr_1.fi;
@@ -154,6 +156,7 @@ format VsxFloatArithOp {
             }
         }
         VSt_df[1] = tmp;
+        VSt_df[0] = 0;
         FPSCR = fpscr_0;
     }});
 
@@ -165,10 +168,10 @@ format VsxFloatArithOp {
         std::feclearexcept(FE_ALL_EXCEPT);
 
         for (int i = 0; i < 2; i++) {
-            VSt_df[i] = VSb_ud[i];
+            tmp = VSb_ud[i];
             std::tie(tmp, fpscr_0) =
             get_floating_exception(VSb_ud[i],
-                VSb_ud[i], fpscr_0, VSt_df[i]);
+                VSb_ud[i], fpscr_0, tmp);
             VSt_df[i] = tmp;
         }
         
@@ -194,6 +197,7 @@ format VsxFloatArithOp {
                 fpscr_0.fr = 0;
         }
         VSt_df[1] = tmp;
+        VSt_df[0] = 0;
         FPSCR = fpscr_0;
     }});
 
@@ -204,8 +208,9 @@ format VsxFloatArithOp {
         float tmp;
         fp_before_cal(fpscr_0);
         for (int i = 0; i < 2; i++) {
-            VSt_sf[i * 2 + 1] = (float)VSb_ud[i];
-            VSt_sf[i * 2] = (float)VSb_ud[i];
+            tmp = (float)VSb_ud[i];
+            VSt_sf[i * 2 + 1] = tmp;
+            VSt_sf[i * 2] = tmp;
             std::tie(tmp, fpscr_0) =
             get_floating_exception((float)VSb_ud[i],
                 (float)VSb_ud[i], fpscr_0, (float)VSt_sf[i]);
@@ -362,31 +367,31 @@ format VsxFloatArithOp {
          double tmp;
          std::feclearexcept(FE_ALL_EXCEPT);
          for (int i = 0; i < 2; i++) {
-             VSt_df[i] = VSb_uw[i * 2 + 1];
+             tmp = VSb_uw[i * 2 + 1];
 
-        std::tie(tmp, fpscr_0)=
-        get_floating_exception(VSb_uw[i],
-            VSb_uw[i], fpscr_0, VSt_df[i]);
-        VSt_df[i] = tmp;
-         }
-         fpscr_0.fi = fpscr_1.fi;
-         FPSCR = fpscr_0;
+            std::tie(tmp, fpscr_0)=
+            get_floating_exception(VSb_uw[i],
+                VSb_uw[i], fpscr_0, tmp);
+            VSt_df[i] = tmp;
+        }
+        fpscr_0.fi = fpscr_1.fi;
+        FPSCR = fpscr_0;
      }});
 168:xvcvuxwsp({{
          Fpscr fpscr_0 = FPSCR;
          Fpscr fpscr_1 = FPSCR;
 
-         float tmp;
-         std::feclearexcept(FE_ALL_EXCEPT);
-         for (int i = 0; i < 4; i++) {
-             VSt_sf[i] = VSb_uw[i];
-        std::tie(tmp, fpscr_0) =
-        get_floating_exception(VSb_uw[i],
-             VSb_uw[i], fpscr_0, VSt_sf[i]);
-        VSt_sf[i] = tmp;
-         }
-         fpscr_0.fi = fpscr_1.fi;
-         FPSCR = fpscr_0;
+        float tmp;
+        std::feclearexcept(FE_ALL_EXCEPT);
+        for (int i = 0; i < 4; i++) {
+            tmp = VSb_uw[i];
+            std::tie(tmp, fpscr_0) =
+            get_floating_exception(VSb_uw[i],
+                VSb_uw[i], fpscr_0, tmp);
+            VSt_sf[i] = tmp;
+        }
+        fpscr_0.fi = fpscr_1.fi;
+        FPSCR = fpscr_0;
      }});
 
 

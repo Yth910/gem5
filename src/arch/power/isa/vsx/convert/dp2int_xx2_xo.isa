@@ -39,6 +39,7 @@ format VsxFloatArithOp {
         }
 
         VSt_sd[1] = tmp;
+        VSt_sd[0] = 0;
         FPSCR = fpscr_0;
     }});
 
@@ -119,6 +120,8 @@ format VsxFloatArithOp {
                 fpscr_0.fi = 1;
         }
 
+        VSt_sw[0] = 0;
+        VSt_sw[1] = 0;
         VSt_sw[2] = tmp;
         VSt_sw[3] = tmp;
         FPSCR = fpscr_0;
@@ -295,6 +298,8 @@ format VsxFloatArithOp {
                 fpscr_0.fi = 1;
         }
 
+        VSt_uw[0] = 0;
+        VSt_uw[1] = 0;
         VSt_uw[2] = tmp;
         VSt_uw[3] = tmp;
         FPSCR = fpscr_0;

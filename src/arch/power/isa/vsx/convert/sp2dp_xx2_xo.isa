@@ -16,6 +16,7 @@ format VsxFloatArithOp {
         fpscr_0 = update_fpscr(fpscr_0, fpscr_0);
         fpscr_0 = vsx_set_class((double)tmp, fpscr_0);
         VSt_df[1] = tmp;
+        VSt_df[0] = 0;
         FPSCR = fpscr_0;
     }});
 
@@ -26,19 +27,21 @@ format VsxFloatArithOp {
         tmp = VSb_sf[3];
 
         VSt_df[1] = tmp;
+        VSt_df[0] = 0;
         FPSCR = fpscr_0;
     }});
 
     457:xvcvspdp({{
         Fpscr fpscr_0 = FPSCR;
-
         fpscr_0 = fp_before_cal(fpscr_0);
+        double tmp;
         for (int i = 0; i < 2; i++) {
-            VSt_df[i] = (VSb_sf[i * 2 + 1]);
-            if (isSnan(VSt_df[i])) {
+            tmp = (VSb_sf[i * 2 + 1]);
+            if (isSnan(tmp)) {
                 fpscr_0.vxsnan = 1;
-                VSt_df[i] = SnantoQnan(VSt_df[i]);
+                tmp = SnantoQnan(tmp);
             }
+            VSt_df[i] = tmp;
         }
         fpscr_0.fr = 0;
         fpscr_0.fi = 0;
