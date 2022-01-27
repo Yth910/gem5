@@ -47,7 +47,7 @@ format VsxFloatArithOp {
     33:xsmaddadp({{ //fpscr when same operand, o3 mismatch
         Fpscr fpscr_0 = FPSCR;
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(VSa_df[1], VSb_df[1], VSt_df[1], fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(VSa_df[1], VSb_df[1], VSs_df[1], fpscr_0);
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
         VSt_df[1] = tmp;
         VSt_df[0] = 0;
@@ -57,7 +57,7 @@ format VsxFloatArithOp {
     41:xsmaddmdp({{
         Fpscr fpscr_0 = FPSCR;
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(VSa_df[1], VSt_df[1], VSb_df[1], fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(VSa_df[1], VSs_df[1], VSb_df[1], fpscr_0);
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
         VSt_df[1] = tmp;
         VSt_df[0] = 0;
@@ -67,7 +67,7 @@ format VsxFloatArithOp {
     1:xsmaddasp({{
         Fpscr fpscr_0 = FPSCR;
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(VSa_df[1], VSb_df[1], VSt_df[1], fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(VSa_df[1], VSb_df[1], VSs_df[1], fpscr_0);
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
         VSt_df[1] = tmp;
         VSt_df[0] = 0;
@@ -77,7 +77,7 @@ format VsxFloatArithOp {
     9:xsmaddmsp({{
         Fpscr fpscr_0 = FPSCR;
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(VSa_df[1], VSt_df[1], VSb_df[1], fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(VSa_df[1], VSs_df[1], VSb_df[1], fpscr_0);
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
         VSt_df[1] = tmp;
         VSt_df[0] = 0;
@@ -105,7 +105,7 @@ format VsxFloatArithOp {
     49:xsmsubadp({{
         Fpscr fpscr_0 = FPSCR;
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(VSa_df[1], VSb_df[1], bfp_NEGATE(VSt_df[1]), fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(VSa_df[1], VSb_df[1], bfp_NEGATE(VSs_df[1]), fpscr_0);
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
         VSt_df[1] = tmp;
         VSt_df[0] = 0;
@@ -115,7 +115,7 @@ format VsxFloatArithOp {
     57:xsmsubmdp({{
         Fpscr fpscr_0 = FPSCR;
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(VSa_df[1], VSt_df[1], bfp_NEGATE(VSb_df[1]), fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(VSa_df[1], VSs_df[1], bfp_NEGATE(VSb_df[1]), fpscr_0);
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
         VSt_df[1] = tmp;
         VSt_df[0] = 0;
@@ -125,7 +125,7 @@ format VsxFloatArithOp {
     17:xsmsubasp({{
         Fpscr fpscr_0 = FPSCR;
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(VSa_df[1], VSb_df[1], bfp_NEGATE(VSt_df[1]), fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(VSa_df[1], VSb_df[1], bfp_NEGATE(VSs_df[1]), fpscr_0);
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
         VSt_df[1] = tmp;
         VSt_df[0] = 0;
@@ -135,7 +135,7 @@ format VsxFloatArithOp {
     25:xsmsubmsp({{
         Fpscr fpscr_0 = FPSCR;
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(VSa_df[1], VSt_df[1], bfp_NEGATE(VSb_df[1]), fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(VSa_df[1], VSs_df[1], bfp_NEGATE(VSb_df[1]), fpscr_0);
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
         VSt_df[1] = tmp;
         VSt_df[0] = 0;
@@ -166,7 +166,7 @@ format VsxFloatArithOp {
     161:xsnmaddadp({{
         Fpscr fpscr_0 = FPSCR;
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(VSa_df[1], VSb_df[1], VSt_df[1], fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(VSa_df[1], VSb_df[1], VSs_df[1], fpscr_0);
         tmp = bfp_NEGATE(tmp);
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
         VSt_df[1] = tmp;
@@ -177,7 +177,7 @@ format VsxFloatArithOp {
     169:xsnmaddmdp({{
         Fpscr fpscr_0 = FPSCR;
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(VSa_df[1], VSt_df[1], VSb_df[1], fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(VSa_df[1], VSs_df[1], VSb_df[1], fpscr_0);
         tmp = bfp_NEGATE(tmp);
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
         VSt_df[1] = tmp;
@@ -188,7 +188,7 @@ format VsxFloatArithOp {
     129:xsnmaddasp({{
         Fpscr fpscr_0 = FPSCR;
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(VSa_df[1], VSb_df[1], VSt_df[1], fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(VSa_df[1], VSb_df[1], VSs_df[1], fpscr_0);
         tmp = bfp_NEGATE(tmp);
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
         VSt_df[1] = tmp;
@@ -199,7 +199,7 @@ format VsxFloatArithOp {
     137:xsnmaddmsp({{
         Fpscr fpscr_0 = FPSCR;
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(VSa_df[1], VSt_df[1], VSb_df[1], fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(VSa_df[1], VSs_df[1], VSb_df[1], fpscr_0);
         tmp = bfp_NEGATE(tmp);
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
         VSt_df[1] = tmp;
@@ -210,7 +210,7 @@ format VsxFloatArithOp {
     177:xsnmsubadp({{
         Fpscr fpscr_0 = FPSCR;
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(VSa_df[1], VSb_df[1], bfp_NEGATE(VSt_df[1]), fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(VSa_df[1], VSb_df[1], bfp_NEGATE(VSs_df[1]), fpscr_0);
         tmp = bfp_NEGATE(tmp);
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
         VSt_df[1] = tmp;
@@ -221,7 +221,7 @@ format VsxFloatArithOp {
     185:xsnmsubmdp({{
         Fpscr fpscr_0 = FPSCR;
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(VSa_df[1], VSt_df[1], bfp_NEGATE(VSb_df[1]), fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(VSa_df[1], VSs_df[1], bfp_NEGATE(VSb_df[1]), fpscr_0);
         tmp = bfp_NEGATE(tmp);
         fpscr_0 = vsx_set_class(tmp, fpscr_0);
         VSt_df[1] = tmp;
@@ -232,7 +232,7 @@ format VsxFloatArithOp {
     145:xsnmsubasp({{
         Fpscr fpscr_0 = FPSCR;
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(VSa_df[1], VSb_df[1], bfp_NEGATE(VSt_df[1]), fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(VSa_df[1], VSb_df[1], bfp_NEGATE(VSs_df[1]), fpscr_0);
         tmp = bfp_NEGATE(tmp);
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
         VSt_df[1] = tmp;
@@ -243,7 +243,7 @@ format VsxFloatArithOp {
     153:xsnmsubmsp({{
         Fpscr fpscr_0 = FPSCR;
         double tmp;
-        std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(VSa_df[1], VSt_df[1], bfp_NEGATE(VSb_df[1]), fpscr_0);
+        std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(VSa_df[1], VSs_df[1], bfp_NEGATE(VSb_df[1]), fpscr_0);
         tmp = bfp_NEGATE(tmp);
         fpscr_0 = vsx_set_class((float)tmp, fpscr_0);
         VSt_df[1] = tmp;
@@ -342,7 +342,7 @@ format VsxFloatArithOp {
         Fpscr fpscr_0 = FPSCR;
         for (auto i = 0; i < 2; i++) {
             double tmp;
-            std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(VSa_df[i], VSb_df[i], VSt_df[i], fpscr_0);
+            std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(VSa_df[i], VSb_df[i], VSs_df[i], fpscr_0);
             fpscr_0.fi = 0;
             fpscr_0.fr = 0;
             VSt_df[i] = tmp;
@@ -354,7 +354,7 @@ format VsxFloatArithOp {
         Fpscr fpscr_0 = FPSCR;
         for (auto i = 0; i < 2; i++) {
             double tmp;
-            std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(VSa_df[i], VSt_df[i], VSb_df[i], fpscr_0);
+            std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(VSa_df[i], VSs_df[i], VSb_df[i], fpscr_0);
             fpscr_0.fi = 0;
             fpscr_0.fr = 0;
             VSt_df[i] = tmp;
@@ -366,7 +366,7 @@ format VsxFloatArithOp {
         Fpscr fpscr_0 = FPSCR;
         for (auto i = 0; i < 4; i++) {
             double tmp;
-            std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(VSa_sf[i], VSb_sf[i], VSt_sf[i], fpscr_0);
+            std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(VSa_sf[i], VSb_sf[i], VSs_sf[i], fpscr_0);
             fpscr_0.fi = 0;
             fpscr_0.fr = 0;
             VSt_sf[i] = tmp;
@@ -378,7 +378,7 @@ format VsxFloatArithOp {
         Fpscr fpscr_0 = FPSCR;
         for (auto i = 0; i < 4; i++) {
             double tmp;
-            std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(VSa_sf[i], VSt_sf[i], VSb_sf[i], fpscr_0);
+            std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(VSa_sf[i], VSs_sf[i], VSb_sf[i], fpscr_0);
             fpscr_0.fi = 0;
             fpscr_0.fr = 0;
             VSt_sf[i] = tmp;
@@ -431,7 +431,7 @@ format VsxFloatArithOp {
         Fpscr fpscr_0 = FPSCR;
         for (auto i = 0; i < 2; i++) {
             double tmp;
-            std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(VSa_df[i], VSb_df[i], bfp_NEGATE(VSt_df[i]), fpscr_0);
+            std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(VSa_df[i], VSb_df[i], bfp_NEGATE(VSs_df[i]), fpscr_0);
             fpscr_0.fi = 0;
             fpscr_0.fr = 0;
             VSt_df[i] = tmp;
@@ -443,7 +443,7 @@ format VsxFloatArithOp {
         Fpscr fpscr_0 = FPSCR;
         for (auto i = 0; i < 2; i++) {
             double tmp;
-            std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(VSa_df[i], VSt_df[i], bfp_NEGATE(VSb_df[i]), fpscr_0);
+            std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(VSa_df[i], VSs_df[i], bfp_NEGATE(VSb_df[i]), fpscr_0);
             fpscr_0.fi = 0;
             fpscr_0.fr = 0;
             VSt_df[i] = tmp;
@@ -455,7 +455,7 @@ format VsxFloatArithOp {
         Fpscr fpscr_0 = FPSCR;
         for (auto i = 0; i < 4; i++) {
             double tmp;
-            std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(VSa_sf[i], VSb_sf[i], bfp_NEGATE(VSt_sf[i]), fpscr_0);
+            std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(VSa_sf[i], VSb_sf[i], bfp_NEGATE(VSs_sf[i]), fpscr_0);
             fpscr_0.fi = 0;
             fpscr_0.fr = 0;
             VSt_sf[i] = tmp;
@@ -467,7 +467,7 @@ format VsxFloatArithOp {
         Fpscr fpscr_0 = FPSCR;
         for (auto i = 0; i < 4; i++) {
             double tmp;
-            std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(VSa_sf[i], VSt_sf[i], bfp_NEGATE(VSb_sf[i]), fpscr_0);
+            std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(VSa_sf[i], VSs_sf[i], bfp_NEGATE(VSb_sf[i]), fpscr_0);
             fpscr_0.fi = 0;
             fpscr_0.fr = 0;
             VSt_sf[i] = tmp;
@@ -503,7 +503,7 @@ format VsxFloatArithOp {
         Fpscr fpscr_0 = FPSCR;
         for (auto i = 0; i < 2; i++) {
             double tmp;
-            std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(VSa_df[i], VSb_df[i], VSt_df[i], fpscr_0);
+            std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(VSa_df[i], VSb_df[i], VSs_df[i], fpscr_0);
             fpscr_0.fi = 0;
             fpscr_0.fr = 0;
             VSt_df[i] = bfp_NEGATE(tmp);
@@ -515,7 +515,7 @@ format VsxFloatArithOp {
         Fpscr fpscr_0 = FPSCR;
         for (auto i = 0; i < 2; i++) {
             double tmp;
-            std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(VSa_df[i], VSt_df[i], VSb_df[i], fpscr_0);
+            std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(VSa_df[i], VSs_df[i], VSb_df[i], fpscr_0);
             fpscr_0.fi = 0;
             fpscr_0.fr = 0;
             VSt_df[i] = bfp_NEGATE(tmp);
@@ -527,7 +527,7 @@ format VsxFloatArithOp {
         Fpscr fpscr_0 = FPSCR;
         for (auto i = 0; i < 4; i++) {
             double tmp;
-            std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(VSa_sf[i], VSb_sf[i], VSt_sf[i], fpscr_0);
+            std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(VSa_sf[i], VSb_sf[i], VSs_sf[i], fpscr_0);
             fpscr_0.fi = 0;
             fpscr_0.fr = 0;
             VSt_sf[i] = bfp_NEGATE(tmp);
@@ -539,7 +539,7 @@ format VsxFloatArithOp {
         Fpscr fpscr_0 = FPSCR;
         for (auto i = 0; i < 4; i++) {
             double tmp;
-            std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(VSa_sf[i], VSt_sf[i], VSb_sf[i], fpscr_0);
+            std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(VSa_sf[i], VSs_sf[i], VSb_sf[i], fpscr_0);
             fpscr_0.fi = 0;
             fpscr_0.fr = 0;
             VSt_sf[i] = bfp_NEGATE(tmp);
@@ -551,7 +551,7 @@ format VsxFloatArithOp {
         Fpscr fpscr_0 = FPSCR;
         for (auto i = 0; i < 2; i++) {
             double tmp;
-            std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(VSa_df[i], VSb_df[i], bfp_NEGATE(VSt_df[i]), fpscr_0);
+            std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(VSa_df[i], VSb_df[i], bfp_NEGATE(VSs_df[i]), fpscr_0);
             fpscr_0.fi = 0;
             fpscr_0.fr = 0;
             VSt_df[i] = bfp_NEGATE(tmp);
@@ -563,7 +563,7 @@ format VsxFloatArithOp {
         Fpscr fpscr_0 = FPSCR;
         for (auto i = 0; i < 2; i++) {
             double tmp;
-            std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(VSa_df[i], VSt_df[i], bfp_NEGATE(VSb_df[i]), fpscr_0);
+            std::tie(tmp, fpscr_0) = bfp64_MULTIPLY_ADD(VSa_df[i], VSs_df[i], bfp_NEGATE(VSb_df[i]), fpscr_0);
             fpscr_0.fi = 0;
             fpscr_0.fr = 0;
             VSt_df[i] = bfp_NEGATE(tmp);
@@ -575,7 +575,7 @@ format VsxFloatArithOp {
         Fpscr fpscr_0 = FPSCR;
         for (auto i = 0; i < 4; i++) {
             double tmp;
-            std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(VSa_sf[i], VSb_sf[i], bfp_NEGATE(VSt_sf[i]), fpscr_0);
+            std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(VSa_sf[i], VSb_sf[i], bfp_NEGATE(VSs_sf[i]), fpscr_0);
             fpscr_0.fi = 0;
             fpscr_0.fr = 0;
             VSt_sf[i] = bfp_NEGATE(tmp);
@@ -587,7 +587,7 @@ format VsxFloatArithOp {
         Fpscr fpscr_0 = FPSCR;
         for (auto i = 0; i < 4; i++) {
             double tmp;
-            std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(VSa_sf[i], VSt_sf[i], bfp_NEGATE(VSb_sf[i]), fpscr_0);
+            std::tie(tmp, fpscr_0) = bfp32_MULTIPLY_ADD(VSa_sf[i], VSs_sf[i], bfp_NEGATE(VSb_sf[i]), fpscr_0);
             fpscr_0.fi = 0;
             fpscr_0.fr = 0;
             VSt_sf[i] = bfp_NEGATE(tmp);
