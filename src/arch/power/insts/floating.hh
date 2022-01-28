@@ -677,7 +677,6 @@ class FloatOp : public PowerStaticInst
             if (tmp > 0x7fffffffffffffffLL) {
                 ret = 0x7fffffffffffffffLL;
                 fpscr_flag.vxcvi = 1;
-                printf("convert si64:%f to %llx\n", x, ret);
             }
 
             __int128_t val = 0xffffffffffffffffULL;
@@ -686,7 +685,6 @@ class FloatOp : public PowerStaticInst
             if (tmp < val) {
                 ret = 0x8000000000000000LL;
                 fpscr_flag.vxcvi = 1;
-                printf("convert si64:%f to %llx\n", x, ret);
             }
         }
         fpscr = update_fpscr(fpscr, fpscr_flag);
@@ -709,13 +707,11 @@ class FloatOp : public PowerStaticInst
             if (tmp > 0xffffffffffffffffULL) {
                 ret = 0xffffffffffffffffULL;
                 fpscr_flag.vxcvi = 1;
-                printf("convert ui64:%f to %llx\n", x, ret);
             }
 
             if (tmp < 0) {
                 ret = 0;
                 fpscr_flag.vxcvi = 1;
-                printf("convert ui64:%f to %llx\n", x, ret);
             }
         }
         fpscr = update_fpscr(fpscr, fpscr_flag);
@@ -738,13 +734,11 @@ class FloatOp : public PowerStaticInst
             if (tmp > 0x7fffffff) {
                 ret = 0x7fffffff;
                 fpscr_flag.vxcvi = 1;
-                printf("convert si32:%f to %llx\n", x, ret);
             }
 
             if (tmp < -0x80000000LL) {
                 ret = 0x80000000;
                 fpscr_flag.vxcvi = 1;
-                printf("convert si32:%f to %llx\n", x, ret);
             }
         }
         fpscr = update_fpscr(fpscr, fpscr_flag);
@@ -768,13 +762,11 @@ class FloatOp : public PowerStaticInst
             if (tmp > 0xffffffff) {
                 ret = 0xffffffff;
                 fpscr_flag.vxcvi = 1;
-                printf("convert ui32:%f to %llx\n", x, ret);
             }
 
             if (tmp < 0) {
                 ret = 0;
                 fpscr_flag.vxcvi = 1;
-                printf("convert ui32:%f to %llx\n", x, ret);
             }
         }
         fpscr = update_fpscr(fpscr, fpscr_flag);

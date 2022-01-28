@@ -5,7 +5,7 @@ format VsxFloatArithOp {
 
         int64_t tmp;
         fpscr_0 = fp_before_cal(fpscr_0);
-        tmp = VSb_df[1];
+        tmp = trunc(VSb_df[1]);
         std::tie(tmp, fpscr_0) =
         get_floating_exception(VSb_df[1], VSb_df[1],
                                 fpscr_0, (double)tmp);
@@ -51,7 +51,7 @@ format VsxFloatArithOp {
         fpscr_0 = fp_before_cal(fpscr_0);
         
         for (int i = 0; i < 2; i++) {
-            tmp = VSb_df[i];
+            tmp = trunc(VSb_df[i]);
             std::tie(tmp, fpscr_0) =
             get_floating_exception(VSb_df[i], VSb_df[i],
                                    fpscr_0, (double)tmp);
@@ -85,9 +85,9 @@ format VsxFloatArithOp {
         Fpscr fpscr_0 = FPSCR;
         Fpscr fpscr_1 = FPSCR;
 
-        uint32_t tmp;
+        int32_t tmp;
         fpscr_0 = fp_before_cal(fpscr_0);
-        tmp = VSb_df[1];
+        tmp = trunc(VSb_df[1]);
         std::tie(tmp, fpscr_0) =
         get_floating_exception(VSb_df[1], VSb_df[1],
                                fpscr_0, (double)tmp);
@@ -134,7 +134,7 @@ format VsxFloatArithOp {
         int32_t tmp;
         fpscr_0 = fp_before_cal(fpscr_0);
         for (int i = 0; i < 2; i++) {
-            tmp = VSb_df[i];
+            tmp = trunc(VSb_df[i]);
             std::tie(tmp, fpscr_0) =
             get_floating_exception(VSb_df[1], VSb_df[1],
                                     fpscr_0, (double)tmp);
@@ -172,7 +172,7 @@ format VsxFloatArithOp {
 
         uint64_t tmp;
         fpscr_0 = fp_before_cal(fpscr_0);
-        tmp = VSb_df[1];
+        tmp = trunc(VSb_df[1]);
         std::tie(tmp, fpscr_0) =
         get_floating_exception(VSb_df[1], VSb_df[1],
                                 fpscr_0, (double)tmp);
@@ -215,7 +215,7 @@ format VsxFloatArithOp {
         uint64_t tmp;
         fpscr_0 = fp_before_cal(fpscr_0);
         for (int i = 0; i < 2; i++) {
-            tmp = VSb_df[i];
+            tmp = trunc(VSb_df[i]);
             std::tie(tmp, fpscr_0) =
             get_floating_exception(VSb_df[i], VSb_df[i],
                                     fpscr_0, (double)tmp);
@@ -268,7 +268,7 @@ format VsxFloatArithOp {
 
         int64_t tmp;
         fpscr_0 = fp_before_cal(fpscr_0);
-        tmp = VSb_df[1];
+        tmp = trunc(VSb_df[1]);
         std::tie(tmp, fpscr_0) =
         get_floating_exception(VSb_df[1], VSb_df[1],
                                 fpscr_0, (double)tmp);
@@ -314,7 +314,7 @@ format VsxFloatArithOp {
         fpscr_0 = fp_before_cal(fpscr_0);
         
         for (int i = 0; i < 2; i++) {
-            tmp = VSb_df[i];
+            tmp = trunc(VSb_df[i]);
             std::tie(tmp, fpscr_0) =
             get_floating_exception(VSb_df[i], VSb_df[i],
                                     fpscr_0, (double)tmp);
