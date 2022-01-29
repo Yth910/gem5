@@ -106,9 +106,9 @@ format VsxFloatArithOp {
         fp_before_cal(fpscr_0);
 
         for (auto i = 0; i < 2; i++) {
-            VSt_df[i] = bfp64_ROUND_TO_INTEGER_FLOOR(VSb_df[i]);
+            tmp = bfp64_ROUND_TO_INTEGER_FLOOR(VSb_df[i]);
             std::tie(tmp, fpscr_0) = get_floating_exception(VSb_df[i],
-                                     VSb_df[i], fpscr_0, VSt_df[i]);
+                                     VSb_df[i], fpscr_0, tmp);
             VSt_df[i] = tmp;
         }
 
@@ -123,9 +123,9 @@ format VsxFloatArithOp {
         fp_before_cal(fpscr_0);
 
         for (auto i = 0; i < 2; i++) {
-            VSt_df[i] = bfp64_ROUND_TO_INTEGER_CEIL(VSb_df[i]);
+            tmp = bfp64_ROUND_TO_INTEGER_CEIL(VSb_df[i]);
             std::tie(tmp, fpscr_0) = get_floating_exception(VSb_df[i],
-                                     VSb_df[i], fpscr_0, VSt_df[i]);
+                                     VSb_df[i], fpscr_0, tmp);
             VSt_df[i] = tmp;
         }
 
@@ -141,9 +141,9 @@ format VsxFloatArithOp {
         fp_before_cal(fpscr_0);
 
         for (auto i = 0; i < 2; i++) {
-            VSt_df[i] = bfp64_ROUND_TO_INTEGER_TRUNC(VSb_df[i]);
+            tmp = bfp64_ROUND_TO_INTEGER_TRUNC(VSb_df[i]);
             std::tie(tmp, fpscr_0) = get_floating_exception(VSb_df[i],
-                                     VSb_df[i], fpscr_0, VSt_df[i]);
+                                     VSb_df[i], fpscr_0, tmp);
             VSt_df[i] = tmp;
         }
 
@@ -158,9 +158,9 @@ format VsxFloatArithOp {
         float tmp;
         fp_before_cal(fpscr_0);
         for (auto i = 0; i < 4; i++) {
-            VSt_sf[i] = bfp32_ROUND_TO_INTEGER_NEAR(VSb_sf[i]);
+            tmp = bfp32_ROUND_TO_INTEGER_NEAR(VSb_sf[i]);
             std::tie(tmp, fpscr_0) = get_floating_exception(VSb_sf[i],
-                                     VSb_sf[i], fpscr_0, VSt_sf[i]);
+                                     VSb_sf[i], fpscr_0, tmp);
             VSt_sf[i] = tmp;
         }
         fpscr_0.fi = 0;
@@ -188,9 +188,9 @@ format VsxFloatArithOp {
         fp_before_cal(fpscr_0);
 
         for (auto i = 0; i < 4; i++) {
-            VSt_sf[i] = bfp32_ROUND_TO_INTEGER_FLOOR(VSb_sf[i]);
+            tmp = bfp32_ROUND_TO_INTEGER_FLOOR(VSb_sf[i]);
             std::tie(tmp, fpscr_0) = get_floating_exception(VSb_sf[i],
-                                     VSb_sf[i], fpscr_0, VSt_sf[i]);
+                                     VSb_sf[i], fpscr_0, tmp);
             VSt_sf[i] = tmp;
         }
 
@@ -205,9 +205,9 @@ format VsxFloatArithOp {
         fp_before_cal(fpscr_0);
 
         for (auto i = 0; i < 4; i++) {
-            VSt_sf[i] = bfp32_ROUND_TO_INTEGER_CEIL(VSb_sf[i]);
+            tmp = bfp32_ROUND_TO_INTEGER_CEIL(VSb_sf[i]);
             std::tie(tmp, fpscr_0) = get_floating_exception(VSb_sf[i],
-                                     VSb_sf[i], fpscr_0, VSt_sf[i]);
+                                     VSb_sf[i], fpscr_0, tmp);
             VSt_sf[i] = tmp;
         }
 
@@ -222,9 +222,9 @@ format VsxFloatArithOp {
         fp_before_cal(fpscr_0);
 
         for (auto i = 0; i < 4; i++) {
-            VSt_sf[i] = bfp32_ROUND_TO_INTEGER_TRUNC(VSb_sf[i]);
+            tmp = bfp32_ROUND_TO_INTEGER_TRUNC(VSb_sf[i]);
             std::tie(tmp, fpscr_0) = get_floating_exception(VSb_sf[i],
-                                     VSb_sf[i], fpscr_0, VSt_sf[i]);
+                                     VSb_sf[i], fpscr_0, tmp);
             VSt_sf[i] = tmp;
         }
 
