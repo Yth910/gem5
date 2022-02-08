@@ -131,12 +131,12 @@ format VsxFloatArithOp {
         Fpscr fpscr_0 = FPSCR;
         for (auto i = 0; i < 4; i++) {
             /* CODE SEG 2 */
-            VSt_sf[i] = (float)sqrt(Vb_sf[i]);
+            VSt_sf[i] = (float)sqrt(VSb_sf[i]);
             fpscr_0.fr = 0;
             fpscr_0.fi = 0;
-            //std::tie(Vt_sf[i], fpscr_0) = get_floating_exception((float)Vb_sf[i], (float)Vb_sf[i], fpscr_0, (float)Vt_sf[i]);
+            //std::tie(VSt_sf[i], fpscr_0) = get_floating_exception((float)VSb_sf[i], (float)VSb_sf[i], fpscr_0, (float)VSt_sf[i]);
             fpscr_0.xx = 0;
-            fpscr_0 = vsx_set_class(Vt_sf[i], fpscr_0);
+            fpscr_0 = vsx_set_class(VSt_sf[i], fpscr_0);
         }
         FPSCR = fpscr_0;
     }});
