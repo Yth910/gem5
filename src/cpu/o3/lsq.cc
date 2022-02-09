@@ -1136,7 +1136,7 @@ bool
 LSQ::SplitDataRequest::recvTimingResp(PacketPtr pkt)
 {
     auto state = dynamic_cast<LSQSenderState*>(pkt->senderState);
-    uint32_t pktIdx = 0;
+    uint64_t pktIdx = 0;
     while (pktIdx < _packets.size() && pkt != _packets[pktIdx])
         pktIdx++;
     assert(pktIdx < _packets.size());
@@ -1421,7 +1421,7 @@ LSQ::HtmCmdRequest::finish(const Fault &fault, const RequestPtr &req,
 }
 
 Fault
-LSQ::read(LSQRequest* req, int load_idx)
+LSQ::read(LSQRequest* req, long load_idx)
 {
     ThreadID tid = cpu->contextToThread(req->request()->contextId());
 
@@ -1429,7 +1429,7 @@ LSQ::read(LSQRequest* req, int load_idx)
 }
 
 Fault
-LSQ::write(LSQRequest* req, uint8_t *data, int store_idx)
+LSQ::write(LSQRequest* req, uint8_t *data, long store_idx)
 {
     ThreadID tid = cpu->contextToThread(req->request()->contextId());
 

@@ -279,7 +279,7 @@ class LSQ
         uint32_t numInTranslationFragments;
 
         /** LQ/SQ entry idx. */
-        uint32_t _entryIdx;
+        uint64_t _entryIdx;
 
         void markDelayed() override { flags.set(Flag::Delayed); }
         bool isDelayed() { return flags.isSet(Flag::Delayed); }
@@ -405,18 +405,18 @@ class LSQ
         }
 
         uint32_t taskId() const { return _taskId; }
-        RequestPtr request(int idx = 0) { return _requests.at(idx); }
+        RequestPtr request(long idx = 0) { return _requests.at(idx); }
 
         const RequestPtr
-        request(int idx = 0) const
+        request(long idx = 0) const
         {
             return _requests.at(idx);
         }
 
-        Addr getVaddr(int idx = 0) const { return request(idx)->getVaddr(); }
+        Addr getVaddr(long idx = 0) const { return request(idx)->getVaddr(); }
         virtual void initiateTranslation() = 0;
 
-        PacketPtr packet(int idx = 0) { return _packets.at(idx); }
+        PacketPtr packet(long idx = 0) { return _packets.at(idx); }
 
         virtual PacketPtr
         mainPacket()
@@ -964,12 +964,12 @@ class LSQ
     /** Executes a read operation, using the load specified at the load
      * index.
      */
-    Fault read(LSQRequest* req, int load_idx);
+    Fault read(LSQRequest* req, long load_idx);
 
     /** Executes a store operation, using the store specified at the store
      * index.
      */
-    Fault write(LSQRequest* req, uint8_t *data, int store_idx);
+    Fault write(LSQRequest* req, uint8_t *data, long store_idx);
 
     /**
      * Retry the previous send that failed.

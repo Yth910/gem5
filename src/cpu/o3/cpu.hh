@@ -635,13 +635,13 @@ class CPU : public BaseCPU
     }
 
     /** CPU read function, forwards read to LSQ. */
-    Fault read(LSQRequest* req, int load_idx)
+    Fault read(LSQRequest* req, long load_idx)
     {
         return iew.ldstQueue.read(req, load_idx);
     }
 
     /** CPU write function, forwards write to LSQ. */
-    Fault write(LSQRequest* req, uint8_t *data, int store_idx)
+    Fault write(LSQRequest* req, uint8_t *data, long store_idx)
     {
         return iew.ldstQueue.write(req, data, store_idx);
     }

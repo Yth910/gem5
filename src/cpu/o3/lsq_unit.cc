@@ -672,7 +672,7 @@ LSQUnit::executeStore(const DynInstPtr &store_inst)
     // Make sure that a store exists.
     assert(stores != 0);
 
-    int store_idx = store_inst->sqIdx;
+    long store_idx = store_inst->sqIdx;
 
     DPRINTF(LSQUnit, "Executing store PC %s [sn:%lli]\n",
             store_inst->pcState(), store_inst->seqNum);
@@ -1302,7 +1302,7 @@ LSQUnit::cacheLineSize()
 }
 
 Fault
-LSQUnit::read(LSQRequest *req, int load_idx)
+LSQUnit::read(LSQRequest *req, long load_idx)
 {
     LQEntry& load_req = loadQueue[load_idx];
     const DynInstPtr& load_inst = load_req.instruction();
@@ -1625,7 +1625,7 @@ LSQUnit::read(LSQRequest *req, int load_idx)
 }
 
 Fault
-LSQUnit::write(LSQRequest *req, uint8_t *data, int store_idx)
+LSQUnit::write(LSQRequest *req, uint8_t *data, long store_idx)
 {
     assert(storeQueue[store_idx].valid());
 

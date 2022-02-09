@@ -265,7 +265,8 @@ class LSQUnit
     /** Executes a load instruction. */
     Fault executeLoad(const DynInstPtr &inst);
 
-    Fault executeLoad(int lq_idx) { panic("Not implemented"); return NoFault; }
+    Fault executeLoad(long lq_idx)
+    { panic("Not implemented"); return NoFault; }
     /** Executes a store instruction. */
     Fault executeStore(const DynInstPtr &inst);
 
@@ -528,7 +529,7 @@ class LSQUnit
      */
     InstSeqNum stallingStoreIsn;
     /** The index of the above store. */
-    int stallingLoadIdx;
+    long stallingLoadIdx;
 
     /** The packet that needs to be retried. */
     PacketPtr retryPkt;
@@ -582,10 +583,10 @@ class LSQUnit
 
   public:
     /** Executes the load at the given index. */
-    Fault read(LSQRequest *req, int load_idx);
+    Fault read(LSQRequest *req, long load_idx);
 
     /** Executes the store at the given index. */
-    Fault write(LSQRequest *req, uint8_t *data, int store_idx);
+    Fault write(LSQRequest *req, uint8_t *data, long store_idx);
 
     /** Returns the index of the head load instruction. */
     int getLoadHead() { return loadQueue.head(); }
